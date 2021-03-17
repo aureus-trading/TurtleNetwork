@@ -19,7 +19,7 @@ TN {
   }
 
   rest-api {
-    port = 6869
+    port = 6861
   }
 
   miner {
