@@ -30,7 +30,7 @@ trait Blockchain {
   def heightOf(blockId: ByteStr): Option[Int]
 
   /** Features related */
-  def approvedFeatures: Map[Short, Int]
+  def approvedFeaptures: Map[Short, Int]
   def activatedFeatures: Map[Short, Int]
   def featureVotes(height: Int): Map[Short, Int]
 
