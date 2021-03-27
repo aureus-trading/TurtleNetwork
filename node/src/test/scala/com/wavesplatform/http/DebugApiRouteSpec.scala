@@ -108,10 +108,10 @@ class DebugApiRouteSpec
 
     "takes the priority pool into account" in withDomain(domainSettingsWithFeatures(BlockchainFeatures.NG)) { d =>
       d.appendBlock(TxHelpers.genesis(TxHelpers.defaultAddress))
-      d.appendBlock(TxHelpers.transfer(to = TxHelpers.secondAddress, amount = 1.waves + TestValues.fee))
+      d.appendBlock(TxHelpers.transfer(to = TxHelpers.secondAddress, amount = 1.TN + TestValues.fee))
 
       val route = debugApiRoute.copy(priorityPoolBlockchain = () => d.blockchain).route
-      val tx = TxHelpers.transfer(TxHelpers.secondSigner, TestValues.address, 1.waves)
+      val tx = TxHelpers.transfer(TxHelpers.secondSigner, TestValues.address, 1.TN)
       validatePost(tx) ~> route ~> check {
         val json = Json.parse(responseAs[String])
         (json \ "valid").as[Boolean] shouldBe true
