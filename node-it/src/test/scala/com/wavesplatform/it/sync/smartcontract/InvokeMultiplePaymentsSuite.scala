@@ -231,6 +231,6 @@ class InvokeMultiplePaymentsSuite extends BaseTransactionSuite with CancelAfterF
 
     asset1 = IssuedAsset(ByteStr.decodeBase58(sender.issue(caller, waitForTx = true).id).get)
     asset2 = IssuedAsset(ByteStr.decodeBase58(sender.issue(caller, waitForTx = true).id).get)
-    sender.createAlias(caller, "recipientalias", smartMinFee, waitForTx = true)
+    sender.createAlias(caller, "recipientalias", aliasFeeAmount+smartFee, waitForTx = true)
   }
 }

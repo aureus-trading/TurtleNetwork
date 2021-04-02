@@ -179,7 +179,7 @@ class BlockchainUpdatesSpec extends FreeSpec with Matchers with WithDomain with 
         rollback.removedBlocks should have length 1
 
         rollback.stateUpdate.balances shouldBe Seq(
-          BalanceUpdate(TxHelpers.defaultAddress, Waves, 10000001036400000L, after = 10000000600000000L),
+          BalanceUpdate(TxHelpers.defaultAddress, Waves, 10000000680000000L, after = 10000000600000000L),
           BalanceUpdate(TxHelpers.defaultAddress, issue.asset, 2000, after = 0),
           BalanceUpdate(TxHelpers.secondAddress, Waves, 100000000, after = 0)
         )
@@ -214,7 +214,7 @@ class BlockchainUpdatesSpec extends FreeSpec with Matchers with WithDomain with 
         rollback.removedBlocks shouldBe empty
 
         rollback.stateUpdate.balances shouldBe Seq(
-          BalanceUpdate(TxHelpers.defaultAddress, Waves, 10000000935800000L, after = 10000001099400000L),
+          BalanceUpdate(TxHelpers.defaultAddress, Waves, 10000000520000000L, after = 10000001040000000L),
           BalanceUpdate(TxHelpers.defaultAddress, issue.asset, 2000, after = 0),
           BalanceUpdate(TxHelpers.secondAddress, Waves, 200000000, after = 100000000)
         )

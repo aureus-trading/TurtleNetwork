@@ -53,7 +53,7 @@ class BlocksApiSuite extends GrpcBaseTransactionSuite with Matchers {
         sender.keyPair,
         PBRecipients.create(PublicKey(Ints.toByteArray(i) ++ new Array[Byte](28)).toAddress),
         100000000L,
-        100000L
+        2000000L
       )
     }
   }

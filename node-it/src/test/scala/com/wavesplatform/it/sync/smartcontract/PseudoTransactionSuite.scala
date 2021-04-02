@@ -81,17 +81,17 @@ class PseudoTransactionSuite extends BaseTransactionSuite {
       List(
         Terms.CONST_BYTESTR(ByteStr.decodeBase58(recipient.toAddress.toString).get).explicitGet(),
         Terms.CONST_BYTESTR(ByteStr.decodeBase58(smartAssetId).get).explicitGet(),
-        Terms.CONST_LONG(transferAmount / 2)
+        Terms.CONST_LONG(transferAmount / 1110)
       ))
     sender.setAssetScript(smartAssetId, firstDApp, script = Some(smartAssetScript(signedInvoke.id().toString)), fee = issueFee + smartFee, waitForTx = true)
     sender.signedBroadcast(signedInvoke.json(), waitForTx = true)
 
-    sender.createAlias(recipient, recipientAlias, fee = smartMinFee, waitForTx = true)
+    sender.createAlias(recipient, recipientAlias, fee = aliasFeeAmount + smartFee, waitForTx = true)
     val signedInvoke2 = invokeScriptTransaction("transferAssetByAlias",
       List(
         Terms.CONST_STRING(recipientAlias).explicitGet(),
         Terms.CONST_BYTESTR(ByteStr.decodeBase58(smartAssetId).get).explicitGet(),
-        Terms.CONST_LONG(transferAmount / 2)
+        Terms.CONST_LONG(transferAmount / 1110)
       ))
     sender.setAssetScript(smartAssetId, firstDApp, script = Some(smartAssetScript(signedInvoke2.id().toString)), fee = issueFee + smartFee, waitForTx = true)
     sender.signedBroadcast(signedInvoke2.json(), waitForTx = true)
