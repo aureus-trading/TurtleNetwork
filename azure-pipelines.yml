@@ -29,8 +29,8 @@ steps:
     containerRegistry: 'turtlenetwork docker'
     repository: 'turtlenetwork/tnnode'
     command: 'buildAndPush'
-    Dockerfile: '**/Dockerfile'
-    buildContext: '**'
+    Dockerfile: './docker/Dockerfile'
+    buildContext: './docker'
     tags: |
       latest
       $(tag)
