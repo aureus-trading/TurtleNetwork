@@ -30,7 +30,7 @@ steps:
     repository: 'turtlenetwork/tnnode'
     command: 'buildAndPush'
     Dockerfile: './docker/Dockerfile'
-    buildContext: './docker'
+    buildContext: './docker/'
     tags: |
       latest
       $(tag)
