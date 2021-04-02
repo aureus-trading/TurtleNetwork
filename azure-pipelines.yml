@@ -31,7 +31,7 @@ steps:
     command: 'buildAndPush'
     Dockerfile: './docker/Dockerfile'
     addPipelineData: false
-    buildContext: '$(Build.Repository.LocalPath)'
+    buildContext: '**'
     tags: |
       latest
       $(tag)
