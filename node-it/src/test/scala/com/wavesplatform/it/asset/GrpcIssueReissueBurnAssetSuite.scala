@@ -21,7 +21,8 @@ import org.scalatest.FreeSpec
 import scala.util.Random
 
 class GrpcIssueReissueBurnAssetSuite extends FreeSpec with GrpcBaseTransactionSuiteLike {
-  private val initialWavesBalance = 25000.TN
+  private val initialWavesBalance = 4000.TN
+  private val initialWavesBalanceBig = 12000.TN
   private val setScriptPrice      = 1.TN
 
   private val CallableMethod    = "@Callable"
@@ -172,7 +173,7 @@ class GrpcIssueReissueBurnAssetSuite extends FreeSpec with GrpcBaseTransactionSu
     }
 
     "Issue 10 assets should not produce an error" in {
-      val acc = createDapp(script(simpleNonreissuableAsset))
+      val acc = createDappBig(script(simpleNonreissuableAsset))
       val tx  = invokeScript(acc, "issue10Assets", fee = invocationCost(issuesCount = 10))
       for (nth <- 0 to 9) {
         val assetId = validateIssuedAssets(acc, tx, simpleNonreissuableAsset, nth, CallableMethod)
@@ -182,12 +183,12 @@ class GrpcIssueReissueBurnAssetSuite extends FreeSpec with GrpcBaseTransactionSu
     }
 
     "Issue more than 10 assets should produce an error" in {
-      val acc = createDapp(script(simpleNonreissuableAsset))
+      val acc = createDappBig(script(simpleNonreissuableAsset))
       assertGrpcError(invokeScript(acc, "issue11Assets"), "Too many script actions: max: 10, actual: 11")
     }
 
     "More than 10 actions Issue/Reissue/Burn should produce an error" in {
-      val acc     = createDapp(script(simpleReissuableAsset))
+      val acc     = createDappBig(script(simpleReissuableAsset))
       val txIssue = issue(acc, method, simpleReissuableAsset, invocationCost(1))
       val assetId = validateIssuedAssets(acc, txIssue, simpleReissuableAsset, method = method)
 
@@ -195,7 +196,7 @@ class GrpcIssueReissueBurnAssetSuite extends FreeSpec with GrpcBaseTransactionSu
     }
 
     "More than 10 issue action in one invocation should produce an error" in {
-      val acc = createDapp(script(simpleNonreissuableAsset))
+      val acc = createDappBig(script(simpleNonreissuableAsset))
       assertGrpcError(invokeScript(acc, "issue11Assets", fee = invocationCost(1)), "Too many script actions: max: 10, actual: 11")
     }
   }
@@ -269,6 +270,34 @@ class GrpcIssueReissueBurnAssetSuite extends FreeSpec with GrpcBaseTransactionSu
       miner.waitForHeightArise()
       checks()
     }
+  }
+
+  def createDappBig(scriptParts: String*): KeyPair = {
+    val script  = scriptParts.mkString(" ")
+    val address = KeyPair.fromSeed(Base58.encode(Random.nextString(10).getBytes())).explicitGet()
+    val compiledScript = ScriptCompiler
+      .compile(
+        script,
+        ScriptEstimatorV2
+      )
+      .explicitGet()
+      ._1
+
+    miner.broadcastTransfer(sender.keyPair, PBRecipients.create(address.toAddress), initialWavesBalanceBig, minFee, waitForTx = true)
+
+    miner.waitForTransaction(
+      miner
+        .signedBroadcast(
+          PBTransactions.protobuf(
+            SetScriptTransaction
+              .selfSigned(1.toByte, address, Some(compiledScript), setScriptFee, System.currentTimeMillis())
+              .explicitGet()
+          )
+        )
+        .id
+    )
+
+    address
   }
 
   def createDapp(scriptParts: String*): KeyPair = {

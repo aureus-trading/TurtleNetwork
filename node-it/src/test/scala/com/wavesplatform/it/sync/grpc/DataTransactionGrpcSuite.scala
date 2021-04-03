@@ -28,7 +28,7 @@ class DataTransactionGrpcSuite extends GrpcBaseTransactionSuite {
 
   test("should not put 65-sized proof") {
     val keyPair = sender.generateKeyPair()
-    sender.broadcastTransfer(sender.keyPair, PBRecipients.create(keyPair.toAddress), 1.TN, 100000L, waitForTx = true)
+    sender.broadcastTransfer(sender.keyPair, PBRecipients.create(keyPair.toAddress), 1.TN, minFee, waitForTx = true)
     sender.setScript(
       keyPair,
       Right(
@@ -46,7 +46,7 @@ class DataTransactionGrpcSuite extends GrpcBaseTransactionSuite {
             ._1
         )
       ),
-      1000000L,
+      100000000L,
       waitForTx = true
     )
     val dataTx =
