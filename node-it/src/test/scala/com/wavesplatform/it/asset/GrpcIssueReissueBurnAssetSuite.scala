@@ -500,7 +500,7 @@ class GrpcIssueReissueBurnAssetSuite extends FreeSpec with GrpcBaseTransactionSu
   }
 
   def invocationCost(issuesCount: Int, isSmartAcc: Boolean = true, smartPaymentCount: Int = 0, smartAssetsInActions: Int = 0): Long = {
-    0.06.TN + (if (isSmartAcc) 0.04.TN else 0L) + 0.04.TN * smartPaymentCount + 0.04.TN * smartAssetsInActions + 1000.TN * issuesCount
+    0.1.TN + (if (isSmartAcc) 0.04.TN else 0L) + 0.04.TN * smartPaymentCount + 0.04.TN * smartAssetsInActions + 1000.TN * issuesCount
   }
 
   def script(asset: Asset, function: String = ""): String = {
