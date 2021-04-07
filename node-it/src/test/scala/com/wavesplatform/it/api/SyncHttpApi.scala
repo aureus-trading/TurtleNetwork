@@ -133,7 +133,7 @@ object SyncHttpApi extends Assertions {
       case Success(s) => Assertions.fail(s"Expecting error but handle $s")
     }
 
-  val RequestAwaitTime: FiniteDuration = 50.seconds
+  val RequestAwaitTime: FiniteDuration = 180.seconds
 
   def sync[A](awaitable: Awaitable[A], atMost: Duration = RequestAwaitTime): A =
     try Await.result(awaitable, atMost)
