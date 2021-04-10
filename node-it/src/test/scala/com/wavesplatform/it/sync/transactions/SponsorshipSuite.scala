@@ -127,6 +127,10 @@ class SponsorshipSuite
       assertMinAssetFee(secondSponsorTxId, 1 * Token)
     }
 
+    "miner TN balance should be changed before using sponsored asset" in {
+      miner.assertBalances(miner.address, minerWavesBalance + 2 * issueFee + 2 * sponsorReducedFee + 2 * minFee)
+    }
+
     "check balance before test accounts balances" in {
       for (sponsorAssetId <- Seq(firstSponsorAssetId, secondSponsorAssetId)) {
         sender.assertAssetBalance(sponsorAddress, sponsorAssetId, sponsorAssetTotal / 2)
@@ -158,6 +162,8 @@ class SponsorshipSuite
         }
       }
     }
+
+
 
     "fee should be written off in issued asset" - {
       "alice transfer sponsored asset to bob using sponsored fee" in {

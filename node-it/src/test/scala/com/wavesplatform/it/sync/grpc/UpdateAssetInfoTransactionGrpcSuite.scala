@@ -16,7 +16,7 @@ import scala.util.Random
 
 class UpdateAssetInfoTransactionGrpcSuite extends GrpcBaseTransactionSuite with TableDrivenPropertyChecks {
   import UpdateAssetInfoTransactionGrpcSuite._
-  val updateInterval                              = 5
+  val updateInterval                              = 3
   override protected def nodeConfigs: Seq[Config] = Seq(configWithUpdateIntervalSetting(updateInterval).withFallback(Miners.head))
 
   val issuer      = firstAcc
@@ -50,7 +50,7 @@ class UpdateAssetInfoTransactionGrpcSuite extends GrpcBaseTransactionSuite with 
 
   test("able to update name/description of issued asset") {
     val nextTerm = issueHeight + updateInterval + 1
-    sender.waitForHeight(nextTerm, 2.minutes)
+    sender.waitForHeight(nextTerm, 5.minutes)
     val updateAssetInfoTxId =
       PBTransactions
         .vanilla(
@@ -71,7 +71,7 @@ class UpdateAssetInfoTransactionGrpcSuite extends GrpcBaseTransactionSuite with 
       s"Can't update info of asset with id=$assetId",
       Code.INVALID_ARGUMENT
     )
-    sender.waitForHeight(sender.height + updateInterval / 2, 2.minutes)
+    sender.waitForHeight(sender.height + updateInterval / 2, 5.minutes)
 
     assertGrpcError(
       sender.updateAssetInfo(issuer, assetId, "updatedName", "updatedDescription", issueFee),
@@ -90,7 +90,7 @@ class UpdateAssetInfoTransactionGrpcSuite extends GrpcBaseTransactionSuite with 
 
   forAll(invalidAssetsNames) { assetName: String =>
     test(s"not able to update name to $assetName") {
-      sender.waitForHeight(sender.height + 3, 2.minutes)
+      sender.waitForHeight(sender.height + 3, 5.minutes)
       assertGrpcError(
         sender.updateAssetInfo(issuer, assetId, assetName, "updatedDescription", issueFee),
         "invalid name",
@@ -154,7 +154,7 @@ class UpdateAssetInfoTransactionGrpcSuite extends GrpcBaseTransactionSuite with 
         .explicitGet()
         .id()
         .toString
-    sender.waitForHeight(sender.height + updateInterval + 1, 3.minutes)
+    sender.waitForHeight(sender.height + updateInterval + 1, 6.minutes)
     assertGrpcError(
       sender.updateAssetInfo(issuer, smartAssetId, "updatedName", "updatedDescription", issueFee + smartFee - 1),
       s"State check failed. Reason: Transaction involves 1 scripted assets. Requires $smartFee extra fee.",
