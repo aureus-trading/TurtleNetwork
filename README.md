@@ -11,6 +11,12 @@ Please read [repo wiki article](https://documentation.turtlenetwork.eu/nodeowner
 
 ## 👨‍💻 Development
 
+```
+set ThisBuild/network := Testnet
+
+set ThisBuild/network := Mainnet
+```
+
 The node can be built and installed wherever Java can run. 
 To build and test this project, you will have to follow these steps:
 
@@ -113,3 +119,8 @@ User may never use this product if his activity related to:
 - Providing gambling services in jurisdictions where this is illegal or (where applicable) offering gambling services without a valid license to the relevant jurisdiction.
 - Illegal products/services or any service providing peripheral support of illegal activities. Fake references and other services/products that foster deception (including fake IDs and government documents)
 
+
+## 👏 Acknowledgements
+
+
+Special thanks to wavesplatform for writing the base code, and the support.
