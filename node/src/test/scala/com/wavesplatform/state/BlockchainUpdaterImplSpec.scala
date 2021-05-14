@@ -293,11 +293,11 @@ class BlockchainUpdaterImplSpec
       )
 
       d.appendBlock(
-        SetScriptTransaction.selfSigned(2.toByte, dapp, Some(script), 500_0000L, ntpTime.getTimestamp()).explicitGet()
+        SetScriptTransaction.selfSigned(2.toByte, dapp, Some(script), 6000_0000L, ntpTime.getTimestamp()).explicitGet()
       )
 
       val invoke =
-        InvokeScriptTransaction.selfSigned(3.toByte, sender, dapp.toAddress, None, Seq.empty, 50_0000L, Waves, ntpTime.getTimestamp()).explicitGet()
+        InvokeScriptTransaction.selfSigned(3.toByte, sender, dapp.toAddress, None, Seq.empty, 600_0000L, Waves, ntpTime.getTimestamp()).explicitGet()
 
       d.appendBlock(d.createBlock(5.toByte, Seq(invoke)))
     }
