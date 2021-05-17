@@ -21,9 +21,10 @@ steps:
 - task: CmdLine@2
   inputs:
     script: |
-      raw_tag=$(curl -fsSL https://api.github.com/repos/BlackTurtle123/TurtleNetwork/releases/latest | tac | grep -m 1 ''tag_name.:'' | tr -cd ''[0-9\.]''
+      rawTag=$(curl -fsSL https://api.github.com/repos/BlackTurtle123/TurtleNetwork/releases/latest | tac | grep -m 1 ''tag_name.:'' | tr -cd ''[0-9\.]''
         )
-      echo "##vso[task.setvariable variable=tag]$raw_tag-$(Build.SourceVersion)"  
+      echo "##vso[task.setvariable variable=tag]$rawTag-$(Build.SourceVersion)"  
+      echo "##vso[task.setvariable variable=rawTag]$rawTag"  
   displayName: Get latest tag and compose var
 
 - task: CmdLine@2
@@ -42,4 +43,4 @@ steps:
     tags: |
       latest
       $(tag)
-      $(raw_tag)
+      $(rawTag)
