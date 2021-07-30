@@ -1,7 +1,7 @@
 FROM openjdk:8-jdk-stretch as builder
 ARG SBT_VERSION=1.2.8
 ARG WAVES_VERSION="latest"
-ARG BRANCH="version-1.1.x"
+ARG BRANCH="version-1.2.4"
 ARG DEB_PACKAGE_NETWORKS
 
 RUN                                                                             \
