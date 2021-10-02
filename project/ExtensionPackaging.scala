@@ -26,10 +26,8 @@ object ExtensionPackaging extends AutoPlugin {
 
   override def projectSettings: Seq[Def.Setting[_]] =
     Seq(
-      packageName := s"${name.value}${network.value.packageSuffix}",
       packageDoc / publishArtifact := false,
       packageSrc / publishArtifact := false,
-      Universal / javaOptions := Nil,
       // Here we record the classpath as it's added to the mappings separately, so
       // we can use its order to generate the bash/bat scripts.
       classpathOrdering := Nil,
@@ -54,7 +52,8 @@ object ExtensionPackaging extends AutoPlugin {
       },
       classpath := makeRelativeClasspathNames(classpathOrdering.value),
       nodePackageName := (LocalProject("node") / Linux / packageName).value,
-      debianPackageDependencies := Seq((LocalProject("node") / Debian / packageName).value),
+      debianPackageDependencies +=
+        s"${(LocalProject("node") / Debian / packageName).value} (= ${(LocalProject("node") / version).value})",
       // To write files to Waves NODE directory
       linuxPackageMappings := getUniversalFolderMappings(
         nodePackageName.value,
@@ -67,22 +66,14 @@ object ExtensionPackaging extends AutoPlugin {
              |set -e
              |chown -R ${nodePackageName.value}:${nodePackageName.value} /usr/share/${nodePackageName.value}""".stripMargin
       ),
+      Linux / maintainer := "turtlenetwork.eu",
+      Linux / packageSummary := s"TN node ${name.value}${network.value.packageSuffix} extension",
+      Linux / packageDescription := s"TN node ${name.value}${network.value.packageSuffix} extension",
+      Debian / normalizedName := s"${name.value}${network.value.packageSuffix}",
+      Debian / packageName := s"${name.value}${network.value.packageSuffix}",
       libraryDependencies ++= Dependencies.logDeps,
-      javaOptions in run ++= extensionClasses.value.zipWithIndex.map { case (extension, index) => s"-DTN.extensions.$index=$extension" }
-    ) ++ nameFix ++ inScope(Global)(nameFix) ++ maintainerFix
-
-  private def maintainerFix =
-    inConfig(Linux)(
-      Seq(
-        maintainer := "turtlenetwork.eu",
-        packageSummary := s"TN node ${name.value}${network.value.packageSuffix} extension",
-        packageDescription := s"TN node ${name.value}${network.value.packageSuffix} extension"
-      ))
-
-  private def nameFix = Seq(
-    packageName := s"${name.value}${network.value.packageSuffix}",
-    normalizedName := s"${name.value}${network.value.packageSuffix}"
-  )
+      run / javaOptions ++= extensionClasses.value.zipWithIndex.map { case (extension, index) => s"-DTN.extensions.$index=$extension" }
+    )
 
   // A copy of com.typesafe.sbt.packager.linux.LinuxPlugin.getUniversalFolderMappings
   private def getUniversalFolderMappings(pkg: String, installLocation: String, mappings: Seq[(File, String)]): Seq[LinuxPackageMapping] = {
@@ -147,7 +138,7 @@ object ExtensionPackaging extends AutoPlugin {
         val providedClasspath = refs.map { ref =>
           stateTask.flatMap { state =>
             val extracted = Project.extract(state)
-            extracted.get(Runtime / dependencyClasspath in ref)
+            extracted.get(ref / Runtime / dependencyClasspath)
           }
         }
 

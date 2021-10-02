@@ -7,6 +7,7 @@ import com.wavesplatform.common.state.ByteStr
 import com.wavesplatform.consensus.GeneratingBalanceProvider
 import com.wavesplatform.features.{BlockchainFeature, BlockchainFeatureStatus, BlockchainFeatures}
 import com.wavesplatform.lang.ValidationError
+import com.wavesplatform.lang.v1.ContractLimits
 import com.wavesplatform.lang.v1.traits.domain.Issue
 import com.wavesplatform.settings.BlockchainSettings
 import com.wavesplatform.state.reader.LeaseDetails
@@ -65,6 +66,7 @@ trait Blockchain {
   def assetScript(id: IssuedAsset): Option[AssetScriptInfo]
 
   def accountData(acc: Address, key: String): Option[DataEntry[_]]
+  def hasData(address: Address): Boolean
 
   def leaseBalance(address: Address): LeaseBalance
 
@@ -92,7 +94,7 @@ object Blockchain {
     def lastBlockIds(howMany: Int): Seq[ByteStr]   = (blockchain.height to blockchain.height - howMany by -1).flatMap(blockId)
 
     def resolveAlias(aoa: AddressOrAlias): Either[ValidationError, Address] =
-      aoa match {
+      (aoa: @unchecked) match {
         case a: Address => Right(a)
         case a: Alias   => blockchain.resolveAlias(a)
       }
@@ -139,6 +141,11 @@ object Blockchain {
     def lastBlockReward: Option[Long] = blockchain.blockReward(blockchain.height)
 
     def hasAssetScript(asset: IssuedAsset): Boolean = blockchain.assetScript(asset).isDefined
+    def hasPaidVerifier(account: Address): Boolean =
+      if (blockchain.isFeatureActivated(BlockchainFeatures.SynchronousCalls))
+        blockchain.accountScript(account).exists(_.verifierComplexity > ContractLimits.FreeVerifierComplexity)
+      else
+        blockchain.hasAccountScript(account)
 
     def vrf(atHeight: Int): Option[ByteStr] =
       blockchain
@@ -177,5 +184,9 @@ object Blockchain {
       else if (blockchain.settings.functionalitySettings.blockVersion3AfterHeight + 1 < height) NgBlockVersion
       else if (height > 1) PlainBlockVersion
       else GenesisBlockVersion
+
+    def binaryData(address: Address, key: String): Option[ByteStr] = blockchain.accountData(address, key).collect {
+      case BinaryDataEntry(_, value) => value
+    }
   }
 }

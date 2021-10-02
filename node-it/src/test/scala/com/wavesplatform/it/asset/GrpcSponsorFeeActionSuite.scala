@@ -6,15 +6,15 @@ import com.wavesplatform.it.api.SyncHttpApi._
 import com.wavesplatform.it.api.{IssueInfoResponse, SponsorFeeResponse, StateChangesDetails}
 import com.wavesplatform.it.sync._
 import com.wavesplatform.it.sync.grpc.GrpcBaseTransactionSuiteLike
-import com.wavesplatform.it.util._
 import com.wavesplatform.lang.v1.estimator.v2.ScriptEstimatorV2
 import com.wavesplatform.state.Sponsorship
+import com.wavesplatform.test._
 import com.wavesplatform.transaction.smart.SetScriptTransaction
 import com.wavesplatform.transaction.smart.script.ScriptCompiler
-import org.scalatest.FreeSpec
+import org.scalatest.freespec.AnyFreeSpec
 
-class GrpcSponsorFeeActionSuite extends FreeSpec with GrpcBaseTransactionSuiteLike {
-  private val initialWavesBalance = 2100.TN
+class GrpcSponsorFeeActionSuite extends AnyFreeSpec with GrpcBaseTransactionSuiteLike {
+  private val initialWavesBalance = 2100.waves
 
   private val minSponsoredAssetFee      = 100
   private var sponsoredAssetId: String  = ""
@@ -55,7 +55,8 @@ class GrpcSponsorFeeActionSuite extends FreeSpec with GrpcBaseTransactionSuiteLi
               Nil,
               Nil,
               Seq(SponsorFeeResponse(sponsorFeeAssetId, Some(`minSponsoredAssetFee`))),
-              None
+              None,
+              Nil
             )
             ) if issueAssetId == sponsorFeeAssetId =>
       }
@@ -225,7 +226,8 @@ class GrpcSponsorFeeActionSuite extends FreeSpec with GrpcBaseTransactionSuiteLi
               Nil,
               Nil,
               sponsorFeeResponses,
-              None
+              None,
+              Nil
             )
             ) if sponsorFeeResponses.size == 9 && sponsorFeeResponses.last == SponsorFeeResponse(`assetId`, Some(`lastMinSponsoredAssetFee`)) =>
       }
@@ -272,7 +274,8 @@ class GrpcSponsorFeeActionSuite extends FreeSpec with GrpcBaseTransactionSuiteLi
               Nil,
               Nil,
               Seq(SponsorFeeResponse(`assetId`, Some(100)), SponsorFeeResponse(`assetId`, None)),
-              None
+              None,
+              Nil
             )
             ) =>
       }
@@ -390,7 +393,7 @@ class GrpcSponsorFeeActionSuite extends FreeSpec with GrpcBaseTransactionSuiteLi
 
       assertBadRequestAndMessage(
         miner.invokeScript(miner.keyPair, dappAddress, Some("sponsor11assets"), fee = smartMinFee),
-        "Too many script actions: max: 10, actual: 11"
+        "Actions count limit is exceeded"
       )
     }
 

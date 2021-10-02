@@ -21,7 +21,6 @@ import monix.eval.Task
 import monix.execution.Scheduler
 
 import scala.util.Right
-import scala.util.control.NonFatal
 
 object BlockAppender extends ScorexLogging {
   def apply(
@@ -34,7 +33,7 @@ object BlockAppender extends ScorexLogging {
   )(newBlock: Block): Task[Either[ValidationError, Option[BigInt]]] =
     Task {
       if (blockchainUpdater.isLastBlockId(newBlock.header.reference))
-        appendBlock(blockchainUpdater, utxStorage, pos, time, verify)(newBlock).map(_ => Some(blockchainUpdater.score))
+        appendKeyBlock(blockchainUpdater, utxStorage, pos, time, verify)(newBlock).map(_ => Some(blockchainUpdater.score))
       else if (blockchainUpdater.contains(newBlock.id()) || blockchainUpdater.isLastBlockId(newBlock.id()))
         Right(None)
       else
@@ -88,9 +87,7 @@ object BlockAppender extends ScorexLogging {
     }
 
     handle
-      .onErrorHandle {
-        case NonFatal(e) => log.warn("Error happened after block appending", e)
-      }
+      .onErrorHandle(e => log.warn("Error happened after block appending", e))
   }
 
   //noinspection TypeAnnotation,ScalaStyle

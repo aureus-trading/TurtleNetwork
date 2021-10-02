@@ -1,6 +1,6 @@
 #!/bin/bash
 shopt -s nullglob
-NETWORKS="mainnet testnet stagenet"
+NETWORKS="mainnet testnet stagenet custom"
 
 logEcho() {
   echo $1 | gosu TN tee -a /var/log/TN/TN.log
@@ -38,7 +38,7 @@ fi
 
 [ -n "${WAVES_WALLET_PASSWORD}" ] && JAVA_OPTS="${JAVA_OPTS} -DTN.wallet.password=${WAVES_WALLET_PASSWORD}"
 [ -n "${WAVES_WALLET_SEED}" ] && JAVA_OPTS="${JAVA_OPTS} -DTN.wallet.seed=${WAVES_WALLET_SEED}"
-JAVA_OPTS="${JAVA_OPTS} -DTN.data-directory=$WVDATA/data -DTN.directory=$WVDATA"
+JAVA_OPTS="${JAVA_OPTS} -DTN.directory=$WVDATA"
 
 logEcho "Node is starting..."
 logEcho "WAVES_HEAP_SIZE='${WAVES_HEAP_SIZE}'"

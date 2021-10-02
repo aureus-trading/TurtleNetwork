@@ -1,6 +1,7 @@
 package com.wavesplatform.lang.v1.estimator.v3
 
-import cats.implicits._
+import cats.instances.list._
+import cats.syntax.traverse._
 import cats.{Id, Monad}
 import com.wavesplatform.lang.ExecutionError
 import com.wavesplatform.lang.v1.FunctionHeader
@@ -19,7 +20,7 @@ object ScriptEstimatorV3 extends ScriptEstimator {
       funcs: Map[FunctionHeader, Coeval[Long]],
       expr: EXPR
   ): Either[ExecutionError, Long] = {
-    val ctxFuncs = funcs.view.mapValues(cost => (cost.value(), Set[String]())).toMap
+    val ctxFuncs = funcs.view.mapValues((_, Set[String]())).toMap
     evalExpr(expr).run(EstimatorContext(ctxFuncs)).value._2
   }
 
@@ -69,7 +70,7 @@ object ScriptEstimatorV3 extends ScriptEstimator {
         (funcs ~ usedRefs).modify(_) {
           case (funcs, _) =>
             (
-              funcs + ((FunctionHeader.User(func.name), (funcCost, usedRefsInBody))),
+              funcs + ((FunctionHeader.User(func.name), (Coeval.now(funcCost), usedRefsInBody))),
               startCtx.usedRefs
             )
         }
@@ -97,7 +98,7 @@ object ScriptEstimatorV3 extends ScriptEstimator {
         .get(ctx)
         .get(header)
         .map(const)
-        .getOrElse(raiseError[Id, EstimatorContext, ExecutionError, (Long, Set[String])](s"function '$header' not found"))
+        .getOrElse(raiseError[Id, EstimatorContext, ExecutionError, (Coeval[Long], Set[String])](s"function '$header' not found"))
       _ <- update(
         (funcs ~ usedRefs).modify(_) {
           case (funcs, usedRefs) =>
@@ -108,7 +109,7 @@ object ScriptEstimatorV3 extends ScriptEstimator {
         }
       )
       argsCost <- args.traverse(evalHoldingFuncs)
-    } yield argsCost.sum + bodyCost
+    } yield argsCost.sum + bodyCost.value()
 
   private def update(f: EstimatorContext => EstimatorContext): EvalM[Unit] =
     modify[Id, EstimatorContext, ExecutionError](f)

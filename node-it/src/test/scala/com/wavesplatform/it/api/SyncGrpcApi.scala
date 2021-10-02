@@ -3,13 +3,13 @@ package com.wavesplatform.it.api
 import java.util.concurrent.TimeoutException
 
 import com.google.protobuf.ByteString
-import com.google.protobuf.wrappers.StringValue
 import com.wavesplatform.account.{AddressScheme, KeyPair}
 import com.wavesplatform.api.grpc.BalanceResponse.WavesBalances
 import com.wavesplatform.api.grpc.{TransactionStatus => PBTransactionStatus, _}
 import com.wavesplatform.common.utils.{Base58, EitherExt2}
 import com.wavesplatform.it.Node
 import com.wavesplatform.it.api.SyncHttpApi.RequestAwaitTime
+import com.wavesplatform.it.sync._
 import com.wavesplatform.lang.script.Script
 import com.wavesplatform.lang.v1.compiler.Terms.FUNCTION_CALL
 import com.wavesplatform.protobuf.Amount
@@ -73,8 +73,8 @@ object SyncGrpcApi extends Assertions {
       }
 
     def resolveAlias(alias: String): Addr = {
-      val addr = accounts.resolveAlias(StringValue.of(alias))
-      PBRecipients.toAddress(addr.value.toByteArray, AddressScheme.current.chainId).explicitGet()
+      val addr = accounts.resolveAlias(alias)
+      PBRecipients.toAddress(addr.toByteArray, AddressScheme.current.chainId).explicitGet()
     }
 
     def stateChanges(txId: String): (VanillaTransaction, StateChangesDetails) = {
@@ -211,7 +211,7 @@ object SyncGrpcApi extends Assertions {
     def waitForTxAndHeightArise(txId: String): Unit = {
       @tailrec
       def recWait(): Unit = {
-        val Seq(status)   = getStatuses(TransactionsByIdRequest.of(Seq(ByteString.copyFrom(Base58.decode(txId)))))
+        val status        = getStatuses(TransactionsByIdRequest.of(Seq(ByteString.copyFrom(Base58.decode(txId))))).head
         val currentHeight = this.height
 
         if (status.status.isNotExists) throw new IllegalArgumentException(s"Transaction not exists: $txId")
@@ -290,7 +290,7 @@ object SyncGrpcApi extends Assertions {
     def setScript(
         sender: KeyPair,
         script: Either[Array[Byte], Option[Script]],
-        fee: Long,
+        fee: Long = setScriptFee,
         timestamp: Long = System.currentTimeMillis(),
         version: Int = 1,
         waitForTx: Boolean = false
@@ -319,7 +319,7 @@ object SyncGrpcApi extends Assertions {
         dApp: Recipient,
         functionCall: Option[FUNCTION_CALL],
         payments: Seq[Amount] = Seq.empty,
-        fee: Long,
+        fee: Long = invokeFee,
         version: Int = 2,
         feeAssetId: ByteString = ByteString.EMPTY,
         waitForTx: Boolean = false
@@ -342,9 +342,8 @@ object SyncGrpcApi extends Assertions {
       maybeWaitForTransaction(sync(async(n).broadcastLeaseCancel(source, leaseId, fee, version)), waitForTx)
     }
 
-    def getActiveLeases(address: ByteString): List[PBSignedTransaction] = {
-      val leases = accounts.getActiveLeases(AccountRequest.of(address))
-      leases.toList.map(resp => resp.getTransaction)
+    def getActiveLeases(address: ByteString): List[LeaseResponse] = {
+      accounts.getActiveLeases(AccountRequest.of(address)).toList
     }
 
     def updateAssetInfo(
@@ -366,21 +365,21 @@ object SyncGrpcApi extends Assertions {
     def assetInfo(assetId: String): AssetInfoResponse = sync(async(n).assetInfo(assetId))
 
     def blockAt(height: Int): VanillaBlock = {
-      val block = blocks.getBlock(BlockRequest.of(includeTransactions = true, BlockRequest.Request.Height.apply(height))).getBlock
+      val block = blocks.getBlock(BlockRequest.of(BlockRequest.Request.Height.apply(height), includeTransactions = true)).getBlock
       PBBlocks.vanilla(block).toEither.explicitGet()
     }
 
     def blockHeaderAt(height: Int): Header = {
-      blocks.getBlock(BlockRequest.of(includeTransactions = true, BlockRequest.Request.Height.apply(height))).getBlock.getHeader
+      blocks.getBlock(BlockRequest.of(BlockRequest.Request.Height.apply(height), includeTransactions = true)).getBlock.getHeader
     }
 
     def blockById(blockId: ByteString): VanillaBlock = {
-      val block = blocks.getBlock(BlockRequest.of(includeTransactions = true, BlockRequest.Request.BlockId.apply(blockId))).getBlock
+      val block = blocks.getBlock(BlockRequest.of(BlockRequest.Request.BlockId.apply(blockId), includeTransactions = true)).getBlock
       PBBlocks.vanilla(block).toEither.explicitGet()
     }
 
     def blockSeq(fromHeight: Int, toHeight: Int, filter: BlockRangeRequest.Filter = BlockRangeRequest.Filter.Empty): Seq[VanillaBlock] = {
-      val blockIter = blocks.getBlockRange(BlockRangeRequest.of(fromHeight, toHeight, includeTransactions = true, filter))
+      val blockIter = blocks.getBlockRange(BlockRangeRequest.of(fromHeight, toHeight, filter, includeTransactions = true))
       blockIter.map(blockWithHeight => PBBlocks.vanilla(blockWithHeight.getBlock).toEither.explicitGet()).toSeq
     }
 
@@ -390,5 +389,10 @@ object SyncGrpcApi extends Assertions {
     }
 
     def getStatuses(request: TransactionsByIdRequest): Seq[PBTransactionStatus] = sync(async(n).getStatuses(request))
+
+    def getStatus(txId: String): PBTransactionStatus = {
+      val request = TransactionsByIdRequest.of(Seq(ByteString.copyFrom(Base58.decode(txId))))
+      sync(async(n).getStatuses(request)).head
+    }
   }
 }

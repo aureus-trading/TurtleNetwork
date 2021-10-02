@@ -1,6 +1,7 @@
 package com.wavesplatform.lang.v1.compiler
 
-import cats.implicits._
+import cats.syntax.traverse._
+import cats.instances.list._
 
 object Types {
 
@@ -23,6 +24,7 @@ object Types {
   case class PARAMETERIZEDTUPLE(t: List[TYPE])   extends PARAMETERIZED             { override def toString: String = t.mkString("(", ", ", ")") }
   case object NOTHING                            extends REAL { override val name = "Nothing"; override val typeList = List() }
   case object LONG                               extends REAL { override val name = "Int"; override val typeList = List(this) }
+  case object BIGINT                             extends REAL { override val name = "BigInt"; override val typeList = List(this) }
   case object BYTESTR                            extends REAL { override val name = "ByteVector"; override val typeList = List(this) }
   case object BOOLEAN                            extends REAL { override val name = "Boolean"; override val typeList = List(this) }
   case object STRING                             extends REAL { override val name = "String"; override val typeList = List(this) }
@@ -69,18 +71,8 @@ object Types {
         (A1, ..., Z1) | ... | (A1, ..., Zk) | ... | (An, ..., Zk)
     */
     override def unfold: FINAL = {
-      def combine(accTypes: List[TUPLE], nextTypes: List[REAL]): List[TUPLE] =
-        if (accTypes.isEmpty)
-          nextTypes.map(t => TUPLE(List(t)))
-        else
-          for {
-            a <- accTypes
-            b <- nextTypes
-          } yield TUPLE(a.types :+ b)
-
-      UNION.reduce(UNION.create(
-        types.map(_.typeList).foldLeft(List.empty[TUPLE])(combine)
-      ))
+      val regrouped = regroup(types.map(_.typeList)).map(t => TUPLE(t.toList))
+      UNION.reduce(UNION.create(regrouped))
     }
   }
 
@@ -163,6 +155,7 @@ object Types {
   val UNIT: CASETYPEREF    = CASETYPEREF("Unit", List.empty)
   val optionByteVector     = UNION(BYTESTR, UNIT)
   val optionLong           = UNION(LONG, UNIT)
+  val optionString         = UNION(STRING, UNIT)
   val listByteVector: LIST = LIST(BYTESTR)
   val listString: LIST     = LIST(STRING)
 }

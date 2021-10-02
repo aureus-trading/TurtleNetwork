@@ -8,22 +8,21 @@ import com.wavesplatform.it.api.SyncGrpcApi._
 import com.wavesplatform.it.api.{BurnInfoResponse, IssueInfoResponse, ReissueInfoResponse, StateChangesDetails}
 import com.wavesplatform.it.sync._
 import com.wavesplatform.it.sync.grpc.GrpcBaseTransactionSuiteLike
-import com.wavesplatform.it.util._
 import com.wavesplatform.lang.v1.FunctionHeader
 import com.wavesplatform.lang.v1.compiler.Terms.{CONST_BOOLEAN, CONST_BYTESTR, CONST_LONG, FUNCTION_CALL}
 import com.wavesplatform.lang.v1.estimator.v2.ScriptEstimatorV2
 import com.wavesplatform.protobuf.transaction.{PBRecipients, PBTransactions}
+import com.wavesplatform.test._
 import com.wavesplatform.transaction.TxVersion
 import com.wavesplatform.transaction.smart.SetScriptTransaction
 import com.wavesplatform.transaction.smart.script.ScriptCompiler
-import org.scalatest.FreeSpec
+import org.scalatest.freespec.AnyFreeSpec
 
 import scala.util.Random
-
-class GrpcIssueReissueBurnAssetSuite extends FreeSpec with GrpcBaseTransactionSuiteLike {
-  private val initialWavesBalance = 4000.TN
-  private val initialWavesBalanceBig = 12000.TN
-  private val setScriptPrice      = 1.TN
+class GrpcIssueReissueBurnAssetSuite extends AnyFreeSpec with GrpcBaseTransactionSuiteLike {
+  private val initialWavesBalance = 4000.waves
+  private val initialWavesBalanceBig = 12000.waves
+  private val setScriptPrice      = 1.waves
 
   private val CallableMethod    = "@Callable"
   private val TransactionMethod = "Transaction"
@@ -183,8 +182,8 @@ class GrpcIssueReissueBurnAssetSuite extends FreeSpec with GrpcBaseTransactionSu
     }
 
     "Issue more than 10 assets should produce an error" in {
-      val acc = createDappBig(script(simpleNonreissuableAsset))
-      assertGrpcError(invokeScript(acc, "issue11Assets"), "Too many script actions: max: 10, actual: 11")
+      val acc = createDapp(script(simpleNonreissuableAsset))
+      assertGrpcError(invokeScript(acc, "issue11Assets"), "Actions count limit is exceeded")
     }
 
     "More than 10 actions Issue/Reissue/Burn should produce an error" in {
@@ -192,12 +191,12 @@ class GrpcIssueReissueBurnAssetSuite extends FreeSpec with GrpcBaseTransactionSu
       val txIssue = issue(acc, method, simpleReissuableAsset, invocationCost(1))
       val assetId = validateIssuedAssets(acc, txIssue, simpleReissuableAsset, method = method)
 
-      assertGrpcError(invokeScript(acc, "process11actions", assetId = assetId), "Too many script actions: max: 10, actual: 11")
+      assertGrpcError(invokeScript(acc, "process11actions", assetId = assetId), "Actions count limit is exceeded")
     }
 
     "More than 10 issue action in one invocation should produce an error" in {
-      val acc = createDappBig(script(simpleNonreissuableAsset))
-      assertGrpcError(invokeScript(acc, "issue11Assets", fee = invocationCost(1)), "Too many script actions: max: 10, actual: 11")
+      val acc = createDapp(script(simpleNonreissuableAsset))
+      assertGrpcError(invokeScript(acc, "issue11Assets", fee = invocationCost(1)), "Actions count limit is exceeded")
     }
   }
 
@@ -500,7 +499,7 @@ class GrpcIssueReissueBurnAssetSuite extends FreeSpec with GrpcBaseTransactionSu
   }
 
   def invocationCost(issuesCount: Int, isSmartAcc: Boolean = true, smartPaymentCount: Int = 0, smartAssetsInActions: Int = 0): Long = {
-    0.1.TN + (if (isSmartAcc) 0.04.TN else 0L) + 0.04.TN * smartPaymentCount + 0.04.TN * smartAssetsInActions + 1000.TN * issuesCount
+    0.1.waves + (if (isSmartAcc) 0.04.waves else 0L) + 0.04.waves * smartPaymentCount + 0.04.waves * smartAssetsInActions + 1000.waves * issuesCount
   }
 
   def script(asset: Asset, function: String = ""): String = {

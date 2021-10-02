@@ -1,6 +1,5 @@
 package com.wavesplatform.state.diffs.smart.predef
 
-import com.wavesplatform.TransactionGen
 import com.wavesplatform.common.state.ByteStr
 import com.wavesplatform.common.utils.EitherExt2
 import com.wavesplatform.features.BlockchainFeatures
@@ -12,19 +11,18 @@ import com.wavesplatform.lang.script.v1.ExprScript
 import com.wavesplatform.lang.utils._
 import com.wavesplatform.lang.v1.compiler.ExpressionCompiler
 import com.wavesplatform.lang.v1.compiler.Terms.EVALUATED
-import com.wavesplatform.lang.v1.estimator.v2.ScriptEstimatorV2
+import com.wavesplatform.lang.v1.estimator.v3.ScriptEstimatorV3
 import com.wavesplatform.lang.v1.parser.Parser
 import com.wavesplatform.state.diffs._
 import com.wavesplatform.state.{BinaryDataEntry, Blockchain, BooleanDataEntry, EmptyDataEntry, IntegerDataEntry, StringDataEntry}
+import com.wavesplatform.test.FreeSpec
 import com.wavesplatform.transaction.Transaction
 import com.wavesplatform.transaction.smart.script.{ScriptCompiler, ScriptRunner}
 import com.wavesplatform.utils.EmptyBlockchain
 import org.scalacheck.Gen
-import org.scalatest.{FreeSpec, Matchers}
-import org.scalatestplus.scalacheck.{ScalaCheckPropertyChecks => PropertyChecks}
 import shapeless.Coproduct
 
-class ScriptVersionsTest extends FreeSpec with PropertyChecks with Matchers with TransactionGen {
+class ScriptVersionsTest extends FreeSpec {
   private def eval[T <: EVALUATED](
       script: String,
       version: StdLibVersion,
@@ -45,7 +43,7 @@ class ScriptVersionsTest extends FreeSpec with PropertyChecks with Matchers with
       tx: Transaction,
       blockchain: Blockchain
   ): Either[String, EVALUATED] =
-    ScriptRunner(Coproduct(tx), blockchain, script, isAssetScript = false, null)._2
+    ScriptRunner(Coproduct(tx), blockchain, script, isAssetScript = false, null)._3
 
   private val duplicateNames =
     """
@@ -117,7 +115,7 @@ class ScriptVersionsTest extends FreeSpec with PropertyChecks with Matchers with
   "ScriptV4" - {
     "DataTransaction entry mapping" in {
       def compile(scriptText: String) =
-        ScriptCompiler.compile(scriptText, ScriptEstimatorV2).explicitGet()._1
+        ScriptCompiler.compile(scriptText, ScriptEstimatorV3).explicitGet()._1
 
       def script(dApp: Boolean, version: StdLibVersion): Script =
         compile(
@@ -153,7 +151,7 @@ class ScriptVersionsTest extends FreeSpec with PropertyChecks with Matchers with
         )
 
       val fixedBlockchain = new EmptyBlockchain {
-        override def activatedFeatures: Map[Short, Int] = Map(BlockchainFeatures.ContinuationTransaction.id -> 0)
+        override def activatedFeatures: Map[Short, Int] = Map(BlockchainFeatures.SynchronousCalls.id -> 0)
       }
 
       for {

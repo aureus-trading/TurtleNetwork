@@ -6,7 +6,6 @@ import cats.Id
 import cats.syntax.monoid._
 import com.wavesplatform.common.state.ByteStr
 import com.wavesplatform.common.utils.{Base64, EitherExt2}
-import com.wavesplatform.lang.Common.{NoShrink, produce}
 import com.wavesplatform.lang.Global
 import com.wavesplatform.lang.directives.values._
 import com.wavesplatform.lang.v1.CTX
@@ -21,14 +20,14 @@ import com.wavesplatform.lang.v1.evaluator.ctx.impl.crypto.RSA._
 import com.wavesplatform.lang.v1.evaluator.ctx.impl.{CryptoContext, PureContext}
 import com.wavesplatform.lang.v1.evaluator.{ContextfulVal, EvaluatorV1}
 import com.wavesplatform.lang.v1.parser.Parser
+import com.wavesplatform.test._
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest._
-import org.scalatestplus.scalacheck.{ScalaCheckPropertyChecks => PropertyChecks}
 
 import scala.util.Random
 
-class RSATest extends PropSpec with PropertyChecks with Matchers with BeforeAndAfterAll with NoShrink {
+class RSATest extends PropSpec with BeforeAndAfterAll {
 
   lazy val provider = new BouncyCastleProvider
 
@@ -139,7 +138,7 @@ class RSATest extends PropSpec with PropertyChecks with Matchers with BeforeAndA
 
         val signature = privateSignature.sign
 
-        eval(scriptSrc(alg, message, signature, xpub.getEncoded), PureContext.build(V3) |+| CryptoContext.build(Global, V3)) shouldBe Right(CONST_BOOLEAN(true))
+        eval(scriptSrc(alg, message, signature, xpub.getEncoded), PureContext.build(V3, fixUnicodeFunctions = true) |+| CryptoContext.build(Global, V3)) shouldBe Right(CONST_BOOLEAN(true))
       }
     }
   }
@@ -158,7 +157,7 @@ class RSATest extends PropSpec with PropertyChecks with Matchers with BeforeAndA
 
         val signature = privateSignature.sign
 
-        eval(scriptSrc(alg, message, signature, xpub.getEncoded), PureContext.build(V4) |+| CryptoContext.build(Global, V4)) should produce(s"Can't find a function '${algToType(alg)}'()")
+        eval(scriptSrc(alg, message, signature, xpub.getEncoded), PureContext.build(V4, fixUnicodeFunctions = true) |+| CryptoContext.build(Global, V4)) should produce(s"Can't find a function '${algToType(alg)}'()")
       }
     }
   }
@@ -181,7 +180,7 @@ class RSATest extends PropSpec with PropertyChecks with Matchers with BeforeAndA
           val vars: Map[String, (FINAL, ContextfulVal[NoContext])] = Map(
              ("msg", (BYTESTR, ContextfulVal.pure[NoContext](CONST_BYTESTR(ByteStr(message), limit = CONST_BYTESTR.DataTxSize).explicitGet()))),
            )
-          val ctx: CTX[NoContext] = PureContext.build(V4) |+| CryptoContext.build(Global, V4) |+| CTX[NoContext](Seq(), vars, Array.empty[BaseFunction[NoContext]])
+          val ctx: CTX[NoContext] = PureContext.build(V4, fixUnicodeFunctions = true) |+| CryptoContext.build(Global, V4) |+| CTX[NoContext](Seq(), vars, Array.empty[BaseFunction[NoContext]])
 
           eval(limScriptSrc(lim, alg, signature, xpub.getEncoded), ctx) shouldBe Right(CONST_BOOLEAN(true))
         }
@@ -207,7 +206,7 @@ class RSATest extends PropSpec with PropertyChecks with Matchers with BeforeAndA
           val vars: Map[String, (FINAL, ContextfulVal[NoContext])] = Map(
              ("msg", (BYTESTR, ContextfulVal.pure[NoContext](CONST_BYTESTR(ByteStr(message), limit = CONST_BYTESTR.DataTxSize).explicitGet()))),
            )
-          val ctx: CTX[NoContext] = PureContext.build(V4) |+| CryptoContext.build(Global, V4) |+| CTX[NoContext](Seq(), vars, Array.empty[BaseFunction[NoContext]])
+          val ctx: CTX[NoContext] = PureContext.build(V4, fixUnicodeFunctions = true) |+| CryptoContext.build(Global, V4) |+| CTX[NoContext](Seq(), vars, Array.empty[BaseFunction[NoContext]])
 
           eval(limScriptSrc(lim, alg, signature, xpub.getEncoded), ctx) shouldBe Left(s"Invalid message size = ${lim * 1024 + 1} bytes, must be not greater than ${lim} KB")
         }
@@ -232,7 +231,7 @@ class RSATest extends PropSpec with PropertyChecks with Matchers with BeforeAndA
         val vars: Map[String, (FINAL, ContextfulVal[NoContext])] = Map(
            ("msg", (BYTESTR, ContextfulVal.pure[NoContext](CONST_BYTESTR(ByteStr(message), limit = CONST_BYTESTR.DataTxSize).explicitGet()))),
          )
-        val ctx: CTX[NoContext] = PureContext.build(V4) |+| CryptoContext.build(Global, V4) |+| CTX[NoContext](Seq(), vars, Array.empty[BaseFunction[NoContext]])
+        val ctx: CTX[NoContext] = PureContext.build(V4, fixUnicodeFunctions = true) |+| CryptoContext.build(Global, V4) |+| CTX[NoContext](Seq(), vars, Array.empty[BaseFunction[NoContext]])
 
         eval(maxScriptSrcV4(alg, signature, xpub.getEncoded), ctx) shouldBe Right(CONST_BOOLEAN(true))
       }
@@ -256,7 +255,7 @@ class RSATest extends PropSpec with PropertyChecks with Matchers with BeforeAndA
         val vars: Map[String, (FINAL, ContextfulVal[NoContext])] = Map(
            ("msg", (BYTESTR, ContextfulVal.pure[NoContext](CONST_BYTESTR(ByteStr(message), limit = CONST_BYTESTR.DataTxSize).explicitGet()))),
          )
-        val ctx: CTX[NoContext] = PureContext.build(V3) |+| CryptoContext.build(Global, V3) |+| CTX[NoContext](Seq(), vars, Array.empty[BaseFunction[NoContext]])
+        val ctx: CTX[NoContext] = PureContext.build(V3, fixUnicodeFunctions = true) |+| CryptoContext.build(Global, V3) |+| CTX[NoContext](Seq(), vars, Array.empty[BaseFunction[NoContext]])
 
         eval(maxScriptSrc(alg, signature, xpub.getEncoded), ctx) shouldBe Right(CONST_BOOLEAN(true))
       }
@@ -280,7 +279,7 @@ class RSATest extends PropSpec with PropertyChecks with Matchers with BeforeAndA
         val vars: Map[String, (FINAL, ContextfulVal[NoContext])] = Map(
            ("msg", (BYTESTR, ContextfulVal.pure[NoContext](CONST_BYTESTR(ByteStr(message), limit = CONST_BYTESTR.DataTxSize).explicitGet()))),
          )
-        val ctx: CTX[NoContext] = PureContext.build(V3) |+| CryptoContext.build(Global, V3) |+| CTX[NoContext](Seq(), vars, Array.empty[BaseFunction[NoContext]])
+        val ctx: CTX[NoContext] = PureContext.build(V3, fixUnicodeFunctions = true) |+| CryptoContext.build(Global, V3) |+| CTX[NoContext](Seq(), vars, Array.empty[BaseFunction[NoContext]])
 
         eval(maxScriptSrc(alg, signature, xpub.getEncoded), ctx) shouldBe Left(s"Invalid message size = ${32 * 1024 + 1} bytes, must be not greater than 32 KB")
       }
@@ -296,7 +295,7 @@ class RSATest extends PropSpec with PropertyChecks with Matchers with BeforeAndA
       Random.nextBytes(signature)
 
       algs foreach { alg =>
-        eval(scriptSrc(alg, message, signature, xpub.getEncoded), PureContext.build(V3) |+| CryptoContext.build(Global, V3)) shouldBe Right(CONST_BOOLEAN(false))
+        eval(scriptSrc(alg, message, signature, xpub.getEncoded), PureContext.build(V3, fixUnicodeFunctions = true) |+| CryptoContext.build(Global, V3)) shouldBe Right(CONST_BOOLEAN(false))
       }
     }
   }
@@ -326,7 +325,7 @@ class RSATest extends PropSpec with PropertyChecks with Matchers with BeforeAndA
         privateSignature.update(message)
 
         val signature = privateSignature.sign
-        val ctx = PureContext.build(V3) |+| CryptoContext.build(Global, V3)
+        val ctx = PureContext.build(V3, fixUnicodeFunctions = true) |+| CryptoContext.build(Global, V3)
 
         val invalidKey = Array[Byte](1, 2, 3)
         eval(scriptSrc(alg, message, signature, invalidKey), ctx) should produce(s"Invalid key base58'${ByteStr(invalidKey)}'")
@@ -336,7 +335,7 @@ class RSATest extends PropSpec with PropertyChecks with Matchers with BeforeAndA
 
   private val evaluator = new EvaluatorV1[Id, NoContext]()
 
-  private def eval[T <: EVALUATED](code: String, ctx: CTX[NoContext] = PureContext.build(V4) |+| CryptoContext.build(Global, V4)): Either[String, T] = {
+  private def eval[T <: EVALUATED](code: String, ctx: CTX[NoContext] = PureContext.build(V4, fixUnicodeFunctions = true) |+| CryptoContext.build(Global, V4)): Either[String, T] = {
     val untyped      = Parser.parseExpr(code).get.value
     val typed    = ExpressionCompiler(ctx.compilerContext, untyped)
     typed.flatMap(v => evaluator.apply[T](ctx.evaluationContext, v._1))

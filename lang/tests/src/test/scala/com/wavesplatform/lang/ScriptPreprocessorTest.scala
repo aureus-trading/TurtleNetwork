@@ -2,7 +2,6 @@ package com.wavesplatform.lang
 
 import cats.Id
 import cats.kernel.Monoid
-import com.wavesplatform.lang.Common.NoShrink
 import com.wavesplatform.lang.directives.values.V3
 import com.wavesplatform.lang.directives.{Directive, DirectiveParser}
 import com.wavesplatform.lang.script.ScriptPreprocessor
@@ -15,10 +14,9 @@ import com.wavesplatform.lang.v1.evaluator.EvaluatorV1._
 import com.wavesplatform.lang.v1.evaluator.ctx.impl.PureContext
 import com.wavesplatform.lang.v1.parser.Parser
 import com.wavesplatform.lang.v1.testing.ScriptGenParser
-import org.scalatest.{Matchers, PropSpec}
-import org.scalatestplus.scalacheck.{ScalaCheckPropertyChecks => PropertyChecks}
+import com.wavesplatform.test._
 
-class ScriptPreprocessorTest extends PropSpec with PropertyChecks with Matchers with ScriptGenParser with NoShrink {
+class ScriptPreprocessorTest extends PropSpec with ScriptGenParser {
   private val evaluator = new EvaluatorV1[Id, NoContext]()
 
   private def processAndEval(src: String, libraries: Map[String, String]): Either[ExecutionError, EVALUATED] =
@@ -31,7 +29,7 @@ class ScriptPreprocessorTest extends PropSpec with PropertyChecks with Matchers 
 
   private def eval(code: String): Either[String, EVALUATED] = {
     val untyped  = Parser.parseExpr(code).get.value
-    val ctx: CTX[NoContext] = Monoid.combineAll(Seq(PureContext.build(V3)))
+    val ctx: CTX[NoContext] = Monoid.combineAll(Seq(PureContext.build(V3, fixUnicodeFunctions = true)))
     val typed    = ExpressionCompiler(ctx.compilerContext, untyped)
     typed.flatMap(v => evaluator.apply[EVALUATED](ctx.evaluationContext, v._1))
   }
@@ -41,6 +39,40 @@ class ScriptPreprocessorTest extends PropSpec with PropertyChecks with Matchers 
       """
         | {-# SCRIPT_TYPE ACCOUNT #-}
         | {-# IMPORT lib1,lib2,lib3 #-}
+        | let a = 5
+        | multiply(inc(a), dec(a)) == (5 + 1) * (5 - 1)
+      """.stripMargin
+
+    val libraries =
+      Map(
+        "lib1" ->
+          """
+            | {-# SCRIPT_TYPE  ACCOUNT #-}
+            | {-# CONTENT_TYPE LIBRARY #-}
+            | func inc(a: Int) = a + 1
+          """.stripMargin,
+        "lib2" ->
+          """
+            | {-# SCRIPT_TYPE  ACCOUNT #-}
+            | {-# CONTENT_TYPE LIBRARY #-}
+            | func dec(a: Int) = a - 1
+          """.stripMargin,
+        "lib3" ->
+          """
+            | {-# SCRIPT_TYPE  ACCOUNT #-}
+            | {-# CONTENT_TYPE LIBRARY #-}
+            | func multiply(a: Int, b: Int) = a * b
+          """.stripMargin
+      )
+
+    processAndEval(script, libraries) shouldBe Right(CONST_BOOLEAN(true))
+  }
+
+  property("multiple libraries list with spaces") {
+    val script =
+      """
+        | {-# SCRIPT_TYPE ACCOUNT #-}
+        | {-# IMPORT lib1, lib2 , lib3 #-}
         | let a = 5
         | multiply(inc(a), dec(a)) == (5 + 1) * (5 - 1)
       """.stripMargin

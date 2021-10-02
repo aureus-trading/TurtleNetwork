@@ -2,15 +2,12 @@ package com.wavesplatform.it.async
 
 import com.typesafe.config.{Config, ConfigFactory}
 import com.wavesplatform.it.api.AsyncHttpApi._
-import com.wavesplatform.it.transactions.NodesFromDocker
-import com.wavesplatform.it.{NodeConfigs, TransferSending}
-import org.scalatest._
+import com.wavesplatform.it.{BaseFreeSpec, NodeConfigs, TransferSending}
 
 import scala.concurrent.Await.result
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-class MicroblocksGenerationSuite extends FreeSpec with Matchers with TransferSending with NodesFromDocker {
+class MicroblocksGenerationSuite extends BaseFreeSpec with TransferSending {
   import MicroblocksGenerationSuite._
 
   override protected val nodeConfigs: Seq[Config] =
@@ -18,8 +15,6 @@ class MicroblocksGenerationSuite extends FreeSpec with Matchers with TransferSen
 
 
   private val nodeAddresses = nodeConfigs.map(_.getString("address")).toSet
-
-  private def miner = nodes.head
 
   s"Generate transactions and wait for one block with $maxTxs txs" in result(
     for {

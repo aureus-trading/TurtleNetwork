@@ -1,11 +1,10 @@
 package com.wavesplatform.api.grpc
 
 import com.google.protobuf.ByteString
-import com.google.protobuf.wrappers.{BytesValue, StringValue}
 import com.wavesplatform.account.{Address, Alias}
-import com.wavesplatform.api.common.CommonAccountsApi
+import com.wavesplatform.api.common.{CommonAccountsApi, LeaseInfo}
 import com.wavesplatform.protobuf._
-import com.wavesplatform.protobuf.transaction.PBTransactions
+import com.wavesplatform.protobuf.transaction.{PBRecipients, PBTransactions}
 import com.wavesplatform.protobuf.utils.PBImplicitConversions.fromAssetIdAndAmount
 import com.wavesplatform.transaction.Asset
 import io.grpc.stub.StreamObserver
@@ -63,12 +62,24 @@ class AccountsApiGrpcImpl(commonApi: CommonAccountsApi)(implicit sc: Scheduler) 
     }
   }
 
-  override def getActiveLeases(request: AccountRequest, responseObserver: StreamObserver[TransactionResponse]): Unit =
+  // TODO: Lease info route?
+  override def getActiveLeases(request: AccountRequest, responseObserver: StreamObserver[LeaseResponse]): Unit =
     responseObserver.interceptErrors {
-      val transactions = commonApi.activeLeases(request.address.toAddress)
-      val result = transactions.map {
-        case (height, transaction) => TransactionResponse(transaction.id().toByteString, height, Some(transaction.toPB))
-      }
+      val result =
+        commonApi
+          .activeLeases(request.address.toAddress)
+          .map {
+            case LeaseInfo(leaseId, originTransactionId, sender, recipient, amount, height, status, _, _) =>
+              assert(status == LeaseInfo.Status.Active)
+              LeaseResponse(
+                leaseId.toByteString,
+                originTransactionId.toByteString,
+                ByteString.copyFrom(sender.bytes),
+                Some(PBRecipients.create(recipient)),
+                amount,
+                height
+              )
+          }
       responseObserver.completeWith(result)
     }
 
@@ -82,12 +93,12 @@ class AccountsApiGrpcImpl(commonApi: CommonAccountsApi)(implicit sc: Scheduler) 
     responseObserver.completeWith(stream.map(de => DataEntryResponse(request.address, Some(PBTransactions.toPBDataEntry(de)))))
   }
 
-  override def resolveAlias(request: StringValue): Future[BytesValue] =
+  override def resolveAlias(request: String): Future[ByteString] =
     Future {
       val result = for {
-        alias   <- Alias.create(request.value)
+        alias   <- Alias.create(request)
         address <- commonApi.resolveAlias(alias)
-      } yield BytesValue(ByteString.copyFrom(address.bytes))
+      } yield ByteString.copyFrom(address.bytes)
 
       result.explicitGetErr()
     }

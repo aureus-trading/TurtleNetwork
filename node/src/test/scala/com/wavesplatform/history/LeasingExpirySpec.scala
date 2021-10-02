@@ -11,22 +11,13 @@ import com.wavesplatform.lagonaki.mocks.TestBlock
 import com.wavesplatform.settings.{Constants, FunctionalitySettings}
 import com.wavesplatform.state.diffs.produce
 import com.wavesplatform.state.{Blockchain, LeaseBalance}
+import com.wavesplatform.test.FreeSpec
 import com.wavesplatform.transaction.GenesisTransaction
 import com.wavesplatform.transaction.lease.LeaseTransaction
-import com.wavesplatform.{EitherMatchers, NoShrink, TransactionGen}
 import org.scalacheck.Gen
 import org.scalactic.source.Position
-import org.scalatest.{FreeSpec, Matchers}
-import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
-class LeasingExpirySpec
-    extends FreeSpec
-    with ScalaCheckPropertyChecks
-    with WithDomain
-    with Matchers
-    with EitherMatchers
-    with TransactionGen
-    with NoShrink {
+class LeasingExpirySpec extends FreeSpec with WithDomain {
   private val LeasingExpiryActivationHeight = 4
   private val LeasingValidity               = 2
 
@@ -202,27 +193,28 @@ class LeasingExpirySpec
 
     "should be applied only for expired leases" ignore forAll(manyLeases) {
       case (alias, blocks) =>
-        withDomain(leasingSettings) {
-          case Domain(_, blockchainUpdater, _) =>
-            // blocks before activation
-            blocks.slice(0, 3).foreach(b => blockchainUpdater.processBlock(b) should beRight)
-            ensureEffectiveBalance(blockchainUpdater, alias, 0L)
+        withDomain(leasingSettings) { d =>
+          import d.blockchainUpdater
 
-            // block at activation height with lease
-            blockchainUpdater.processBlock(blocks(3)) should beRight
-            ensureEffectiveBalance(blockchainUpdater, alias, amount)
+          // blocks before activation
+          blocks.slice(0, 3).foreach(b => blockchainUpdater.processBlock(b) should beRight)
+          ensureEffectiveBalance(blockchainUpdater, alias, 0L)
 
-            // block after activation and before cancellation, including new lease
-            blockchainUpdater.processBlock(blocks(4))
-            ensureEffectiveBalance(blockchainUpdater, alias, amount + halfAmount)
+          // block at activation height with lease
+          blockchainUpdater.processBlock(blocks(3)) should beRight
+          ensureEffectiveBalance(blockchainUpdater, alias, amount)
 
-            // block at height of first lease cancellation, effective balance reflects it
-            blockchainUpdater.processBlock(blocks(5))
-            ensureEffectiveBalance(blockchainUpdater, alias, halfAmount)
+          // block after activation and before cancellation, including new lease
+          blockchainUpdater.processBlock(blocks(4))
+          ensureEffectiveBalance(blockchainUpdater, alias, amount + halfAmount)
 
-            // block at height of second lease cancellation, effective balance reflects it
-            blockchainUpdater.processBlock(blocks(6))
-            ensureEffectiveBalance(blockchainUpdater, alias, 0L)
+          // block at height of first lease cancellation, effective balance reflects it
+          blockchainUpdater.processBlock(blocks(5))
+          ensureEffectiveBalance(blockchainUpdater, alias, halfAmount)
+
+          // block at height of second lease cancellation, effective balance reflects it
+          blockchainUpdater.processBlock(blocks(6))
+          ensureEffectiveBalance(blockchainUpdater, alias, 0L)
         }
     }
   }
@@ -245,27 +237,28 @@ class LeasingExpirySpec
 
     "has correct balance when lease transaction is accepted in a block where previous leases are cancelled" ignore forAll(leaseInTheCancelBlock) {
       case (miner, lessor, blocks) =>
-        withDomain(leasingSettings) {
-          case Domain(_, blockchainUpdater, _) =>
-            // blocks before activation
-            blocks.slice(0, 3).foreach(b => blockchainUpdater.processBlock(b) should beRight)
-            ensureEffectiveBalance(blockchainUpdater, miner, 0L)
-            ensureNoLeases(blockchainUpdater, Set(lessor.toAddress, miner.toAddress))
+        withDomain(leasingSettings) { d =>
+          import d.blockchainUpdater
 
-            // effective balance reflects new leases
-            blockchainUpdater.processBlock(blocks(3)) should beRight
-            ensureEffectiveBalance(blockchainUpdater, miner, amount)
+          // blocks before activation
+          blocks.slice(0, 3).foreach(b => blockchainUpdater.processBlock(b) should beRight)
+          ensureEffectiveBalance(blockchainUpdater, miner, 0L)
+          ensureNoLeases(blockchainUpdater, Set(lessor.toAddress, miner.toAddress))
 
-            // blocks after activation and before cancellation
-            blockchainUpdater.processBlock(blocks(4)) should beRight
+          // effective balance reflects new leases
+          blockchainUpdater.processBlock(blocks(3)) should beRight
+          ensureEffectiveBalance(blockchainUpdater, miner, amount)
 
-            // effective balance reflects cancelled and new leases
-            blockchainUpdater.processBlock(blocks(5)) should beRight
-            ensureEffectiveBalance(blockchainUpdater, miner, amount)
+          // blocks after activation and before cancellation
+          blockchainUpdater.processBlock(blocks(4)) should beRight
 
-            // effective balance not changed
-            blockchainUpdater.processBlock(blocks(6)) should beRight
-            ensureEffectiveBalance(blockchainUpdater, miner, amount)
+          // effective balance reflects cancelled and new leases
+          blockchainUpdater.processBlock(blocks(5)) should beRight
+          ensureEffectiveBalance(blockchainUpdater, miner, amount)
+
+          // effective balance not changed
+          blockchainUpdater.processBlock(blocks(6)) should beRight
+          ensureEffectiveBalance(blockchainUpdater, miner, amount)
         }
     }
 
@@ -282,25 +275,26 @@ class LeasingExpirySpec
 
     "can generate block where lease is cancelled" ignore forAll(blockWhereLeaseCancelled) {
       case (miner, blocks) =>
-        withDomain(leasingSettings) {
-          case Domain(_, blockchainUpdater, _) =>
-            // blocks before activation
-            blocks.slice(0, 3).foreach(b => blockchainUpdater.processBlock(b) should beRight)
-            ensureEffectiveBalance(blockchainUpdater, miner, 0L)
+        withDomain(leasingSettings) { d =>
+          import d.blockchainUpdater
 
-            // effective balance reflects new leases
-            blockchainUpdater.processBlock(blocks(3)) should beRight
-            ensureEffectiveBalance(blockchainUpdater, miner, amount)
+          // blocks before activation
+          blocks.slice(0, 3).foreach(b => blockchainUpdater.processBlock(b) should beRight)
+          ensureEffectiveBalance(blockchainUpdater, miner, 0L)
 
-            // blocks after activation and before cancellation
-            blockchainUpdater.processBlock(blocks(4)) should beRight
+          // effective balance reflects new leases
+          blockchainUpdater.processBlock(blocks(3)) should beRight
+          ensureEffectiveBalance(blockchainUpdater, miner, amount)
 
-            // miner allowed to generate block at cancellation height
-            ensureEffectiveBalance(blockchainUpdater, miner, amount)
-            blockchainUpdater.processBlock(blocks(5)) should beRight
+          // blocks after activation and before cancellation
+          blockchainUpdater.processBlock(blocks(4)) should beRight
 
-            // miner not allowed to generate block after cancellation
-            ensureEffectiveBalance(blockchainUpdater, miner, 0L)
+          // miner allowed to generate block at cancellation height
+          ensureEffectiveBalance(blockchainUpdater, miner, amount)
+          blockchainUpdater.processBlock(blocks(5)) should beRight
+
+          // miner not allowed to generate block after cancellation
+          ensureEffectiveBalance(blockchainUpdater, miner, 0L)
         }
     }
   }

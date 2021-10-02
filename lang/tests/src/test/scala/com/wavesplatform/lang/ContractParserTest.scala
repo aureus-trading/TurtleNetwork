@@ -1,20 +1,18 @@
 package com.wavesplatform.lang
 
-import com.wavesplatform.lang.Common._
 import com.wavesplatform.lang.v1.parser.Expressions.Pos.AnyPos
 import com.wavesplatform.lang.v1.parser.Expressions._
 import com.wavesplatform.lang.v1.parser.{Expressions, Parser}
 import com.wavesplatform.lang.v1.testing.ScriptGenParser
+import com.wavesplatform.test._
 import fastparse.Parsed.{Failure, Success}
 import org.scalatest.exceptions.TestFailedException
-import org.scalatest.{Matchers, PropSpec}
-import org.scalatestplus.scalacheck.{ScalaCheckPropertyChecks => PropertyChecks}
 
-class ContractParserTest extends PropSpec with PropertyChecks with Matchers with ScriptGenParser with NoShrink {
+class ContractParserTest extends PropSpec with ScriptGenParser {
 
   private def parse(x: String): DAPP = Parser.parseContract(x) match {
     case Success(r, _)      => r
-    case f@Failure(_, _, _) => throw new TestFailedException(f.msg, 0)
+    case f: Failure => throw new TestFailedException(f.msg, 0)
   }
 
   private def cleanOffsets(l: LET): LET =
@@ -352,5 +350,119 @@ class ContractParserTest extends PropSpec with PropertyChecks with Matchers with
         |}
         |""".stripMargin
     parse(code)
+  }
+
+  property("Strict simple test") {
+    val code =
+      """{-# STDLIB_VERSION 4 #-}
+        |{-# CONTENT_TYPE DAPP #-}
+        |{-# SCRIPT_TYPE ACCOUNT #-}
+        |
+        |func testFunc(number: Int) = {
+        | strict tmp = if (11 < 22) then true else false
+        | tmp == false
+        |}
+        |
+        |@Callable(inv)
+        |func testCallableFunc(keyName: String) = {
+        |  strict id = 42 + 100500
+        |  [IntEntry(keyName, 1)]
+        |}
+        |""".stripMargin
+    parse(code)
+  }
+
+  property("Strict - two declarations") {
+    val code =
+      """{-# STDLIB_VERSION 4 #-}
+        |{-# CONTENT_TYPE DAPP #-}
+        |{-# SCRIPT_TYPE ACCOUNT #-}
+        |
+        |@Callable(inv)
+        |func testFunc(asset: String) = {
+        |  strict srctTmp1 = 42 + 100500
+        |  let abc = "someString"
+        |  strict srctTmp2 = 100501 - 1
+        |  [IntEntry("key", 1)]
+        |}
+        |""".stripMargin
+    parse(code)
+  }
+
+  property("Disallow strict declarations outside of function.") {
+    val code =
+      """{-# STDLIB_VERSION 4 #-}
+        |{-# CONTENT_TYPE DAPP #-}
+        |{-# SCRIPT_TYPE ACCOUNT #-}
+        |
+        |strict srctTmp1 = 42 + 100500
+        |
+        |@Callable(inv)
+        |func paySelf(asset: String) = {
+        |  let id = asset.someFunc()
+        |  [IntEntry("key", 1)]
+        |}
+        |""".stripMargin
+    Parser.parseContract(code) should matchPattern { case Failure(_, _, _) => }
+  }
+
+  property("Strict - unwrapped content check") {
+    val code =
+      """{-# STDLIB_VERSION 4 #-}
+        |{-# CONTENT_TYPE DAPP #-}
+        |{-# SCRIPT_TYPE ACCOUNT #-}
+        |
+        |func testFunc() = {
+        |  strict strctTmp = 100500
+        |  let abc = "someString"
+        |  strctTmp
+        |}
+        |""".stripMargin
+    parse(code) shouldBe DAPP(
+      AnyPos,
+      List(
+        FUNC(
+          AnyPos,
+          BLOCK(
+            AnyPos,
+            LET(
+              AnyPos,
+              PART.VALID(AnyPos, "strctTmp"),
+              CONST_LONG(AnyPos, 100500)
+            ),
+            IF(
+              AnyPos,
+              FUNCTION_CALL(
+                AnyPos,
+                PART.VALID(AnyPos, "=="),
+                List(
+                  REF(AnyPos, PART.VALID(AnyPos, "strctTmp")),
+                  REF(AnyPos, PART.VALID(AnyPos, "strctTmp"))
+                )
+              ),
+              BLOCK(
+                AnyPos,
+                LET(
+                  AnyPos,
+                  PART.VALID(AnyPos, "abc"),
+                  CONST_STRING(AnyPos, PART.VALID(AnyPos, "someString"))
+                ),
+                REF(AnyPos, PART.VALID(AnyPos, "strctTmp"))
+              ),
+              FUNCTION_CALL(
+                AnyPos,
+                PART.VALID(AnyPos, "throw"),
+                List(
+                  CONST_STRING(AnyPos, PART.VALID(AnyPos, "Strict value is not equal to itself."))
+                )
+              )
+            )
+          ),
+          PART.VALID(AnyPos, "testFunc"),
+          List.empty
+        )
+      ),
+      List.empty
+    )
   }
 }

@@ -68,7 +68,8 @@ object Address extends ScorexLogging {
           )
           .flatMap {
             _ =>
-              val Array(version, network, _*) = addressBytes
+              val version = addressBytes(0)
+              val network = addressBytes(1)
 
               (for {
                 _ <- Either.cond(version == AddressVersion, (), s"Unknown address version: $version")
@@ -115,6 +116,6 @@ object Address extends ScorexLogging {
   // Optimization, should not be used externally
   private[wavesplatform] def createUnsafe(addressBytes: Array[Byte]): Address = new Address {
     override val bytes: Array[Byte] = addressBytes
-    override val chainId: Byte = addressBytes(1)
+    override val chainId: Byte      = addressBytes(1)
   }
 }

@@ -1,6 +1,7 @@
 package com.wavesplatform.state.diffs
 
-import cats.implicits._
+import cats.instances.map._
+import cats.syntax.semigroup._
 import com.wavesplatform.account.Address
 import com.wavesplatform.features.BlockchainFeatures
 import com.wavesplatform.lang.ValidationError
@@ -10,7 +11,8 @@ import com.wavesplatform.transaction.TxValidationError
 import com.wavesplatform.transaction.TxValidationError.GenericError
 import com.wavesplatform.transaction.transfer._
 
-import scala.util.{Right, Try}
+import scala.util.Right
+import scala.util.control.NonFatal
 
 object TransferTransactionDiff {
   def apply(blockchain: Blockchain, blockTime: Long)(tx: TransferTransaction): Either[ValidationError, Diff] = {
@@ -67,21 +69,19 @@ object TransferTransactionDiff {
         )
       )
     } yield Diff(
-      tx,
-      portfolios,
+      portfolios = portfolios,
       scriptsRun = DiffsCommon.countScriptRuns(blockchain, tx)
     )
   }
 
-  private def validateOverflow(blockchain: Blockchain, height: Int, tx: TransferTransaction) = {
-    if (blockchain.isFeatureActivated(BlockchainFeatures.Ride4DApps, height)) {
+  private def validateOverflow(blockchain: Blockchain, height: Int, tx: TransferTransaction) =
+    if (blockchain.isFeatureActivated(BlockchainFeatures.Ride4DApps, height))
       Right(()) // lets transaction validates itself
-    } else {
-      Try(Math.addExact(tx.fee, tx.amount))
-        .fold(
-          _ => TxValidationError.OverflowError.asLeft[Unit],
-          _ => ().asRight[ValidationError]
-        )
-    }
-  }
+    else
+      try {
+        Math.addExact(tx.fee, tx.amount)
+        Right(())
+      } catch {
+        case NonFatal(_) => Left(TxValidationError.OverflowError)
+      }
 }

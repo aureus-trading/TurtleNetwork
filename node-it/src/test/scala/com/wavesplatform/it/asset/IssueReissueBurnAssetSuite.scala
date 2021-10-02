@@ -1,25 +1,25 @@
 package com.wavesplatform.it.asset
 
-import scala.concurrent.duration._
-
 import com.typesafe.config.Config
 import com.wavesplatform.account.KeyPair
 import com.wavesplatform.api.http.ApiError.{AssetDoesNotExist, TransactionDoesNotExist}
 import com.wavesplatform.common.state.ByteStr
 import com.wavesplatform.common.utils.EitherExt2
-import com.wavesplatform.it.BaseSuite
-import com.wavesplatform.it.api.{AssetInfo, BurnInfoResponse, IssueInfoResponse, ReissueInfoResponse, StateChangesDetails, Transaction}
+import com.wavesplatform.it.BaseFreeSpec
 import com.wavesplatform.it.api.SyncHttpApi._
+import com.wavesplatform.it.api.{AssetInfo, BurnInfoResponse, IssueInfoResponse, ReissueInfoResponse, StateChangesDetails, Transaction}
 import com.wavesplatform.it.sync._
-import com.wavesplatform.it.util._
 import com.wavesplatform.lang.v1.compiler.Terms.{CONST_BOOLEAN, CONST_BYTESTR, CONST_LONG}
 import com.wavesplatform.lang.v1.estimator.v2.ScriptEstimatorV2
-import com.wavesplatform.transaction.TxVersion
-import com.wavesplatform.transaction.smart.{InvokeScriptTransaction, SetScriptTransaction}
-import com.wavesplatform.transaction.smart.script.ScriptCompiler
+import com.wavesplatform.test._
 import com.wavesplatform.transaction.Asset.IssuedAsset
+import com.wavesplatform.transaction.TxVersion
+import com.wavesplatform.transaction.smart.script.ScriptCompiler
+import com.wavesplatform.transaction.smart.{InvokeScriptTransaction, SetScriptTransaction}
 
-class IssueReissueBurnAssetSuite extends BaseSuite {
+import scala.concurrent.duration._
+
+class IssueReissueBurnAssetSuite extends BaseFreeSpec {
   override val nodeConfigs: Seq[Config] =
     com.wavesplatform.it.NodeConfigs.newBuilder
       .overrideBase(_.quorum(0))
@@ -209,7 +209,7 @@ class IssueReissueBurnAssetSuite extends BaseSuite {
     "Issue more than 10 assets should produce an error" in {
       val acc = createDappBig(script(simpleNonreissuableAsset))
       assertApiError(invokeScript(acc, "issue11Assets").id) { e =>
-        e.message should include("Too many script actions: max: 10, actual: 11")
+        e.message should include("Actions count limit is exceeded")
       }
     }
 
@@ -219,14 +219,14 @@ class IssueReissueBurnAssetSuite extends BaseSuite {
       val assetId = validateIssuedAssets(acc, txIssue, simpleReissuableAsset, method = method)
 
       assertApiError(invokeScript(acc, "process11actions", assetId = assetId).id) { e =>
-        e.message should include("Too many script actions: max: 10, actual: 11")
+        e.message should include("Actions count limit is exceeded")
       }
     }
 
     "More than 10 issue action in one invocation should produce an error" in {
       val acc = createDappBig(script(simpleNonreissuableAsset))
       assertApiError(invokeScript(acc, "issue11Assets").id) { e =>
-        e.message should include("Too many script actions: max: 10, actual: 11")
+        e.message should include("Actions count limit is exceeded")
       }
     }
   }
@@ -306,7 +306,7 @@ class IssueReissueBurnAssetSuite extends BaseSuite {
       val assetA     = issueValidated(acc, simpleReissuableAsset)
 
       sender.debugStateChangesByAddress(addressStr, 100).flatMap(_.stateChanges) should matchPattern {
-        case Seq(StateChangesDetails(Nil, Nil, Seq(issue), Nil, Nil, Nil, None)) if issue.name == simpleReissuableAsset.name =>
+        case Seq(StateChangesDetails(Nil, Nil, Seq(issue), Nil, Nil, Nil, None, Nil)) if issue.name == simpleReissuableAsset.name =>
       }
 
       val height = nodes.waitForHeightArise()
@@ -328,7 +328,7 @@ class IssueReissueBurnAssetSuite extends BaseSuite {
       nodes.rollback(height, returnToUTX = false)
 
       sender.debugStateChangesByAddress(addressStr, 100).flatMap(_.stateChanges) should matchPattern {
-        case Seq(StateChangesDetails(Nil, Nil, Seq(issue), Nil, Nil, Nil, None)) if issue.name == simpleReissuableAsset.name =>
+        case Seq(StateChangesDetails(Nil, Nil, Seq(issue), Nil, Nil, Nil, None, Nil)) if issue.name == simpleReissuableAsset.name =>
       }
       assertApiError(sender.debugStateChanges(txId), TransactionDoesNotExist)
 

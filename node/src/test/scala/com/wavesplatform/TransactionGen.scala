@@ -252,6 +252,11 @@ trait TransactionGenBase extends ScriptGen with TypedScriptGen with NTPTime { _:
     leaseCancel                                 <- createLeaseCancel(otherSender, lease.id(), fee2, timestamp2)
   } yield (lease, leaseCancel)
 
+  def leaseGen(sender: KeyPair, timestamp: Long): Gen[LeaseTransaction] = for {
+    (_, amount, fee, _, recipient) <- leaseParamGen
+    version <- Gen.oneOf(1.toByte, 2.toByte, 3.toByte)
+  } yield LeaseTransaction.selfSigned(version, sender, recipient.toAddress, amount, fee, timestamp).explicitGet()
+
   val leaseGen: Gen[LeaseTransaction]             = leaseAndCancelGen.map(_._1)
   val leaseCancelGen: Gen[LeaseCancelTransaction] = leaseAndCancelGen.map(_._2)
 
@@ -724,13 +729,13 @@ trait TransactionGenBase extends ScriptGen with TypedScriptGen with NTPTime { _:
       sellMatcherFeeAssetId: Asset = Waves,
       fixedMatcher: Option[KeyPair] = None
   ): Gen[ExchangeTransaction] = {
-    def mkBuyOrder(version: TxVersion): OrderConstructor = version match {
+    def mkBuyOrder(version: TxVersion): OrderConstructor = (version: @unchecked) match {
       case Order.V1 => Order.buy(Order.V1, _, _, _, _, _, _, _, _)
       case Order.V2 => Order.buy(Order.V2, _, _, _, _, _, _, _, _)
       case Order.V3 => Order.buy(Order.V3, _, _, _, _, _, _, _, _, buyMatcherFeeAssetId)
     }
 
-    def mkSellOrder(version: TxVersion): OrderConstructor = version match {
+    def mkSellOrder(version: TxVersion): OrderConstructor = (version: @unchecked) match {
       case Order.V1 => Order.sell(Order.V1, _, _, _, _, _, _, _, _)
       case Order.V2 => Order.sell(Order.V2, _, _, _, _, _, _, _, _)
       case Order.V3 => Order.sell(Order.V3, _, _, _, _, _, _, _, _, sellMatcherFeeAssetId)

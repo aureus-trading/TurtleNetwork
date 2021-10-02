@@ -1,6 +1,8 @@
 package com.wavesplatform.api.http
 
 import akka.NotUsed
+import cats.syntax.traverse._
+import cats.instances.option._
 import akka.http.scaladsl.marshalling.{ToResponseMarshallable, ToResponseMarshaller}
 import akka.http.scaladsl.server.{Directive0, Route}
 import akka.stream.scaladsl.Source
@@ -50,7 +52,7 @@ case class AddressApiRoute(
 
   override lazy val route: Route =
     pathPrefix("addresses") {
-      balanceDetails ~ validate ~ seed ~ balanceWithConfirmations ~ balance ~ balances ~ balancesPost ~ balanceWithConfirmations ~ verify ~ sign ~ deleteAddress ~ verifyText ~
+      balanceDetails ~ validate ~ seed ~ balance ~ balances ~ balancesPost ~ balanceWithConfirmations ~ verify ~ sign ~ deleteAddress ~ verifyText ~
         signText ~ seq ~ publicKey ~ effectiveBalance ~ effectiveBalanceWithConfirmations ~ getData ~ postData ~ scriptInfo ~ scriptMeta
     } ~ root ~ create
 
@@ -75,10 +77,11 @@ case class AddressApiRoute(
         "address"              -> address.stringRepr,
         "script"               -> scriptInfoOpt.map(_.script.bytes().base64),
         "scriptText"           -> scriptInfoOpt.map(_.script.expr.toString),
+        "version"              -> scriptInfoOpt.map(_.script.stdLibVersion.id),
         "complexity"           -> maxComplexity,
         "verifierComplexity"   -> verifierComplexity,
         "callableComplexities" -> callableComplexities,
-        "extraFee"             -> (if (scriptInfoOpt.isEmpty) 0L else FeeValidation.ScriptExtraFee)
+        "extraFee"             -> (if (blockchain.hasPaidVerifier(address)) FeeValidation.ScriptExtraFee else 0L)
       )
     }
   }
@@ -112,7 +115,7 @@ case class AddressApiRoute(
     complete(balanceJson(address))
   }
 
-  def balances: Route = (path("balance") & get & parameters(("height".as[Int].?, "address".as[String].*, "asset".?))) {
+  def balances: Route = (path("balance") & get & parameters("height".as[Int].?, "address".as[String].*, "asset".?)) {
     (maybeHeight, addresses, assetId) =>
       val height = maybeHeight.getOrElse(blockchain.height)
       validateBalanceDepth(height)(
@@ -246,7 +249,6 @@ case class AddressApiRoute(
   private def balanceJson(acc: Address) = Balance(acc.stringRepr, 0, commonAccountsApi.balance(acc))
 
   private def scriptMetaJson(account: Address): Either[ValidationError.ScriptParseError, AccountScriptMeta] = {
-    import cats.implicits._
     val accountScript = blockchain.accountScript(account)
 
     accountScript

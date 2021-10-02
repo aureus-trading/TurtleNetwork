@@ -2,21 +2,16 @@ package com.wavesplatform.database
 
 import java.nio.ByteBuffer
 
-import scala.annotation.tailrec
-import scala.collection.mutable.{ArrayBuffer, ListBuffer}
-import scala.jdk.CollectionConverters._
-import scala.util.Try
-import scala.util.control.NonFatal
-
 import cats.data.Ior
-import cats.implicits._
+import cats.syntax.option._
+import cats.syntax.semigroup._
 import com.google.common.cache.CacheBuilder
 import com.google.common.collect.MultimapBuilder
 import com.google.common.primitives.{Ints, Shorts}
 import com.wavesplatform.account.{Address, Alias}
 import com.wavesplatform.api.BlockMeta
-import com.wavesplatform.block.{Block, SignedBlockHeader}
 import com.wavesplatform.block.Block.BlockId
+import com.wavesplatform.block.{Block, SignedBlockHeader}
 import com.wavesplatform.common.state.ByteStr
 import com.wavesplatform.common.utils._
 import com.wavesplatform.database
@@ -26,11 +21,11 @@ import com.wavesplatform.features.BlockchainFeatures
 import com.wavesplatform.lang.ValidationError
 import com.wavesplatform.protobuf.transaction.PBTransactions
 import com.wavesplatform.settings.{BlockchainSettings, DBSettings, WavesSettings}
-import com.wavesplatform.state.{TxNum, _}
 import com.wavesplatform.state.reader.LeaseDetails
-import com.wavesplatform.transaction._
+import com.wavesplatform.state.{TxNum, _}
 import com.wavesplatform.transaction.Asset.{IssuedAsset, Waves}
 import com.wavesplatform.transaction.TxValidationError.{AliasDoesNotExist, AliasIsDisabled}
+import com.wavesplatform.transaction._
 import com.wavesplatform.transaction.assets._
 import com.wavesplatform.transaction.assets.exchange.ExchangeTransaction
 import com.wavesplatform.transaction.lease.{LeaseCancelTransaction, LeaseTransaction}
@@ -41,10 +36,13 @@ import monix.reactive.Observer
 import org.iq80.leveldb.DB
 import org.slf4j.LoggerFactory
 
-object LevelDBWriter extends ScorexLogging {
+import scala.annotation.tailrec
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import scala.jdk.CollectionConverters._
+import scala.util.Try
+import scala.util.control.NonFatal
 
-  private def loadLeaseStatus(db: ReadOnlyDB, leaseId: ByteStr): Boolean =
-    db.get(Keys.leaseStatusHistory(leaseId)).headOption.fold(false)(h => db.get(Keys.leaseStatus(leaseId)(h)))
+object LevelDBWriter extends ScorexLogging {
 
   /** {{{
     * ([10, 7, 4], 5, 11) => [10, 7, 4]
@@ -160,6 +158,7 @@ object LevelDBWriter extends ScorexLogging {
   }
 }
 
+//noinspection UnstableApiUsage
 abstract class LevelDBWriter private[database] (
     writableDB: DB,
     spendableBalanceChanged: Observer[(Address, Asset)],
@@ -232,6 +231,14 @@ abstract class LevelDBWriter private[database] (
         e   <- ro.get(Keys.data(aid, key)(h))
       } yield e
     }
+
+  override def hasData(address: Address): Boolean = {
+    writableDB.readOnly { ro =>
+      ro.get(Keys.addressId(address)).fold(false) { addressId =>
+        ro.prefixExists(KeyTags.ChangedDataKeys.prefixBytes ++ addressId.toByteArray)
+      }
+    }
+  }
 
   protected override def loadBalance(req: (Address, Asset)): Long =
     addressId(req._1).fold(0L) { addressId =>
@@ -362,7 +369,7 @@ abstract class LevelDBWriter private[database] (
       balances: Map[AddressId, Map[Asset, Long]],
       leaseBalances: Map[AddressId, LeaseBalance],
       addressTransactions: Map[AddressId, Seq[TransactionId]],
-      leaseStates: Map[ByteStr, Boolean],
+      leaseStates: Map[ByteStr, LeaseDetails],
       issuedAssets: Map[IssuedAsset, NewAssetInfo],
       updatedAssets: Map[IssuedAsset, Ior[AssetInfo, AssetVolumeInfo]],
       filledQuantity: Map[ByteStr, VolumeAndFee],
@@ -385,7 +392,7 @@ abstract class LevelDBWriter private[database] (
       rw.put(Keys.height, height)
 
       val previousSafeRollbackHeight = rw.get(Keys.safeRollbackHeight)
-      val newSafeRollbackHeight = height - dbSettings.maxRollbackDepth
+      val newSafeRollbackHeight      = height - dbSettings.maxRollbackDepth
 
       if (previousSafeRollbackHeight < newSafeRollbackHeight) {
         rw.put(Keys.safeRollbackHeight, newSafeRollbackHeight)
@@ -461,9 +468,9 @@ abstract class LevelDBWriter private[database] (
         expiredKeys ++= updateHistory(rw, Keys.assetDetailsHistory(asset), threshold, Keys.assetDetails(asset))
       }
 
-      for ((leaseId, state) <- leaseStates) {
-        rw.put(Keys.leaseStatus(leaseId)(height), state)
-        expiredKeys ++= updateHistory(rw, Keys.leaseStatusHistory(leaseId), threshold, Keys.leaseStatus(leaseId))
+      for ((leaseId, details) <- leaseStates) {
+        rw.put(Keys.leaseDetails(leaseId)(height), Some(Right(details)))
+        expiredKeys ++= updateHistory(rw, Keys.leaseDetailsHistory(leaseId), threshold, Keys.leaseDetails(leaseId))
       }
 
       for ((addressId, script) <- scripts) {
@@ -553,8 +560,8 @@ abstract class LevelDBWriter private[database] (
           val (txHeight, txNum) = transactions
             .get(TransactionId(txId))
             .map { case (_, txNum, _) => (height, txNum) }
-            .orElse(rw.get(Keys.transactionMetaById(TransactionId(txId))).map {
-              case TransactionMeta(height, txNum, _, _) => (height, TxNum(txNum.toShort))
+            .orElse(rw.get(Keys.transactionMetaById(TransactionId(txId))).map { tm =>
+              (tm.height, TxNum(tm.num.toShort))
             })
             .getOrElse(throw new IllegalArgumentException(s"Couldn't find transaction height and num: $txId"))
 
@@ -670,6 +677,10 @@ abstract class LevelDBWriter private[database] (
           }
         }
 
+        writableDB
+          .withResource(loadLeaseIds(_, currentHeight, currentHeight, includeCancelled = true))
+          .foreach(rollbackLeaseStatus(rw, _, currentHeight))
+
         rollbackAssetsInfo(rw, currentHeight)
 
         val transactions = transactionsAtHeight(h)
@@ -677,7 +688,7 @@ abstract class LevelDBWriter private[database] (
         transactions.foreach {
           case (num, tx) =>
             forgetTransaction(tx.id())
-            tx match {
+            (tx: @unchecked) match {
               case _: GenesisTransaction                                                       => // genesis transaction can not be rolled back
               case _: PaymentTransaction | _: TransferTransaction | _: MassTransferTransaction =>
               // balances already restored
@@ -685,10 +696,8 @@ abstract class LevelDBWriter private[database] (
               case _: IssueTransaction | _: UpdateAssetInfoTransaction | _: ReissueTransaction | _: BurnTransaction | _: SponsorFeeTransaction =>
               // asset info already restored
 
-              case tx: LeaseTransaction =>
-                rollbackLeaseStatus(rw, tx.id(), currentHeight)
-              case tx: LeaseCancelTransaction =>
-                rollbackLeaseStatus(rw, tx.leaseId, currentHeight)
+              case _: LeaseTransaction | _: LeaseCancelTransaction =>
+              // leases already restored
 
               case tx: SetScriptTransaction =>
                 val address = tx.sender.toAddress
@@ -789,29 +798,30 @@ abstract class LevelDBWriter private[database] (
   }
 
   private def rollbackLeaseStatus(rw: RW, leaseId: ByteStr, currentHeight: Int): Unit = {
-    rw.delete(Keys.leaseStatus(leaseId)(currentHeight))
-    rw.filterHistory(Keys.leaseStatusHistory(leaseId), currentHeight)
+    rw.delete(Keys.leaseDetails(leaseId)(currentHeight))
+    rw.filterHistory(Keys.leaseDetailsHistory(leaseId), currentHeight)
   }
 
   override def transferById(id: ByteStr): Option[(Int, TransferTransaction)] = readOnly { db =>
     for {
-      TransactionMeta(height, num, TransferTransaction.typeId, _) <- db.get(Keys.transactionMetaById(TransactionId @@ id))
-      tx                                                          <- db.get(Keys.transactionAt(Height(height), TxNum(num.toShort))).collect { case (t: TransferTransaction, true) => t }
+      tm <- db.get(Keys.transactionMetaById(TransactionId @@ id))
+      if tm.`type` == TransferTransaction.typeId
+      tx <- db.get(Keys.transactionAt(Height(tm.height), TxNum(tm.num.toShort))).collect { case (t: TransferTransaction, true) => t }
     } yield (height, tx)
   }
 
   override def transactionInfo(id: ByteStr): Option[(Int, Transaction, Boolean)] = readOnly(transactionInfo(id, _))
 
-  protected def transactionInfo(id: ByteStr, db: ReadOnlyDB): Option[(Int, Transaction, Boolean)] = {
-    val txId = TransactionId(id)
+  protected def transactionInfo(id: ByteStr, db: ReadOnlyDB): Option[(Int, Transaction, Boolean)] =
     for {
-      TransactionMeta(height, num, _, failed) <- db.get(Keys.transactionMetaById(txId))
-      (tx, _)                                 <- db.get(Keys.transactionAt(Height(height), TxNum(num.toShort)))
-    } yield (height, tx, !failed)
-  }
+      tm      <- db.get(Keys.transactionMetaById(TransactionId(id)))
+      (tx, _) <- db.get(Keys.transactionAt(Height(tm.height), TxNum(tm.num.toShort)))
+    } yield (tm.height, tx, !tm.failed)
 
   override def transactionMeta(id: ByteStr): Option[(Int, Boolean)] = readOnly { db =>
-    db.get(Keys.transactionMetaById(TransactionId(id))).map { case TransactionMeta(height, _, _, failed) => (height, !failed) }
+    db.get(Keys.transactionMetaById(TransactionId(id))).map { tm =>
+      (tm.height, !tm.failed)
+    }
   }
 
   override def resolveAlias(alias: Alias): Either[ValidationError, Address] = readOnly { db =>
@@ -823,11 +833,26 @@ abstract class LevelDBWriter private[database] (
   }
 
   override def leaseDetails(leaseId: ByteStr): Option[LeaseDetails] = readOnly { db =>
-    transactionInfo(leaseId, db) match {
-      case Some((h, lt: LeaseTransaction, true)) =>
-        Some(LeaseDetails(lt.sender, lt.recipient, h, lt.amount, loadLeaseStatus(db, leaseId)))
-      case _ => None
-    }
+    for {
+      h             <- db.get(Keys.leaseDetailsHistory(leaseId)).headOption
+      detailsOrFlag <- db.get(Keys.leaseDetails(leaseId)(h))
+      details <- detailsOrFlag.fold(
+        isActive =>
+          transactionInfo(leaseId, db).collect {
+            case (leaseHeight, lt: LeaseTransaction, _) =>
+              LeaseDetails(
+                lt.sender,
+                lt.recipient,
+                lt.amount,
+                if (isActive) LeaseDetails.Status.Active
+                else LeaseDetails.Status.Cancelled(h, None),
+                leaseId,
+                leaseHeight
+              )
+          },
+        Some(_)
+      )
+    } yield details
   }
 
   // These two caches are used exclusively for balance snapshots. They are not used for portfolios, because there aren't

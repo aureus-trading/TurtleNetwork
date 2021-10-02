@@ -6,7 +6,7 @@ import com.wavesplatform.common.utils.EitherExt2
 import com.wavesplatform.it.NodeConfigs.Default
 import com.wavesplatform.it.api.SyncHttpApi._
 import com.wavesplatform.it.transactions.BaseTransactionSuite
-import com.wavesplatform.it.util._
+import com.wavesplatform.test._
 import com.wavesplatform.state.Sponsorship
 import com.wavesplatform.transaction.TxVersion
 import com.wavesplatform.transaction.assets.IssueTransaction
@@ -20,7 +20,7 @@ class CustomFeeTransactionSuite extends BaseTransactionSuite with CancelAfterFai
   override protected def nodeConfigs: Seq[Config] = Configs
 
   private val transferFee = 2000000
-  private val assetFee    = 1000.TN
+  private val assetFee    = 1000.waves
   private val assetToken  = 100
 
   test("make transfer with sponsored asset") {
@@ -32,8 +32,8 @@ class CustomFeeTransactionSuite extends BaseTransactionSuite with CancelAfterFai
     val issuedAssetId = notMiner.signedIssue(req).id
     nodes.waitForHeightAriseAndTxPresent(issuedAssetId)
 
-    val sponsorAssetId = notMiner.sponsorAsset(senderKeyPair, issuedAssetId, assetToken, sponsorFee).id
-    assert(!sponsorAssetId.isEmpty)
+    val sponsorAssetId = notMiner.sponsorAsset(senderKeyPair, issuedAssetId, assetToken, assetFee).id
+    assert(sponsorAssetId.nonEmpty)
     nodes.waitForHeightAriseAndTxPresent(sponsorAssetId)
 
     val fees = sponsorFee + assetFee
@@ -86,7 +86,7 @@ object CustomFeeTransactionSuite {
     decimals = 2,
     reissuable = false,
     script = None,
-    fee = 1000.TN,
+    fee = 1000.waves,
     timestamp = System.currentTimeMillis()
   ).signWith(senderKeyPair.privateKey)
 

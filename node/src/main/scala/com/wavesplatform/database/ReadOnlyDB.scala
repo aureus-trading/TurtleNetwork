@@ -19,7 +19,7 @@ class ReadOnlyDB(db: DB, readOptions: ReadOptions) {
     bytes != null
   }
 
-  def iterator: DBIterator = db.iterator(readOptions)
+  def newIterator: DBIterator = db.iterator(readOptions)
 
   def iterateOver(tag: KeyTags.KeyTag)(f: DBEntry => Unit): Unit = iterateOver(tag.prefixBytes)(f)
 
@@ -31,8 +31,16 @@ class ReadOnlyDB(db: DB, readOptions: ReadOptions) {
     } finally iterator.close()
   }
 
+  def prefixExists(prefix: Array[Byte]): Boolean = {
+    val iterator = db.iterator(readOptions)
+    iterator.seek(prefix)
+    val res = iterator.hasNext && iterator.peekNext().getKey.startsWith(prefix)
+    iterator.close()
+    res
+  }
+
   def read[T](keyName: String, prefix: Array[Byte], seek: Array[Byte], n: Int)(deserialize: DBEntry => T): Vector[T] = {
-    val iter = iterator
+    val iter = newIterator
     @tailrec def loop(aux: Vector[T], restN: Int, totalBytesRead: Long): (Vector[T], Long) =
       if (restN > 0 && iter.hasNext) {
         val elem = iter.next()

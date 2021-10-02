@@ -1,8 +1,10 @@
 package com.wavesplatform.state.diffs
 
-import cats.implicits._
-import com.wavesplatform.features.EstimatorProvider._
+import cats.instances.list._
+import cats.syntax.either._
+import cats.syntax.traverse._
 import com.wavesplatform.features.ComplexityCheckPolicyProvider._
+import com.wavesplatform.features.EstimatorProvider._
 import com.wavesplatform.lang.ValidationError
 import com.wavesplatform.lang.contract.DApp
 import com.wavesplatform.lang.directives.values.StdLibVersion
@@ -26,7 +28,6 @@ object SetScriptTransactionDiff {
           AccountScriptInfo(tx.sender, script, verifierComplexity, callableComplexities)
       }
     } yield Diff(
-      tx = tx,
       portfolios = Map(tx.sender.toAddress -> Portfolio(-tx.fee, LeaseBalance.empty, Map.empty)),
       scripts = Map(tx.sender.toAddress    -> scriptWithComplexities),
       scriptsRun = DiffsCommon.countScriptRuns(blockchain, tx)

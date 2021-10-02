@@ -96,14 +96,14 @@ sbt "extension-module/run /path/to/configuration"
 
 The majority of contributors to this project use IntelliJ IDEA for development, if you want to use it as well please follow these steps:
 
-1. Click on `Add configuration` (or `Edit configurations...`)
-2. Click on `+` to add a new configuration, choose `Application`
+1. Click `Add configuration` (or `Edit configurations...`).
+2. Click `+` to add a new configuration, choose `Application`.
 3. Specify:
    - Main class: `com.wavesplatform.Application`
    - Program arguments: `/path/to/configuration`
    - Use classpath of module: `extension-module`
-4. Click on `OK`
-5. Run this configuration
+4. Click `OK`.
+5. Run this configuration.
 
 </details>
 

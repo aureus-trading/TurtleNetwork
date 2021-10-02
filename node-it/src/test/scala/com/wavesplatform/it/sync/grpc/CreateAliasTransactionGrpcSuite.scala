@@ -5,7 +5,7 @@ import com.wavesplatform.common.utils.EitherExt2
 import com.wavesplatform.it.NTPTime
 import com.wavesplatform.it.api.SyncGrpcApi._
 import com.wavesplatform.it.sync.{aliasFeeAmount, aliasTxSupportedVersions, minFee, transferAmount}
-import com.wavesplatform.it.util._
+import com.wavesplatform.test._
 import com.wavesplatform.protobuf.transaction.{PBRecipients, Recipient}
 import io.grpc.Status.Code
 import org.scalatest.prop.TableDrivenPropertyChecks
@@ -110,7 +110,7 @@ class CreateAliasTransactionGrpcSuite extends GrpcBaseTransactionSuite with NTPT
       val leaserEffBalance       = sender.wavesBalance(leaserAddr).effective
 
       sender.broadcastCreateAlias(aliasCreator, alias, aliasFeeAmount, version = v, waitForTx = true)
-      val leasingAmount = 1.TN
+      val leasingAmount = 1.waves
 sender.broadcastLease(leaser, Recipient().withAlias(alias), leasingAmount, minFee, waitForTx = true)
 
       sender.wavesBalance(aliasCreatorAddr).available shouldBe aliasCreatorBalance - aliasFeeAmount

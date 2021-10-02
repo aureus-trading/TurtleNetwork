@@ -1,23 +1,23 @@
 package com.wavesplatform.api.common
 
+import com.wavesplatform.common.state.ByteStr
 import com.wavesplatform.common.utils._
 import com.wavesplatform.db.WithDomain
 import com.wavesplatform.features.BlockchainFeatures
+import com.wavesplatform.lang.directives.values.V5
+import com.wavesplatform.lang.v1.compiler.TestCompiler
+import com.wavesplatform.lang.v1.traits.domain.{Lease, Recipient}
 import com.wavesplatform.settings.TestFunctionalitySettings
 import com.wavesplatform.state.{DataEntry, Diff, EmptyDataEntry, StringDataEntry, diffs}
-import com.wavesplatform.transaction.{DataTransaction, GenesisTransaction}
-import com.wavesplatform.{BlocksTransactionsHelpers, TransactionGen, history}
+import com.wavesplatform.test.FreeSpec
+import com.wavesplatform.transaction.{DataTransaction, GenesisTransaction, TxHelpers}
+import com.wavesplatform.{BlocksTransactionsHelpers, history}
 import monix.execution.Scheduler.Implicits.global
-import org.scalatest.{FreeSpec, Matchers}
-import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
 class CommonAccountApiSpec
     extends FreeSpec
-    with Matchers
     with WithDomain
-    with TransactionGen
-    with BlocksTransactionsHelpers
-    with ScalaCheckDrivenPropertyChecks {
+    with BlocksTransactionsHelpers {
 
   "Data stream" - {
     "handles non-existent address" in {
@@ -51,7 +51,7 @@ class CommonAccountApiSpec
               )
             )
           ) { d =>
-            val commonAccountsApi             = CommonAccountsApi(d.blockchainUpdater.bestLiquidDiff.getOrElse(Diff.empty), d.db, d.blockchainUpdater)
+            val commonAccountsApi             = CommonAccountsApi(() => d.blockchainUpdater.bestLiquidDiff.getOrElse(Diff.empty), d.db, d.blockchainUpdater)
             def dataList(): Set[DataEntry[_]] = commonAccountsApi.dataStream(acc.toAddress, None).toListL.runSyncUnsafe().toSet
 
             d.appendBlock(block1)
@@ -89,7 +89,7 @@ class CommonAccountApiSpec
       forAll(preconditions) {
         case (acc, block1, mb1, block2, mb2) =>
           withDomain(domainSettingsWithFS(TestFunctionalitySettings.withFeatures(BlockchainFeatures.NG, BlockchainFeatures.DataTransaction))) { d =>
-            val commonAccountsApi             = CommonAccountsApi(d.blockchainUpdater.bestLiquidDiff.getOrElse(Diff.empty), d.db, d.blockchainUpdater)
+            val commonAccountsApi             = CommonAccountsApi(() => d.blockchainUpdater.bestLiquidDiff.getOrElse(Diff.empty), d.db, d.blockchainUpdater)
             def dataList(): Set[DataEntry[_]] = commonAccountsApi.dataStream(acc.toAddress, Some("test_.*")).toListL.runSyncUnsafe().toSet
 
             d.appendBlock(block1)
@@ -139,5 +139,43 @@ class CommonAccountApiSpec
   "NFT list" - {
     "does not include NFTs which were spent in diff" in pending
     "includes NFTs which were received in diff" in pending
+  }
+
+  "Lease info" - {
+    "shows info of lease made through invoke" in withDomain(domainSettingsWithPreactivatedFeatures(BlockchainFeatures.SynchronousCalls, BlockchainFeatures.Ride4DApps)) { d =>
+      val dAppScript = TestCompiler(V5).compileContract(
+        s"""
+           |{-# STDLIB_VERSION 5 #-}
+           |{-# SCRIPT_TYPE ACCOUNT #-}
+           |{-# CONTENT_TYPE DAPP #-}
+           |
+           |@Callable(i)
+           |func test() = {
+           |  [Lease(Address(base58'${TxHelpers.defaultAddress}'), 1, 1)]
+           |}
+           |""".stripMargin
+      )
+
+      val invoke = TxHelpers.invoke(TxHelpers.secondAddress, "test")
+      d.appendBlock(
+        TxHelpers.genesis(TxHelpers.defaultAddress),
+        TxHelpers.genesis(TxHelpers.secondAddress),
+        TxHelpers.setScript(TxHelpers.secondSigner, dAppScript),
+        invoke
+      )
+
+      val api = CommonAccountsApi(() => Diff.empty, d.db, d.blockchain)
+      val leaseId = Lease.calculateId(
+        Lease(
+          Recipient.Address(ByteStr(TxHelpers.defaultAddress.bytes)),
+          1,
+          1
+        ),
+        invoke.id()
+      )
+      api.leaseInfo(leaseId) shouldBe Some(
+        LeaseInfo(leaseId, invoke.id(), TxHelpers.secondAddress, TxHelpers.defaultAddress, 1, 1, LeaseInfo.Status.Active)
+      )
+    }
   }
 }

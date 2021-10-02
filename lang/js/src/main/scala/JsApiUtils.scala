@@ -111,7 +111,7 @@ package object JsApiUtils {
         mergeJSObjects(commonDataObj, additionalDataObj)
       }
 
-      case Expressions.GETTER(_, ref, field, _, _) => {
+      case Expressions.GETTER(_, ref, field, _, _, _) => {
         val additionalDataObj = jObj.applyDynamic("apply")(
           "ref"   -> serExpr(ref),
           "field" -> serPartStr(field)
@@ -166,12 +166,13 @@ package object JsApiUtils {
   }
 
   def serMatchCase(c: Expressions.MATCH_CASE, simpleCtx: Map[String, Pos]): js.Object = {
+    val vars = c.pattern.subpatterns.collect { case (Expressions.TypedVar(Some(newVarName), caseType), _) => (serPartStr(newVarName), serType(caseType)) }
     jObj.applyDynamic("apply")(
       "type"       -> "MATCH_CASE",
       "posStart"   -> c.position.start,
       "posEnd"     -> c.position.end,
-      "varName"    -> c.newVarName.map(serPartStr).orUndefined,
-      "varTypes"   -> serType(c.caseType),
+      "varName"    -> vars.headOption.map(_._1).orUndefined,
+      "varTypes"   -> vars.headOption.map(_._2).orUndefined,
       "resultType" -> c.resultType.getOrElse(NOTHING).toString,
       "expr"       -> serExpr(c.expr),
       "ctx"        -> serCtx(simpleCtx)
@@ -265,7 +266,7 @@ package object JsApiUtils {
   def toJs(ast: EXPR): js.Object = {
     def r(expr: EXPR): js.Object = {
       expr match {
-        case CONST_LONG(t)      => jObj.applyDynamic("apply")("type" -> "LONG", "value"    -> t)
+        case CONST_LONG(t)      => jObj.applyDynamic("apply")("type" -> "LONG", "value"    -> t.toDouble)
         case GETTER(ref, field) => jObj.applyDynamic("apply")("type" -> "GETTER", "ref"    -> r(ref), "field" -> field)
         case CONST_BYTESTR(bs)  => jObj.applyDynamic("apply")("type" -> "BYTESTR", "value" -> bs.arr.toJSArray)
         case CONST_STRING(s)    => jObj.applyDynamic("apply")("type" -> "STRING", "value"  -> s)

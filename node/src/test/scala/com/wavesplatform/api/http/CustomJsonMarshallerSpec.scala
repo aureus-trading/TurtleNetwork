@@ -15,14 +15,13 @@ import com.wavesplatform.http.{ApiErrorMatchers, RestAPISettingsHelper}
 import com.wavesplatform.network.TransactionPublisher
 import com.wavesplatform.state.reader.LeaseDetails
 import com.wavesplatform.state.{Blockchain, Height}
+import com.wavesplatform.test.PropSpec
 import com.wavesplatform.transaction.Asset
 import com.wavesplatform.transaction.Asset.IssuedAsset
 import com.wavesplatform.utx.UtxPool
-import com.wavesplatform.{NTPTime, NoShrink, TestWallet, TransactionGen}
+import com.wavesplatform.{NTPTime, TestWallet}
 import org.scalactic.source.Position
 import org.scalamock.scalatest.PathMockFactory
-import org.scalatest.{Matchers, PropSpec}
-import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.json._
 
 import scala.reflect.ClassTag
@@ -34,11 +33,7 @@ class CustomJsonMarshallerSpec
     with TestWallet
     with NTPTime
     with ScalatestRouteTest
-    with Matchers
-    with ApiErrorMatchers
-    with NoShrink
-    with ScalaCheckPropertyChecks
-    with TransactionGen {
+    with ApiErrorMatchers {
   private val blockchain      = mock[Blockchain]
   private val utx             = mock[UtxPool]
   private val publisher       = mock[TransactionPublisher]
@@ -73,7 +68,7 @@ class CustomJsonMarshallerSpec
       (transactionsApi.transactionById _).expects(lt.id()).returning(Some(TransactionMeta.Default(height, lt, succeeded = true))).twice()
       (blockchain.leaseDetails _)
         .expects(lt.id())
-        .returning(Some(LeaseDetails(lt.sender, lt.recipient, 1, lt.amount, true)))
+        .returning(Some(LeaseDetails(lt.sender, lt.recipient, lt.amount, LeaseDetails.Status.Active, lt.id(), 1)))
         .twice()
       checkRoute(Get(s"/transactions/info/${lt.id()}"), transactionsRoute, "amount")
     }

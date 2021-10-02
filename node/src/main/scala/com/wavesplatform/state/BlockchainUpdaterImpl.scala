@@ -2,8 +2,10 @@ package com.wavesplatform.state
 
 import java.util.concurrent.locks.{Lock, ReentrantReadWriteLock}
 
-import cats.implicits._
+import cats.instances.map._
 import cats.kernel.Monoid
+import cats.syntax.either._
+import cats.syntax.option._
 import com.wavesplatform.account.{Address, Alias}
 import com.wavesplatform.api.BlockMeta
 import com.wavesplatform.block.Block.BlockId
@@ -374,7 +376,7 @@ class BlockchainUpdaterImpl(
                       featuresApprovedWithBlock(block),
                       reward,
                       hitSource,
-                      cancelLeases(collectLeasesToCancel(newHeight))
+                      cancelLeases(collectLeasesToCancel(newHeight), newHeight)
                     )
                   )
                   notifyChangedSpendable(prevNgState, ngState)
@@ -405,16 +407,17 @@ class BlockchainUpdaterImpl(
       collectActiveLeases(fromHeight, toHeight)
     } else Seq.empty
 
-  private def cancelLeases(leaseTransactions: Seq[LeaseTransaction]): Map[ByteStr, Diff] =
+  private def cancelLeases(leaseTransactions: Seq[LeaseTransaction], height: Int): Map[ByteStr, Diff] =
     (for {
-      lt        <- leaseTransactions
-      recipient <- leveldb.resolveAlias(lt.recipient).toSeq
+      lt               <- leaseTransactions
+      (leaseHeight, _) <- transactionMeta(lt.id()).toSeq
+      recipient        <- leveldb.resolveAlias(lt.recipient).toSeq
     } yield lt.id() -> Diff.empty.copy(
       portfolios = Map(
         lt.sender.toAddress -> Portfolio(0, LeaseBalance(0, -lt.amount), Map.empty),
         recipient           -> Portfolio(0, LeaseBalance(-lt.amount, 0), Map.empty)
       ),
-      leaseState = Map(lt.id() -> false)
+      leaseState = Map((lt.id(), LeaseDetails(lt.sender, lt.recipient, lt.amount, LeaseDetails.Status.Expired(height), lt.id(), leaseHeight)))
     )).toMap
 
   override def removeAfter(blockId: ByteStr): Either[ValidationError, Seq[(Block, ByteStr)]] = writeLock {
@@ -509,7 +512,7 @@ class BlockchainUpdaterImpl(
                   MicroBlockAppendError("Invalid total block signature", microBlock)
                 )
               blockDifferResult <- {
-                BlockDiffer.fromMicroBlock(this, leveldb.lastBlockTimestamp, microBlock, ng.base.header.timestamp, restTotalConstraint, verify)
+                BlockDiffer.fromMicroBlock(this, leveldb.lastBlockTimestamp, microBlock, restTotalConstraint, verify)
               }
             } yield {
               val BlockDiffer.Result(diff, carry, totalFee, updatedMdConstraint, detailedDiff) = blockDifferResult
@@ -579,7 +582,7 @@ class BlockchainUpdaterImpl(
               innerVotes :+ ng.base.header.rewardVote
             else innerVotes
         }
-      case None => Seq()
+      case _ => Seq()
     }
   }
 
@@ -692,6 +695,10 @@ class BlockchainUpdaterImpl(
 
   override def accountData(acc: Address, key: String): Option[DataEntry[_]] = readLock {
     compositeBlockchain.accountData(acc, key)
+  }
+
+  override def hasData(acc: Address): Boolean = {
+    compositeBlockchain.hasData(acc)
   }
 
   override def transactionMeta(id: ByteStr): Option[(Int, Boolean)] = readLock {

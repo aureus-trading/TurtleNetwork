@@ -20,13 +20,13 @@ import com.wavesplatform.lang.v1.evaluator.ctx.impl.{CryptoContext, PureContext}
 import com.wavesplatform.lang.v1.evaluator.{EvaluatorV1, FunctionIds}
 import org.openjdk.jmh.annotations._
 import org.openjdk.jmh.infra.Blackhole
-import scorex.crypto.signatures.Curve25519
+import com.wavesplatform.crypto.Curve25519
 
 import scala.util.Random
 
 object ScriptEvaluatorBenchmark {
   val version                                           = V1
-  val pureEvalContext: EvaluationContext[NoContext, Id] = PureContext.build(V1).evaluationContext
+  val pureEvalContext: EvaluationContext[NoContext, Id] = PureContext.build(V1, fixUnicodeFunctions = true).evaluationContext
   val evaluatorV1: EvaluatorV1[Id, NoContext]           = new EvaluatorV1[Id, NoContext]()
 }
 
@@ -217,7 +217,7 @@ class Concat {
 
 @State(Scope.Benchmark)
 class Median {
-  val context: EvaluationContext[NoContext, Id] = PureContext.build(V4).evaluationContext
+  val context: EvaluationContext[NoContext, Id] = PureContext.build(V4, fixUnicodeFunctions = true).evaluationContext
 
   val randomElements: Array[EXPR] =
     (1 to 10000).map { _ =>
@@ -260,7 +260,7 @@ class Median {
 @State(Scope.Benchmark)
 class SigVerify32Kb {
   val context: EvaluationContext[NoContext, Id] =
-    Monoid.combine(PureContext.build(V4).evaluationContext, CryptoContext.build(Global, V4).evaluationContext)
+    Monoid.combine(PureContext.build(V4, fixUnicodeFunctions = true).evaluationContext, CryptoContext.build(Global, V4).evaluationContext)
 
 
   val expr: EXPR = {
@@ -283,7 +283,7 @@ class SigVerify32Kb {
 class ListRemoveByIndex {
   val context: EvaluationContext[NoContext, Id] =
     Monoid.combine(
-      PureContext.build(V4).evaluationContext,
+      PureContext.build(V4, fixUnicodeFunctions = true).evaluationContext,
       CryptoContext.build(Global, V4).evaluationContext
     )
 

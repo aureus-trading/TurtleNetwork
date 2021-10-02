@@ -1,6 +1,6 @@
 import sbt.nio.file.FileAttributes
 
-name := "grpc-server"
+name := "waves-grpc-server"
 
 libraryDependencies ++= Dependencies.grpc
 
@@ -11,8 +11,8 @@ extensionClasses ++= Seq(
 
 inConfig(Compile)(
   Seq(
-    PB.protoSources in Compile := Seq(PB.externalIncludePath.value),
-    includeFilter in PB.generate := new SimpleFileFilter(
+    Compile / PB.protoSources := Seq(PB.externalIncludePath.value),
+    PB.generate / includeFilter := new SimpleFileFilter(
       (f: File) =>
         ((** / "waves" / "node" / "grpc" / ** / "*.proto") || (** / "waves" / "events" / ** / "*.proto"))
           .accept(f.toPath, FileAttributes(f.toPath).getOrElse(FileAttributes.NonExistent))
@@ -22,3 +22,11 @@ inConfig(Compile)(
 )
 
 enablePlugins(RunApplicationSettings, ExtensionPackaging)
+
+Debian / debianControlFile := {
+  val generatedFile = (Debian / debianControlFile).value
+  IO.append(generatedFile, s"""Conflicts: grpc-server${network.value.packageSuffix}
+      |Replaces: grpc-server${network.value.packageSuffix}
+      |""".stripMargin)
+  generatedFile
+}

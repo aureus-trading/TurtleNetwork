@@ -24,7 +24,8 @@ import com.wavesplatform.{NTPTime, TestHelpers}
 import monix.reactive.Observer
 import monix.reactive.subjects.{PublishSubject, Subject}
 import org.iq80.leveldb.{DB, Options}
-import org.scalatest.{Matchers, Suite}
+import org.scalatest.Suite
+import org.scalatest.matchers.should.Matchers
 
 trait WithState extends DBCacheSettings with Matchers with NTPTime { _: Suite =>
   protected val ignoreSpendableBalanceChanged: Subject[(Address, Asset), (Address, Asset)] = PublishSubject()
@@ -152,18 +153,52 @@ trait WithState extends DBCacheSettings with Matchers with NTPTime { _: Suite =>
 }
 
 trait WithDomain extends WithState { _: Suite =>
-  def defaultDomainSettings: WavesSettings =
-    WavesSettings.fromRootConfig(loadConfig(None))
+  implicit class WavesSettingsOps(ws: WavesSettings) {
+    def withFeatures(fs: BlockchainFeature*): WavesSettings = {
+      val functionalitySettings = ws.blockchainSettings.functionalitySettings.copy(preActivatedFeatures = fs.map(_.id -> 0).toMap)
+      ws.copy(blockchainSettings = ws.blockchainSettings.copy(functionalitySettings = functionalitySettings))
+    }
 
-  def domainSettingsWithFS(fs: FunctionalitySettings): WavesSettings = {
-    val ds = defaultDomainSettings
-    ds.copy(blockchainSettings = ds.blockchainSettings.copy(functionalitySettings = fs))
+    def addFeatures(fs: BlockchainFeature*): WavesSettings = {
+      val newFeatures           = ws.blockchainSettings.functionalitySettings.preActivatedFeatures ++ fs.map(_.id -> 0)
+      val functionalitySettings = ws.blockchainSettings.functionalitySettings.copy(preActivatedFeatures = newFeatures)
+      ws.copy(blockchainSettings = ws.blockchainSettings.copy(functionalitySettings = functionalitySettings))
+    }
   }
 
-  def domainSettingsWithFeatures(fs: BlockchainFeature*): WavesSettings =
-    domainSettingsWithFS(defaultDomainSettings.blockchainSettings.functionalitySettings.copy(preActivatedFeatures = fs.map(_.id -> 0).toMap))
+  lazy val SettingsFromDefaultConfig: WavesSettings =
+    WavesSettings.fromRootConfig(loadConfig(None))
 
-  def withDomain[A](settings: WavesSettings = defaultDomainSettings)(
+  def domainSettingsWithFS(fs: FunctionalitySettings): WavesSettings =
+    SettingsFromDefaultConfig.copy(
+      blockchainSettings = SettingsFromDefaultConfig.blockchainSettings.copy(functionalitySettings = fs)
+    )
+
+  def domainSettingsWithPreactivatedFeatures(fs: BlockchainFeature*): WavesSettings =
+    domainSettingsWithFeatures(fs.map(_ -> 0): _*)
+
+  def domainSettingsWithFeatures(fs: (BlockchainFeature, Int)*): WavesSettings =
+    domainSettingsWithFS(SettingsFromDefaultConfig.blockchainSettings.functionalitySettings.copy(preActivatedFeatures = fs.map { case (f, h) => f.id -> h }.toMap))
+
+  object DomainPresets {
+    val NG = domainSettingsWithPreactivatedFeatures(
+      BlockchainFeatures.MassTransfer, // Removes limit of 100 transactions per block
+      BlockchainFeatures.NG
+    )
+
+    val RideV4 = NG.addFeatures(
+      BlockchainFeatures.SmartAccounts,
+      BlockchainFeatures.DataTransaction,
+      BlockchainFeatures.Ride4DApps,
+      BlockchainFeatures.SmartAssets,
+      BlockchainFeatures.BlockV5
+    )
+
+    val RideV5 = RideV4.addFeatures(BlockchainFeatures.SynchronousCalls)
+  }
+
+
+  def withDomain[A](settings: WavesSettings = SettingsFromDefaultConfig)(
       test: Domain => A
   ): A =
     withLevelDBWriter(settings) { blockchain =>
@@ -176,7 +211,7 @@ trait WithDomain extends WithState { _: Suite =>
         BlockchainUpdateTriggers.combined(domain.triggers),
         loadActiveLeases(db, _, _)
       )
-      domain = Domain(db, bcu, blockchain)
+      domain = Domain(db, bcu, blockchain, settings)
       try test(domain)
       finally bcu.shutdown()
     }

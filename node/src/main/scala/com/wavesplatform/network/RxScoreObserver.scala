@@ -3,7 +3,8 @@ package com.wavesplatform.network
 import java.util.concurrent.TimeUnit
 
 import cats._
-import cats.implicits._
+import cats.instances.bigInt._
+import cats.instances.tuple._
 import com.google.common.cache.CacheBuilder
 import com.wavesplatform.utils.ScorexLogging
 import io.netty.channel._
@@ -11,19 +12,14 @@ import monix.eval.Coeval
 import monix.execution.Scheduler
 import monix.reactive.Observable
 
-import scala.jdk.CollectionConverters._
 import scala.concurrent.duration.FiniteDuration
+import scala.jdk.CollectionConverters._
+
+case class BestChannel(channel: Channel, score: BigInt) {
+  override def toString: String = s"BestChannel(${id(channel)},$score)"
+}
 
 object RxScoreObserver extends ScorexLogging {
-
-  case class BestChannel(channel: Channel, score: BigInt) {
-    override def toString: String = s"BestChannel(${id(channel)},score: $score)"
-  }
-
-  implicit val bestChannelEq: Eq[BestChannel] = { (x, y) =>
-    x.channel == y.channel && x.score == y.score
-  }
-
   type SyncWith = Option[BestChannel]
 
   case class ChannelClosedAndSyncWith(closed: Option[Channel], syncWith: SyncWith)
@@ -49,14 +45,16 @@ object RxScoreObserver extends ScorexLogging {
     } else None
   }
 
-  def apply(scoreTtl: FiniteDuration,
-            remoteScoreDebounce: FiniteDuration,
-            initalLocalScore: BigInt,
-            localScores: Observable[BigInt],
-            remoteScores: ChannelObservable[BigInt],
-            channelClosed: Observable[Channel],
-            channelTimeout: Observable[Channel],
-            scheduler: Scheduler): (Observable[ChannelClosedAndSyncWith], Coeval[Stats]) = {
+  def apply(
+      scoreTtl: FiniteDuration,
+      remoteScoreDebounce: FiniteDuration,
+      initalLocalScore: BigInt,
+      localScores: Observable[BigInt],
+      remoteScores: ChannelObservable[BigInt],
+      channelClosed: Observable[Channel],
+      channelTimeout: Observable[Channel],
+      scheduler: Scheduler
+  ): (Observable[ChannelClosedAndSyncWith], Coeval[Stats]) = {
 
     var localScore: BigInt                  = initalLocalScore
     var currentBestChannel: Option[Channel] = None
@@ -83,8 +81,10 @@ object RxScoreObserver extends ScorexLogging {
       remoteScores
         .observeOn(scheduler)
         .groupBy(_._1)
-        .map(_.distinctUntilChanged
-          .debounce(remoteScoreDebounce))
+        .map(
+          _.distinctUntilChanged
+            .debounce(remoteScoreDebounce)
+        )
         .merge
         .collect {
           case (ch, score) if ch.isOpen =>

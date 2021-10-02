@@ -7,7 +7,7 @@ import com.wavesplatform.it.api.IssueTransactionInfo
 import com.wavesplatform.it.api.SyncHttpApi._
 import com.wavesplatform.it.sync._
 import com.wavesplatform.it.transactions.BaseTransactionSuite
-import com.wavesplatform.it.util._
+import com.wavesplatform.test._
 import com.wavesplatform.transaction.assets.IssueTransaction
 import com.wavesplatform.transaction.{Proofs, TxVersion}
 import org.scalatest.prop.TableDrivenPropertyChecks
@@ -107,7 +107,7 @@ class IssueTransactionSuite extends BaseTransactionSuite with TableDrivenPropert
       ("base64:", "Can't parse empty script bytes"),
       ("base64:AA==", "Illegal length of script: 1"),
       ("base64:AAQB", "Invalid content type of script: 4"),
-      ("base64:AAEF", "Invalid version of script: 5"),
+      ("base64:AAEF", "Invalid checksum"),
       ("base64:CAEF", "Invalid version of script: 8")
     )
 

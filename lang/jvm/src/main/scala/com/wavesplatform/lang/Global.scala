@@ -1,26 +1,25 @@
 package com.wavesplatform.lang
 
-import java.math.{MathContext, BigDecimal => BD}
+import java.math.{BigInteger, MathContext, BigDecimal => BD}
 import java.security.spec.InvalidKeySpecException
 
-import cats.implicits._
+import cats.syntax.either._
 import ch.obermuhlner.math.big.BigDecimalMath
+import com.google.common.base.Utf8
 import com.google.common.io.BaseEncoding
+import com.wavesplatform.common.merkle.Merkle
 import com.wavesplatform.common.utils.{Base58, Base64}
+import com.wavesplatform.crypto.{Blake2b256, Curve25519, Keccak256, Sha256}
 import com.wavesplatform.lang.v1.BaseGlobal
+import com.wavesplatform.lang.v1.evaluator.ctx.impl.Rounding
 import com.wavesplatform.lang.v1.evaluator.ctx.impl.crypto.RSA
 import com.wavesplatform.lang.v1.evaluator.ctx.impl.crypto.RSA.DigestAlgorithm
-import com.wavesplatform.lang.v1.repl.node.http.response.model.NodeResponse
-import com.wavesplatform.utils.Merkle
 import com.wavesplatform.zwaves.bls12.{Groth16 => Bls12Groth16}
 import com.wavesplatform.zwaves.bn256.{Groth16 => Bn256Groth16}
 import org.web3j.crypto.Sign
 import org.web3j.crypto.Sign.SignatureData
-import scorex.crypto.hash.{Blake2b256, Keccak256, Sha256}
-import scorex.crypto.signatures.{Curve25519, PublicKey, Signature}
 
 import scala.annotation.tailrec
-import scala.concurrent.Future
 import scala.util.Try
 
 object Global extends BaseGlobal {
@@ -44,12 +43,12 @@ object Global extends BaseGlobal {
   private val base16Encoder: BaseEncoding = BaseEncoding.base16().lowerCase()
 
   override def base16EncodeImpl(input: Array[Byte]): Either[String, String] =
-    toEither(base16Encoder.encode(input))
+    tryEither(base16Encoder.encode(input))
 
   override def base16DecodeImpl(input: String): Either[String, Array[Byte]] =
-    toEither(base16Encoder.decode(input.toLowerCase))
+    tryEither(base16Encoder.decode(input.toLowerCase))
 
-  private def toEither[A](f: => A): Either[String, A] =
+  private def tryEither[A](f: => A): Either[String, A] =
     Try(f).toEither
       .leftMap { exception =>
         val cause = findThrowableCause(exception)
@@ -62,11 +61,11 @@ object Global extends BaseGlobal {
     if (th.getCause == null) th
     else findThrowableCause(th.getCause)
 
-  def curve25519verify(message: Array[Byte], sig: Array[Byte], pub: Array[Byte]): Boolean = Curve25519.verify(Signature(sig), message, PublicKey(pub))
+  def curve25519verify(message: Array[Byte], sig: Array[Byte], pub: Array[Byte]): Boolean =
+    Curve25519.verify(sig, message, pub)
 
   override def rsaVerify(alg: DigestAlgorithm, message: Array[Byte], sig: Array[Byte], pub: Array[Byte]): Either[String, Boolean] =
-    Try(RSA.verify(alg, message, sig, pub))
-      .toEither
+    Try(RSA.verify(alg, message, sig, pub)).toEither
       .leftMap {
         case err: InvalidKeySpecException => s"Invalid key base58'${Base58.encode(pub)}': ${findThrowableCause(err).getMessage}"
         case err                          => findThrowableCause(err).getMessage
@@ -79,26 +78,80 @@ object Global extends BaseGlobal {
   override def merkleVerify(rootBytes: Array[Byte], proofBytes: Array[Byte], valueBytes: Array[Byte]): Boolean =
     Merkle.verify(rootBytes, proofBytes, valueBytes)
 
-  // Math functions
-  def pow(b: Long, bp: Long, e: Long, ep: Long, rp: Long, round: BaseGlobal.Rounds): Either[String, Long] =
-    (Try {
-      val base = BD.valueOf(b, bp.toInt)
-      val exp  = BD.valueOf(e, ep.toInt)
-      val res  = BigDecimalMath.pow(base, exp, MathContext.DECIMAL128)
-      res.setScale(rp.toInt, roundMode(round)).unscaledValue.longValueExact
-    }).toEither.left.map(_.toString)
+  private val longDigits  = 19
+  private val longContext = new MathContext(longDigits)
 
-  def log(b: Long, bp: Long, e: Long, ep: Long, rp: Long, round: BaseGlobal.Rounds): Either[String, Long] =
-    (Try {
+  private val bigIntDigits   = 154
+  private val bigMathContext = new MathContext(bigIntDigits)
+
+  // Math functions
+  def pow(
+      base: Long,
+      basePrecision: Long,
+      exponent: Long,
+      exponentPrecision: Long,
+      resultPrecision: Long,
+      round: Rounding
+  ): Either[String, Long] =
+    tryEither {
+      val baseBD = BD.valueOf(base, basePrecision.toInt)
+      val expBD  = BD.valueOf(exponent, exponentPrecision.toInt)
+      val result = if (expBD == BigDecimal(0.5).bigDecimal) {
+        BigDecimalMath.sqrt(baseBD, longContext)
+      } else {
+        BigDecimalMath.pow(baseBD, expBD, longContext)
+      }
+      setScale(resultPrecision.toInt, round, longDigits, result)
+    }.flatten.map(_.bigInteger.longValueExact())
+
+  def log(b: Long, bp: Long, e: Long, ep: Long, rp: Long, round: Rounding): Either[String, Long] =
+    tryEither {
       val base = BD.valueOf(b, bp.toInt)
       val exp  = BD.valueOf(e, ep.toInt)
       val res  = BigDecimalMath.log(base, MathContext.DECIMAL128).divide(BigDecimalMath.log(exp, MathContext.DECIMAL128), MathContext.DECIMAL128)
-      res.setScale(rp.toInt, roundMode(round)).unscaledValue.longValueExact
-    }).toEither.left.map(_.toString)
+      res.setScale(rp.toInt, round.mode).unscaledValue.longValueExact
+    }
 
-  private val client = new SttpClient()
-  override def requestNode(url: String): Future[NodeResponse] =
-    client.requestNode(url)
+  def toJBig(v: BigInt, p: Long) = BigDecimal(v).bigDecimal.multiply(BD.valueOf(1L, p.toInt))
+
+  def powBigInt(b: BigInt, bp: Long, e: BigInt, ep: Long, rp: Long, round: Rounding): Either[String, BigInt] =
+    tryEither {
+      val base = toJBig(b, bp)
+      val exp  = toJBig(e, ep)
+      val res = if (exp == BigDecimal(0.5).bigDecimal) {
+        BigDecimalMath.sqrt(base, bigMathContext)
+      } else {
+        BigDecimalMath.pow(base, exp, bigMathContext)
+      }
+      setScale(rp.toInt, round, bigIntDigits, res)
+    }.flatten
+
+  private def setScale(
+      resultPrecision: Int,
+      round: Rounding,
+      precision: Int,
+      result: java.math.BigDecimal
+  ): Either[ExecutionError, BigInt] = {
+    val value = result.unscaledValue()
+    val scale = result.scale()
+    if (scale > resultPrecision)
+      if (scale - resultPrecision > precision - 1)
+        Right(BigInt(0))
+      else
+        divide(value, BigInteger.TEN.pow(scale - resultPrecision), round)
+    else if (resultPrecision - scale > precision - 1)
+      Left("Pow overflow")
+    else
+      Right(BigInt(value) * BigInteger.TEN.pow(resultPrecision - scale))
+  }
+
+  def logBigInt(b: BigInt, bp: Long, e: BigInt, ep: Long, rp: Long, round: Rounding): Either[String, BigInt] =
+    tryEither {
+      val base = toJBig(b, bp)
+      val exp  = toJBig(e, ep)
+      val res  = BigDecimalMath.log(base, bigMathContext).divide(BigDecimalMath.log(exp, bigMathContext), bigMathContext)
+      BigInt(res.setScale(rp.toInt, round.mode).unscaledValue)
+    }
 
   override def groth16Verify(verifyingKey: Array[Byte], proof: Array[Byte], inputs: Array[Byte]): Boolean =
     Bls12Groth16.verify(verifyingKey, proof, inputs)
@@ -110,12 +163,15 @@ object Global extends BaseGlobal {
     // https://github.com/web3j/web3j/blob/master/crypto/src/test/java/org/web3j/crypto/ECRecoverTest.java#L43
     val signatureData = {
       val vTemp = signature(64)
-      val v = if (vTemp < 27) (vTemp + 27).toByte else vTemp
-      val r = signature.slice(0, 32)
-      val s = signature.slice(32, 64)
+      val v     = if (vTemp < 27) (vTemp + 27).toByte else vTemp
+      val r     = signature.slice(0, 32)
+      val s     = signature.slice(32, 64)
       new SignatureData(v, r, s)
     }
     val pk = Sign.signedMessageHashToKey(messageHash, signatureData)
     base16Encoder.decode(pk.toString(16))
   }
+
+  override def isIllFormed(s: String): Boolean =
+    Try(Utf8.encodedLength(s)).isFailure
 }

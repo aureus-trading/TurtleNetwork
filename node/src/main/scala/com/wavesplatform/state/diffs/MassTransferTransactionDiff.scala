@@ -1,6 +1,9 @@
 package com.wavesplatform.state.diffs
 
-import cats.implicits._
+import cats.instances.list._
+import cats.instances.map._
+import cats.syntax.semigroup._
+import cats.syntax.traverse._
 import com.wavesplatform.account.Address
 import com.wavesplatform.lang.ValidationError
 import com.wavesplatform.state._
@@ -45,7 +48,7 @@ object MassTransferTransactionDiff {
 
       Either.cond(
         assetIssued,
-        Diff(tx, completePortfolio, scriptsRun = DiffsCommon.countScriptRuns(blockchain, tx)),
+        Diff(portfolios = completePortfolio, scriptsRun = DiffsCommon.countScriptRuns(blockchain, tx)),
         GenericError(s"Attempt to transfer a nonexistent asset")
       )
     }

@@ -1,14 +1,14 @@
 package com.wavesplatform.state.diffs
 
 import cats.data.Chain
-import cats.implicits._
+import cats.syntax.foldable._
 import com.wavesplatform.features.BlockchainFeatures
 import com.wavesplatform.lang.ValidationError
 import com.wavesplatform.settings.Constants
 import com.wavesplatform.state._
+import com.wavesplatform.transaction._
 import com.wavesplatform.transaction.Asset.{IssuedAsset, Waves}
 import com.wavesplatform.transaction.TxValidationError._
-import com.wavesplatform.transaction._
 import com.wavesplatform.transaction.assets._
 import com.wavesplatform.transaction.assets.exchange._
 import com.wavesplatform.transaction.lease._
@@ -61,6 +61,21 @@ object FeeValidation {
     } else {
       Either.cond(tx.assetFee._2 > 0 || !tx.isInstanceOf[Authorized], (), GenericError(s"Fee must be positive."))
     }
+  }
+
+  def calculateAssetFee(blockchain: Blockchain, feeAssetId: Asset, wavesFee: Long): FeeDetails = {
+    val assetFee = feeAssetId match {
+      case asset: Asset.IssuedAsset =>
+        val sponsorship = blockchain
+          .assetDescription(asset)
+          .map(_.sponsorship)
+          .getOrElse(0L)
+        Sponsorship.fromWaves(wavesFee, sponsorship)
+
+      case Asset.Waves => wavesFee
+    }
+
+    FeeDetails(feeAssetId, Chain.empty, assetFee, wavesFee)
   }
 
   private def notEnoughFeeError(txType: Byte, feeDetails: FeeDetails, feeAmount: Long): ValidationError = {
@@ -130,7 +145,7 @@ object FeeValidation {
   }
 
   private def feeAfterSmartTokens(blockchain: Blockchain, tx: Transaction)(inputFee: FeeInfo): FeeInfo = {
-    val FeeInfo(feeAssetInfo, reqirements, feeAmount) = inputFee
+    val FeeInfo(feeAssetInfo, requirements, feeAmount) = inputFee
 
     val tokenIsSmart: Boolean =
       feeAssetInfo
@@ -139,8 +154,9 @@ object FeeValidation {
         .exists(_.script.isDefined)
 
     val assetsCount = tx match {
-      case tx: ExchangeTransaction => tx.checkedAssets.count(blockchain.hasAssetScript) /* *3 if we decide to check orders and transaction */
-      case _                       => tx.checkedAssets.count(blockchain.hasAssetScript)
+      case _: InvokeScriptTransaction if blockchain.isFeatureActivated(BlockchainFeatures.SynchronousCalls) => 0
+      case tx: ExchangeTransaction                                                                          => tx.checkedAssets.count(blockchain.hasAssetScript) /* *3 if we decide to check orders and transaction */
+      case _                                                                                                => tx.checkedAssets.count(blockchain.hasAssetScript)
     }
 
     val finalAssetsCount =
@@ -149,28 +165,28 @@ object FeeValidation {
 
     val extraFee = finalAssetsCount * ScriptExtraFee
 
-    val extraRequeirements =
+    val extraRequirements =
       if (finalAssetsCount > 0)
         Chain(s"Transaction involves $finalAssetsCount scripted assets. Requires $extraFee extra fee")
       else Chain.empty
 
-    FeeInfo(feeAssetInfo, extraRequeirements ++ reqirements, feeAmount + extraFee)
+    FeeInfo(feeAssetInfo, extraRequirements ++ requirements, feeAmount + extraFee)
   }
 
   private def feeAfterSmartAccounts(blockchain: Blockchain, tx: Transaction)(inputFee: FeeInfo): FeeInfo = {
     val smartAccountScriptsCount: Int = tx match {
-      case tx: Transaction with Authorized => if (blockchain.hasAccountScript(tx.sender.toAddress)) 1 else 0
+      case tx: Transaction with Authorized => if (blockchain.hasPaidVerifier(tx.sender.toAddress)) 1 else 0
       case _                               => 0
     }
 
     val extraFee = smartAccountScriptsCount * ScriptExtraFee
-    val extraRequeirements =
+    val extraRequirements =
       if (smartAccountScriptsCount > 0) Chain(s"Transaction sent from smart account. Requires $extraFee extra fee.")
       else Chain.empty
 
     val FeeInfo(feeAssetInfo, reqs, feeAmount) = inputFee
 
-    FeeInfo(feeAssetInfo, extraRequeirements ++ reqs, feeAmount + extraFee)
+    FeeInfo(feeAssetInfo, extraRequirements ++ reqs, feeAmount + extraFee)
   }
 
   def getMinFee(blockchain: Blockchain, tx: Transaction): Either[ValidationError, FeeDetails] = {

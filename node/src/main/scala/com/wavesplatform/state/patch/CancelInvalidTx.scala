@@ -2,13 +2,9 @@ package com.wavesplatform.state.patch
 
 import com.wavesplatform.account.{Address, AddressScheme}
 import com.wavesplatform.common.utils.EitherExt2
-import com.wavesplatform.state.{Diff, LeaseBalance, Portfolio}
+import com.wavesplatform.state.{Blockchain, Diff, LeaseBalance, Portfolio}
 
-object CancelInvalidTx extends DiffPatchFactory {
-  val height: Int = AddressScheme.current.chainId.toChar match {
-    case 'L' => 450000
-    case _   => 0
-  }
+object CancelInvalidTx extends PatchAtHeight('L' -> 450000)  {
 
   def apply(): Diff = {
     val addr1 = Address.fromString("3JcQHUDAzkprtFHX8DskQCys3upBYhPeJQq").explicitGet()
@@ -31,14 +27,10 @@ object CancelInvalidTx extends DiffPatchFactory {
     val diff = Diff.empty.copy(portfolios = pfs)
     diff
   }
+
 }
 
-object CancelInvalidTx2 extends DiffPatchFactory {
-  val height: Int = AddressScheme.current.chainId.toChar match {
-    case 'L' => 457100
-    case _   => 0
-  }
-
+object CancelInvalidTx2 extends PatchAtHeight('L' -> 457100)  {
   def apply(): Diff = {
     val addr1 = Address.fromString("3JreB3JjQJgFfuz6ntFt76eTDUyv7hxdzMk").explicitGet()
     val pfs = Map(

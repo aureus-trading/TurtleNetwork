@@ -2,19 +2,18 @@ package com.wavesplatform.it.asset
 
 import com.wavesplatform.account.KeyPair
 import com.wavesplatform.common.utils.EitherExt2
-import com.wavesplatform.it.BaseSuite
+import com.wavesplatform.it.BaseFreeSpec
 import com.wavesplatform.it.api.SyncHttpApi._
 import com.wavesplatform.it.api.{IssueInfoResponse, SponsorFeeResponse, StateChangesDetails}
 import com.wavesplatform.it.sync._
-import com.wavesplatform.it.util._
 import com.wavesplatform.lang.v1.estimator.v2.ScriptEstimatorV2
 import com.wavesplatform.state.Sponsorship
+import com.wavesplatform.test._
 import com.wavesplatform.transaction.smart.SetScriptTransaction
 import com.wavesplatform.transaction.smart.script.ScriptCompiler
 
-class SponsorFeeActionSuite extends BaseSuite {
-  private val initialWavesBalance = 2100.TN
-
+class SponsorFeeActionSuite extends BaseFreeSpec {
+  private val initialWavesBalance = 2100.waves
   private var sponsoredAssetId: String  = ""
   private var globalDAppAddress: String = ""
   private var dApp: KeyPair             = _
@@ -53,7 +52,8 @@ class SponsorFeeActionSuite extends BaseSuite {
               Nil,
               Nil,
               Seq(SponsorFeeResponse(sponsorFeeAssetId, Some(`minSponsoredAssetFee`))),
-              None
+              None,
+              Nil
             )
             ) if issueAssetId == sponsorFeeAssetId =>
       }
@@ -221,7 +221,8 @@ class SponsorFeeActionSuite extends BaseSuite {
               Nil,
               Nil,
               sponsorFeeResponses,
-              None
+              None,
+              Nil
             )
             ) if sponsorFeeResponses.size == 9 && sponsorFeeResponses.last == SponsorFeeResponse(`assetId`, Some(`lastMinSponsoredAssetFee`)) =>
       }
@@ -268,7 +269,8 @@ class SponsorFeeActionSuite extends BaseSuite {
               Nil,
               Nil,
               Seq(SponsorFeeResponse(`assetId`, Some(100)), SponsorFeeResponse(`assetId`, None)),
-              None
+              None,
+              Nil
             )
             ) =>
       }
@@ -383,7 +385,7 @@ class SponsorFeeActionSuite extends BaseSuite {
 
       assertBadRequestAndMessage(
         miner.invokeScript(miner.keyPair, dAppAddress, Some("sponsor11assets"), fee = smartMinFee),
-        "Too many script actions: max: 10, actual: 11"
+        "Actions count limit is exceeded"
       )
     }
 
@@ -540,7 +542,7 @@ class SponsorFeeActionSuite extends BaseSuite {
       val invokeTx2 = miner.invokeScript(miner.keyPair, dAppAddress, Some("sponsorAsset"), waitForTx = true, fee = smartMinFee + issueFee)
       miner.debugStateChanges(invokeTx2._1.id).stateChanges.get.sponsorFees.head.assetId shouldBe assetId
 
-      nodes.rollback(firstTxHeight, returnToUTX = true)
+      nodes.rollback(firstTxHeight)
       nodes.waitForTransaction(invokeTx2._1.id)
 
       miner.assetsDetails(assetId).minSponsoredAssetFee shouldBe Some(minSponsoredAssetFee)

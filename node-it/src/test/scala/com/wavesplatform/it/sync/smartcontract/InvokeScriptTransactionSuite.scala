@@ -10,11 +10,11 @@ import com.wavesplatform.it.api.SyncHttpApi._
 import com.wavesplatform.it.api.TransactionInfo
 import com.wavesplatform.it.sync._
 import com.wavesplatform.it.transactions.BaseTransactionSuite
-import com.wavesplatform.it.util._
 import com.wavesplatform.lang.v1.compiler.Terms.CONST_BYTESTR
 import com.wavesplatform.lang.v1.estimator.v2.ScriptEstimatorV2
 import com.wavesplatform.lang.v1.estimator.v3.ScriptEstimatorV3
 import com.wavesplatform.state._
+import com.wavesplatform.test._
 import com.wavesplatform.transaction.Asset.Waves
 import com.wavesplatform.transaction.TxVersion
 import com.wavesplatform.transaction.smart.InvokeScriptTransaction.Payment
@@ -81,7 +81,7 @@ class InvokeScriptTransactionSuite extends BaseTransactionSuite with CancelAfter
         |
         """.stripMargin
     val script = ScriptCompiler.compile(scriptText, ScriptEstimatorV2).explicitGet()._1.bytes().base64
-    sender.transfer(firstKeyPair, thirdContract.toAddress.toString, 30.TN, minFee, waitForTx = true)
+    sender.transfer(firstKeyPair, thirdContract.toAddress.toString, 30.waves, minFee, waitForTx = true)
     val setScriptId  = sender.setScript(firstContract, Some(script), setScriptFee, waitForTx = true).id
     val setScriptId2 = sender.setScript(secondContract, Some(script), setScriptFee, waitForTx = true).id
 
@@ -100,28 +100,14 @@ class InvokeScriptTransactionSuite extends BaseTransactionSuite with CancelAfter
     sender.transactionInfo[TransactionInfo](setScriptId2).script.get.startsWith("base64:") shouldBe true
   }
 
-  test("disable use this with alias") {
-    assertApiErrorRaised(
-      sender.invokeScript(
-        caller,
-        "alias:I:alias",
-        func = Some("baz"),
-        args = List(),
-        payment = Seq(),
-        fee = 1.TN,
-        waitForTx = true
-      )
-    )
-  }
-
-  test("but enable use this with address") {
+  ignore("""Allow to use "this" if DApp is called by alias""") {
     sender.invokeScript(
       caller,
-      firstContractAddress,
+      "alias:I:alias",
       func = Some("baz"),
       args = List(),
       payment = Seq(),
-      fee = 1.TN,
+      fee = 1.waves,
       waitForTx = true
     )
     sender.getDataByKey(firstContractAddress, "test") shouldBe BinaryDataEntry("test", ByteStr(firstContract.toAddress.bytes))
@@ -158,8 +144,8 @@ class InvokeScriptTransactionSuite extends BaseTransactionSuite with CancelAfter
         contract,
         func = Some("foo"),
         args = List(CONST_BYTESTR(arg).explicitGet()),
-        payment = Seq(Payment(1.TN, Waves)),
-        fee = 1.TN,
+        payment = Seq(Payment(1.waves, Waves)),
+        fee = 1.waves,
         version = v,
         waitForTx = true
       )
@@ -180,7 +166,7 @@ class InvokeScriptTransactionSuite extends BaseTransactionSuite with CancelAfter
       func = Some("foo"),
       args = List(CONST_BYTESTR(arg).explicitGet()),
       payment = Seq(),
-      fee = 1.TN,
+      fee = 1.waves,
       waitForTx = true
     )
 
@@ -195,7 +181,7 @@ class InvokeScriptTransactionSuite extends BaseTransactionSuite with CancelAfter
       func = Some("baz"),
       args = List(),
       payment = Seq(),
-      fee = 1.TN,
+      fee = 1.waves,
       waitForTx = true
     )
     sender.getDataByKey(firstContractAddress, "test") shouldBe BinaryDataEntry("test", ByteStr(firstContract.toAddress.bytes))
@@ -209,7 +195,7 @@ class InvokeScriptTransactionSuite extends BaseTransactionSuite with CancelAfter
         contract,
         func = None,
         payment = Seq(),
-        fee = 1.TN,
+        fee = 1.waves,
         version = v,
         waitForTx = true
       )
@@ -221,7 +207,7 @@ class InvokeScriptTransactionSuite extends BaseTransactionSuite with CancelAfter
   test("verifier works") {
     for (v <- invokeScrTxSupportedVersions) {
       val contract = if (v < 2) firstContract else secondContract
-      val dataTxId = sender.putData(contract, data = List(StringDataEntry("a", "OOO")), fee = 1.TN, waitForTx = true).id
+      val dataTxId = sender.putData(contract, data = List(StringDataEntry("a", "OOO")), fee = 1.waves, waitForTx = true).id
 
       nodes.waitForHeightAriseAndTxPresent(dataTxId)
 
@@ -237,7 +223,7 @@ class InvokeScriptTransactionSuite extends BaseTransactionSuite with CancelAfter
           secondContractAddress,
           func = Some("emptyKey"),
           payment = Seq(),
-          fee = 1.TN,
+          fee = 1.waves,
           version = TxVersion.V2
         ),
       AssertiveApiError(ScriptExecutionError.Id, "Error while executing account-script: Empty keys aren't allowed in tx version >= 2")
@@ -252,7 +238,7 @@ class InvokeScriptTransactionSuite extends BaseTransactionSuite with CancelAfter
         thirdContract.toAddress.toString,
         func = Some("bar"),
         payment = Seq(),
-        fee = 1.TN,
+        fee = 1.waves,
         version = TxVersion.V2
       ),
       AssertiveApiError(ScriptExecutionError.Id, "Error while executing account-script: Empty keys aren't allowed in tx version >= 2")
