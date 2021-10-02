@@ -151,7 +151,7 @@ object BlockDiffer extends ScorexLogging {
     val txDiffer       = TransactionDiffer(prevBlockTimestamp, timestamp, verify) _
     val hasSponsorship = currentBlockHeight >= Sponsorship.sponsoredFeesSwitchHeight(blockchain)
 
-    val initDiffWithPatches = Seq(CancelAllLeases, CancelLeaseOverflow, CancelInvalidLeaseIn, CancelLeasesToDisabledAliases).foldLeft(initDiff) {
+    val initDiffWithPatches = Seq(CancelAllLeases, CancelInvalidTx, CancelInvalidTx2, CancelLeaseOverflow,  CancelInvalidLeaseIn, CancelLeasesToDisabledAliases).foldLeft(initDiff) {
       case (prevDiff, patch) =>
         patch.lift(CompositeBlockchain(blockchain, prevDiff)).fold(prevDiff)(prevDiff |+| _)
     }
