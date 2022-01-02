@@ -298,7 +298,7 @@ class DebugApiRouteSpec
       }
 
       def testPayment(result: String) = withClue("payment") {
-        val tx = TxHelpers.invoke(TxHelpers.secondAddress, "test", fee = 10400000, payments = Seq(Payment(1L, TestValues.asset)))
+        val tx = TxHelpers.invoke(TxHelpers.secondAddress, "test", fee = 104000000, payments = Seq(Payment(1L, TestValues.asset)))
         jsonPost(routePath("/validate"), tx.json()) ~> route ~> check {
           val json = Json.parse(responseAs[String])
 

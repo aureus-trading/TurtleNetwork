@@ -76,7 +76,7 @@ linuxScriptReplacements += ("network" -> network.value.toString)
 
 inConfig(Universal)(
   Seq(
-    mappings += (baseDirectory.value / s"waves-sample.conf" -> "doc/waves.conf.sample"),
+    mappings += (baseDirectory.value / s"TN-sample.conf" -> "doc/waves.conf.sample"),
     javaOptions ++= Seq(
       // -J prefix is required by the bash script
       "-J-server",

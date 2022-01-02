@@ -105,7 +105,7 @@ object TxHelpers {
         order1.price,
         order1.matcherFee,
         order2.matcherFee,
-        TestValues.fee,
+        TestValues.feeMiddle,
         timestamp
       )
       .explicitGet()

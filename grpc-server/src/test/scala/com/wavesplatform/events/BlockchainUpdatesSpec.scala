@@ -397,7 +397,7 @@ class BlockchainUpdatesSpec extends FreeSpec with WithDomain with ScalaFutures w
         rollback.removedBlocks should have length 1
 
         rollback.stateUpdate.balances shouldBe Seq(
-          BalanceUpdate(TxHelpers.defaultAddress, Waves, 10000000680000000L, after = 10000000600000000L),
+          BalanceUpdate(TxHelpers.defaultAddress, Waves, 9999940740000000L, after = 10000000600000000L),
           BalanceUpdate(TxHelpers.defaultAddress, issue.asset, 2000, after = 0),
           BalanceUpdate(TxHelpers.secondAddress, Waves, 100000000, after = 0)
         )
@@ -431,7 +431,7 @@ class BlockchainUpdatesSpec extends FreeSpec with WithDomain with ScalaFutures w
         rollback.removedBlocks shouldBe empty
 
         rollback.stateUpdate.balances shouldBe Seq(
-          BalanceUpdate(TxHelpers.defaultAddress, Waves, 10000000520000000L, after = 10000001040000000L),
+          BalanceUpdate(TxHelpers.defaultAddress, Waves, 9999940580000000L, after = 10000001040000000L),
           BalanceUpdate(TxHelpers.defaultAddress, issue.asset, 2000, after = 0),
           BalanceUpdate(TxHelpers.secondAddress, Waves, 200000000, after = 100000000)
         )
@@ -507,15 +507,15 @@ class BlockchainUpdatesSpec extends FreeSpec with WithDomain with ScalaFutures w
           issuer.toAddress,
           Some(FUNCTION_CALL(FunctionHeader.User("issue"), Nil)),
           Seq.empty,
-          2.waves,
+          1010.waves,
           Asset.Waves,
           ntpTime.getTimestamp()
         )
         .explicitGet()
       d.appendBlock(
-        GenesisTransaction.create(issuerAddress, 1000.waves, ntpTime.getTimestamp()).explicitGet(),
-        GenesisTransaction.create(invoker.toAddress, 1000.waves, ntpTime.getTimestamp()).explicitGet(),
-        SetScriptTransaction.selfSigned(2.toByte, issuer, Some(dAppScript), 0.06.waves, ntpTime.getTimestamp()).explicitGet(),
+        GenesisTransaction.create(issuerAddress, 1020.waves, ntpTime.getTimestamp()).explicitGet(),
+        GenesisTransaction.create(invoker.toAddress, 1020.waves, ntpTime.getTimestamp()).explicitGet(),
+        SetScriptTransaction.selfSigned(2.toByte, issuer, Some(dAppScript), 1.waves, ntpTime.getTimestamp()).explicitGet(),
         invoke
       )
 
