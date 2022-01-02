@@ -26,7 +26,6 @@ tags:
   - name: alias
   - name: assets
   - name: leasing
-  - name: consensus
   - name: activation
   - name: debug
   - name: node
@@ -242,7 +241,8 @@ paths:
                   minItems: 1
                   maxItems: 1000
                 height:
-                  $ref: '#/components/schemas/Height'
+                  allOf:
+                    - $ref: '#/components/schemas/Height'
                   description: >-
                     For balance at height requests. Max number of blocks back
                     from the current height is set by
@@ -1602,6 +1602,12 @@ paths:
             schema:
               type: string
         required: true
+      parameters:
+        - name: compact
+          in: query
+          description: 'If true, compacts the contract. False by default'
+          schema:
+            type: boolean
       responses:
         '200':
           description: successful operation
@@ -1930,8 +1936,8 @@ paths:
         - assets
       summary: Asset balances
       description: >-
-        Get account balances in all or specified assets (excluding WAVES) at a given address
-        Note: Full portfolio also excludes NFTs
+        Get account balances in all or specified assets (excluding WAVES) at a given address.<br>
+        Note: Full portfolio also excludes NFTs.
       operationId: getAssetBalances
       parameters:
         - $ref: '#/components/parameters/address'
@@ -2006,7 +2012,7 @@ paths:
         - $ref: '#/components/parameters/assetId'
         - name: full
           in: query
-          description: 'false'
+          description: 'If true, the response contains `scriptDetails` for scripted assets. False by default'
           schema:
             type: boolean
       responses:
@@ -2038,7 +2044,7 @@ paths:
               type: string
         - name: full
           in: query
-          description: 'false'
+          description: 'If true, the response contains `scriptDetails` for scripted assets. False by default'
           schema:
             type: boolean
       responses:
@@ -2202,8 +2208,8 @@ paths:
       tags:
         - leasing
       summary: Lease info
-      description: Get lease info.
-      operationId: lease_info_get
+      description: Get lease parameters by lease ID
+      operationId: getLease
       parameters:
         - name: id
           in: path
@@ -2222,13 +2228,13 @@ paths:
     get:
       tags:
         - leasing
-      summary: Lease transactions
-      description: Get lease transactions info.
-      operationId: lease_infos_get
+      summary: Multiple leases info
+      description: Get lease parameters by lease IDs
+      operationId: getMultipleLeases
       parameters:
         - name: id
           in: query
-          description: Transaction IDs base58 encoded
+          description: Lease ID base58 encoded
           required: true
           style: form
           explode: true
@@ -2251,9 +2257,9 @@ paths:
     post:
       tags:
         - leasing
-      summary: Lease transactions
-      description: Get lease transactions info.
-      operationId: lease_infos_post
+      summary: Multiple leases info
+      description: Get lease parameters by lease IDs
+      operationId: getMultipleLeasesViaPost
       requestBody:
         content:
           application/json:
@@ -2315,7 +2321,8 @@ paths:
                 type: object
                 properties:
                   height:
-                    $ref: '#/components/schemas/Height'
+                    allOf:
+                      - $ref: '#/components/schemas/Height'
                     description: Current blockchain height on the node
                   votingInterval:
                     type: integer
@@ -3001,15 +3008,18 @@ components:
         timestamp:
           $ref: '#/components/schemas/Timestamp'
         sender:
-          $ref: '#/components/schemas/Address'
+          allOf:
+            - $ref: '#/components/schemas/Address'
           readOnly: true
         senderPublicKey:
           $ref: '#/components/schemas/PublicKey'
         id:
-          $ref: '#/components/schemas/TransactionId'
+          allOf:
+            - $ref: '#/components/schemas/TransactionId'
           readOnly: true
         applicationStatus:
-          $ref: '#/components/schemas/ApplicationStatus'
+          allOf:
+            - $ref: '#/components/schemas/ApplicationStatus'
           readOnly: true
         version:
           type: integer
@@ -3026,7 +3036,8 @@ components:
         fee:
           $ref: '#/components/schemas/Amount'
         feeAssetId:
-          $ref: '#/components/schemas/AssetId'
+          allOf:
+            - $ref: '#/components/schemas/AssetId'
           nullable: true
     TransactionInfo:
       allOf:
@@ -3442,7 +3453,8 @@ components:
         id:
           type: string
         sender:
-          $ref: '#/components/schemas/Address'
+          allOf:
+            - $ref: '#/components/schemas/Address'
           readOnly: true
         senderPublicKey:
           $ref: '#/components/schemas/PublicKey'
@@ -3575,11 +3587,9 @@ components:
       enum:
         - active
         - canceled
-        - expired
       description: |
         * `active`: lease is active; 
-        * `canceled`: lease was cancelled by transaction; 
-        * `expired`: lease has expired
+        * `canceled`: lease has been canceled
     LeaseInfo:
       required:
         - id
@@ -3592,36 +3602,40 @@ components:
       type: object
       properties:
         id:
-          $ref: '#/components/schemas/LeaseId'
+          allOf:
+            - $ref: '#/components/schemas/LeaseId'
+          description: Lease ID
         originTransactionId:
-          $ref: '#/components/schemas/TransactionId'
+          allOf:
+            - $ref: '#/components/schemas/TransactionId'
+          description: ID of Lease or Invoke Script transaction that created the lease
         sender:
           $ref: '#/components/schemas/Address'
         recipient:
-          $ref: '#/components/schemas/Address'
-          description: Lease recipient id
+          allOf:
+            - $ref: '#/components/schemas/Address'
+          description: Lease recipient address
         amount:
           type: integer
           format: int32
-          description: Leased Waves amount
+          description: Leased WAVES amount
+          allOf:
+            - $ref: '#/components/schemas/Amount'
         height:
-          $ref: '#/components/schemas/Height'
+          allOf:
+            - $ref: '#/components/schemas/Height'
           description: >-
-            The sequential number of the block that contains the lease
-            transaction
+            The sequential number of the block that contains the origin transaction
         status:
           $ref: '#/components/schemas/LeaseStatus'
-          description: >-
-            active: lease is active; canceled: lease was cancelled by
-            transaction; expired: lease has expired
         cancelHeight:
-          $ref: '#/components/schemas/Height'
-          description: >-
-            The sequential number of the block that contains the lease cancel
-            transaction
+          allOf:
+            - $ref: '#/components/schemas/Height'
+          description: "The sequential number of the block that contains the cancel transaction"
         cancelTransactionId:
-          $ref: '#/components/schemas/TransactionId'
-          description: Lease cancel/invoke with cancellation transaction ID
+          allOf:
+            - $ref: '#/components/schemas/TransactionId'
+          description: ID of Lease Cancel or Invoke Script transaction that canceled the lease
     TransactionStatus:
       type: object
       properties:
@@ -3638,7 +3652,8 @@ components:
             * `unconfirmed`: transaction is in the UTX pool
             * `confirmed`: transaction is added to the block or microblock
         height:
-          $ref: '#/components/schemas/Height'
+          allOf:
+            - $ref: '#/components/schemas/Height'
           description: The sequential number of the block that contains the transaction
         confirmations:
           type: integer
@@ -3756,7 +3771,8 @@ components:
               amount:
                 $ref: '#/components/schemas/Amount'
               assetId:
-                $ref: '#/components/schemas/AssetId'
+                allOf:
+                  - $ref: '#/components/schemas/AssetId'
                 nullable: true
         call:
           type: object
@@ -3799,7 +3815,8 @@ components:
         - script
       properties:
         assetId:
-          $ref: '#/components/schemas/AssetId'
+          allOf:
+            - $ref: '#/components/schemas/AssetId'
           readOnly: true
         name:
           $ref: '#/components/schemas/AssetName'
@@ -3854,7 +3871,8 @@ components:
           format: int32
           readOnly: true
         totalAmount:
-          $ref: '#/components/schemas/Amount'
+          allOf:
+            - $ref: '#/components/schemas/Amount'
           readOnly: true
         transfers:
           type: array
@@ -3921,10 +3939,12 @@ components:
         recipient:
           $ref: '#/components/schemas/AddressOrAlias'
         assetId:
-          $ref: '#/components/schemas/AssetId'
+          allOf:
+            - $ref: '#/components/schemas/AssetId'
           nullable: true
         feeAsset:
-          $ref: '#/components/schemas/AssetId'
+          allOf:
+            - $ref: '#/components/schemas/AssetId'
           nullable: true
         amount:
           $ref: '#/components/schemas/Amount'
@@ -3957,7 +3977,8 @@ components:
         address: 
           $ref: '#/components/schemas/Address'
         asset:
-          $ref: '#/components/schemas/AssetId'
+          allOf:
+            - $ref: '#/components/schemas/AssetId'
           nullable: true
         amount:
           $ref: '#/components/schemas/Amount'

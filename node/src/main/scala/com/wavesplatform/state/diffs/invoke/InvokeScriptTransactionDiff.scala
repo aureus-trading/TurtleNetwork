@@ -1,5 +1,7 @@
 package com.wavesplatform.state.diffs.invoke
 
+import scala.util.Right
+
 import cats.Id
 import cats.syntax.either._
 import cats.syntax.semigroup._
@@ -21,21 +23,17 @@ import com.wavesplatform.lang.v1.estimator.v2.ScriptEstimatorV2
 import com.wavesplatform.lang.v1.evaluator._
 import com.wavesplatform.lang.v1.traits.Environment
 import com.wavesplatform.lang.v1.traits.domain._
-import com.wavesplatform.metrics.TxProcessingStats.TxTimerExt
 import com.wavesplatform.metrics.{TxProcessingStats => Stats}
+import com.wavesplatform.metrics.TxProcessingStats.TxTimerExt
 import com.wavesplatform.state._
-import com.wavesplatform.state.diffs.TransactionDiffer
 import com.wavesplatform.state.reader.CompositeBlockchain
-import com.wavesplatform.transaction.{Proofs, Transaction}
+import com.wavesplatform.transaction.Transaction
 import com.wavesplatform.transaction.TxValidationError._
+import com.wavesplatform.transaction.smart.{DApp => DAppTarget, _}
 import com.wavesplatform.transaction.smart.script.ScriptRunner.TxOrd
 import com.wavesplatform.transaction.smart.script.trace.{InvokeScriptTrace, TracedResult}
-import com.wavesplatform.transaction.smart.script.trace.TracedResult.Attribute
-import com.wavesplatform.transaction.smart.{DApp => DAppTarget, _}
 import monix.eval.Coeval
 import shapeless.Coproduct
-
-import scala.util.Right
 
 object InvokeScriptTransactionDiff {
 
@@ -275,12 +273,6 @@ object InvokeScriptTransactionDiff {
     }
   }
 
-  def calculateFee(blockchain: Blockchain, tx: InvokeScriptTransaction): Option[Long] = {
-    val differ = TransactionDiffer(blockchain.lastBlockTimestamp, tx.timestamp, verify = false)(blockchain, _)
-    val result = differ(tx.copy(proofs = Proofs(ByteStr.empty)))
-    result.attributeOpt[Long](Attribute.MinFee)
-  }
-
   private def evaluateV2(
       version: StdLibVersion,
       contract: DApp,
@@ -295,7 +287,7 @@ object InvokeScriptTransactionDiff {
     val evaluationCtx = CachedDAppCTX.get(version, blockchain).completeContext(environment)
     val startLimit    = limit - paymentsComplexity
     ContractEvaluator
-      .applyV2Coeval(evaluationCtx, Map(), contract, invocation, version, startLimit)
+      .applyV2Coeval(evaluationCtx, Map(), contract, invocation, version, startLimit, correctFunctionCallScope = blockchain.checkEstimatorSumOverflow)
       .runAttempt()
       .leftMap(error => (error.getMessage: ExecutionError, 0, Nil: Log[Id]))
       .flatten
@@ -308,6 +300,7 @@ object InvokeScriptTransactionDiff {
           } else
             ScriptExecutionError.dAppExecution(error, log)
       }
+      .map { r => InvokeDiffsCommon.checkScriptResultFields(blockchain, r._1); r }
   }
 
   private def checkCall(fc: FUNCTION_CALL, blockchain: Blockchain): Either[ExecutionError, Unit] = {
