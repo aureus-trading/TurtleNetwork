@@ -95,7 +95,7 @@ trait TransactionGenBase extends ScriptGen with TypedScriptGen with NTPTime { _:
   val positiveLongGen: Gen[Long] = Gen.choose(1, 100000000L * 100000000L / 100)
   val positiveIntGen: Gen[Int]   = Gen.choose(1, Int.MaxValue / 100)
   val smallFeeGen: Gen[Long]     = Gen.choose(100000000000L, 200000000000L)
-  val extraSmallFeeGen: Gen[Long]     = Gen.choose(10000000L, 100000000L)
+  val extraSmallFeeGen: Gen[Long]     = Gen.choose(100000000L, 1000000000L)
 
   val maxOrderTimeGen: Gen[Long] = Gen.choose(10000L, Order.MaxLiveTime).map(_ + ntpTime.correctedTime())
   val timestampGen: Gen[Long]    = Gen.choose(1L, Long.MaxValue - 100)

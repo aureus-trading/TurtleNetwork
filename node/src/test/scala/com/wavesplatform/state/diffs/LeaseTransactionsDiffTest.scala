@@ -205,11 +205,11 @@ class LeaseTransactionsDiffTest extends PropSpec with WithDomain {
     }
   }
 
-  private val totalBalance = 3000.waves
+  private val totalBalance = 10.waves
   private val scenario: Gen[(GenesisTransaction, LeaseTransaction)] = for {
     sender    <- accountGen
     recipient <- accountGen
-    fee       <- smallFeeGen
+    fee       <- extraSmallFeeGen
   } yield (
     GenesisTransaction.create(sender.toAddress, totalBalance, ntpTime.getTimestamp()).explicitGet(),
     LeaseTransaction.selfSigned(TxVersion.V1, sender, recipient.toAddress, totalBalance, fee, ntpTime.getTimestamp()).explicitGet()
