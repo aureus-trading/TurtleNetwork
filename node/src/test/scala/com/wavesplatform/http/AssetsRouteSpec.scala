@@ -141,8 +141,8 @@ class AssetsRouteSpec
       val req = TransferV1Request(
         assetId = None,
         feeAssetId = None,
-        amount = 1.TN,
-        fee = 0.3.TN,
+        amount = 1.waves,
+        fee = 0.3.waves,
         sender = senderPrivateKey.toAddress.toString,
         attachment = Some("attachment"),
         recipient = receiverPrivateKey.toAddress.toString,
@@ -159,9 +159,9 @@ class AssetsRouteSpec
     "accepts VersionedTransferRequest" in {
       val req = TransferV2Request(
         assetId = None,
-        amount = 1.TN,
+        amount = 1.waves,
         feeAssetId = None,
-        fee = 0.3.TN,
+        fee = 0.3.waves,
         sender = senderPrivateKey.toAddress.toString,
         attachment = None,
         recipient = receiverPrivateKey.toAddress.toString,

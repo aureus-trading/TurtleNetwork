@@ -27,7 +27,7 @@ class SmartGenerator(settings: SmartGenerator.Settings, val accounts: Seq[KeyPai
   private def generate(settings: SmartGenerator.Settings): Seq[Transaction] = {
     val bank = randomFrom(accounts).get
 
-    val fee = 0.005.waves
+    val fee = 0.06.waves
 
     val script: Script = Gen.script(settings.complexity, estimator)
 

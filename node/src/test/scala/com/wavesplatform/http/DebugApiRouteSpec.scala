@@ -981,7 +981,7 @@ class DebugApiRouteSpec
         (blockchain.accountScript _).when(TxHelpers.signer(3).toAddress).returns(None)
       }
       val route       = routeWithBlockchain(blockchain)
-      val transferFee = 100000
+      val transferFee = 2000000
 
       val tx = TxHelpers.transfer(TxHelpers.defaultSigner, TxHelpers.secondSigner.toAddress, 1.waves, fee = transferFee, version = TxVersion.V2)
       validatePost(tx) ~> route ~> check {
@@ -993,7 +993,7 @@ class DebugApiRouteSpec
       validatePost(tx2) ~> route ~> check {
         val json = Json.parse(responseAs[String])
         (json \ "valid").as[Boolean] shouldBe false
-        (json \ "error").as[String] should include("Requires 400000 extra fee")
+        (json \ "error").as[String] should include("Requires 4000000 extra fee")
       }
 
       val tx3 = TxHelpers.transfer(TxHelpers.signer(3), TestValues.address, 1.waves, fee = transferFee, version = TxVersion.V2)

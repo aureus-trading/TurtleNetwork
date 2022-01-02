@@ -126,14 +126,14 @@ class InvokeActionsFeeTest
       val invokeFromNonScripted1 = invokeFromNonScripted()
       d.appendBlock(invokeFromScripted1, invokeFromNonScripted1)
       d.blockchain.bestLiquidDiff.get.errorMessage(invokeFromScripted1.id()).get.text should include(
-        s"Fee in WAVES for InvokeScriptTransaction (${invokeFromScripted1.fee} in WAVES) " +
+        s"Fee in TN for InvokeScriptTransaction (${invokeFromScripted1.fee} in TN) " +
           s"with 6 total scripts invoked " +
-          s"does not exceed minimal value of ${FeeConstants(InvokeScriptTransaction.typeId) * FeeUnit + 6 * ScriptExtraFee} WAVES"
+          s"does not exceed minimal value of ${FeeConstants(InvokeScriptTransaction.typeId) * FeeUnit + 6 * ScriptExtraFee} TN"
       )
       d.blockchain.bestLiquidDiff.get.errorMessage(invokeFromNonScripted1.id()).get.text should include(
-        s"Fee in WAVES for InvokeScriptTransaction (${invokeFromNonScripted1.fee} in WAVES) " +
+        s"Fee in TN for InvokeScriptTransaction (${invokeFromNonScripted1.fee} in TN) " +
           s"with 5 total scripts invoked " +
-          s"does not exceed minimal value of ${FeeConstants(InvokeScriptTransaction.typeId) * FeeUnit + 5 * ScriptExtraFee} WAVES"
+          s"does not exceed minimal value of ${FeeConstants(InvokeScriptTransaction.typeId) * FeeUnit + 5 * ScriptExtraFee} TN"
       )
 
       d.appendBlock()
@@ -143,9 +143,9 @@ class InvokeActionsFeeTest
       val invokeFromNonScripted2 = invokeFromNonScripted()
       d.appendBlock(invokeFromScripted2, invokeFromNonScripted2)
       d.blockchain.bestLiquidDiff.get.errorMessage(invokeFromScripted2.id()).get.text should include(
-        s"Fee in WAVES for InvokeScriptTransaction (${invokeFromScripted2.fee} in WAVES) " +
+        s"Fee in TN for InvokeScriptTransaction (${invokeFromScripted2.fee} in TN) " +
           s"with 1 total scripts invoked " +
-          s"does not exceed minimal value of ${FeeConstants(InvokeScriptTransaction.typeId) * FeeUnit + ScriptExtraFee} WAVES"
+          s"does not exceed minimal value of ${FeeConstants(InvokeScriptTransaction.typeId) * FeeUnit + ScriptExtraFee} TN"
       )
       d.blockchain.bestLiquidDiff.get.errorMessage(invokeFromNonScripted2.id()) shouldBe None
     }

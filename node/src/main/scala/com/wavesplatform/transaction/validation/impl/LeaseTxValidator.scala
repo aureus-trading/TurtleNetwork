@@ -20,5 +20,5 @@ object LeaseTxValidator extends TxValidator[LeaseTransaction] {
   }
 
   def validateAmount(amount: TxAmount) =
-    Either.cond(amount > 0, (), TxValidationError.NonPositiveAmount(amount, "waves"))
+    Either.cond(amount > 0, (), TxValidationError.NonPositiveAmount(amount, "TN"))
 }

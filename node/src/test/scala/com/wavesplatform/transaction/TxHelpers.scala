@@ -43,7 +43,7 @@ object TxHelpers {
 
   def issue(amount: Long = 1000, script: Script = null): IssueTransaction =
     IssueTransaction
-      .selfSigned(TxVersion.V2, defaultSigner, "test", "", amount, 0, reissuable = true, Option(script), 1.TN, timestamp)
+      .selfSigned(TxVersion.V2, defaultSigner, "test", "", amount, 0, reissuable = true, Option(script), 1.waves, timestamp)
       .explicitGet()
 
   def reissue(asset: IssuedAsset, amount: Long = 1000): ReissueTransaction =
@@ -115,11 +115,11 @@ object TxHelpers {
     InvokeScriptTransaction.selfSigned(TxVersion.V1, defaultSigner, dApp, Some(fc), payments, fee, feeAssetId, timestamp).explicitGet()
   }
 
-  def lease(recipient: AddressOrAlias = secondAddress, amount: TxAmount = 10.TN): LeaseTransaction = {
+  def lease(recipient: AddressOrAlias = secondAddress, amount: TxAmount = 10.waves): LeaseTransaction = {
     LeaseTransaction.selfSigned(TxVersion.V2, defaultSigner, recipient, amount, TestValues.fee, timestamp).explicitGet()
   }
 
   def leaseCancel(leaseId: ByteStr): LeaseCancelTransaction = {
-    LeaseCancelTransaction.selfSigned(TxVersion.V2, defaultSigner, leaseId, TestValues.fee, timestamp).explicitGet()
+    LeaseCancelTransaction.selfSigned(TxVersion.V2, defaultSigner, leaseId, TestValues.feeSmall, timestamp).explicitGet()
   }
 }

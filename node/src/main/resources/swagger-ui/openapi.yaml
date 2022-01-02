@@ -164,7 +164,7 @@ paths:
       tags:
         - addresses
       summary: Regular balance
-      description: Get the regular balance in WAVES at a given address
+      description: Get the regular balance in TN at a given address
       operationId: getRegularBalance
       parameters:
         - $ref: '#/components/parameters/address'
@@ -261,7 +261,7 @@ paths:
       tags:
         - addresses
       summary: Effective balance
-      description: Get the effective balance in WAVES at a given address
+      description: Get the effective balance in TN at a given address
       operationId: getEffectiveBalance
       parameters:
         - $ref: '#/components/parameters/address'
@@ -475,7 +475,7 @@ paths:
     get:
       tags:
         - addresses
-      summary: All types of balances in WAVES
+      summary: All types of balances in TN
       description: >-
         Get the available, regular, generating, and effective balance, see
         [definitions](https://docs.waves.tech/en/blockchain/account/account-balance#account-balance-in-waves)
@@ -514,7 +514,7 @@ paths:
     get:
       tags:
         - addresses
-      summary: Confirmed regular balance in WAVES
+      summary: Confirmed regular balance in TN
       description: >-
         Get the minimum regular balance at a given address for {confirmations}
         blocks back from the current height. Max number of confirmations is set
@@ -539,7 +539,7 @@ paths:
     get:
       tags:
         - addresses
-      summary: Confirmed effective balance in WAVES
+      summary: Confirmed effective balance in TN
       description: >-
         Get the minimum effective balance at a given address for {confirmations}
         blocks from the current height. Max number of confirmations is set by

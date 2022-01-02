@@ -252,7 +252,7 @@ class TransactionsRouteSpec
         )
         Post(routePath("/calculateFee"), tx1) ~> route ~> check {
           status shouldEqual StatusCodes.OK
-          (responseAs[JsObject] \ "feeAmount").as[Long] shouldEqual 100000
+          (responseAs[JsObject] \ "feeAmount").as[Long] shouldEqual 2000000
         }
 
         val tx2 = Json.obj(
@@ -264,7 +264,7 @@ class TransactionsRouteSpec
         )
         Post(routePath("/calculateFee"), tx2) ~> route ~> check {
           status shouldEqual StatusCodes.OK
-          (responseAs[JsObject] \ "feeAmount").as[Long] shouldEqual 500000
+          (responseAs[JsObject] \ "feeAmount").as[Long] shouldEqual 6000000
         }
 
         val tx3 = Json.obj(
@@ -276,7 +276,7 @@ class TransactionsRouteSpec
         )
         Post(routePath("/calculateFee"), tx3) ~> route ~> check {
           status shouldEqual StatusCodes.OK
-          (responseAs[JsObject] \ "feeAmount").as[Long] shouldEqual 100000
+          (responseAs[JsObject] \ "feeAmount").as[Long] shouldEqual 2000000
         }
       }
     }
@@ -360,7 +360,7 @@ class TransactionsRouteSpec
                                    |  "id" : "${leaseCancel.id()}",
                                    |  "sender" : "3MtGzgmNa5fMjGCcPi5nqMTdtZkfojyWHL9",
                                    |  "senderPublicKey" : "9BUoYQYq7K38mkk61q8aMH9kD9fKSVL1Fib7FbH6nUkQ",
-                                   |  "fee" : 1000000,
+                                   |  "fee" : 2000000,
                                    |  "feeAssetId" : null,
                                    |  "timestamp" : ${leaseCancel.timestamp},
                                    |  "proofs" : [ "${leaseCancel.signature}" ],
@@ -579,7 +579,7 @@ class TransactionsRouteSpec
                                    |  "id" : "${leaseCancel.id()}",
                                    |  "sender" : "3MtGzgmNa5fMjGCcPi5nqMTdtZkfojyWHL9",
                                    |  "senderPublicKey" : "9BUoYQYq7K38mkk61q8aMH9kD9fKSVL1Fib7FbH6nUkQ",
-                                   |  "fee" : 1000000,
+                                   |  "fee" : 2000000,
                                    |  "feeAssetId" : null,
                                    |  "timestamp" : ${leaseCancel.timestamp},
                                    |  "proofs" : [ "${leaseCancel.signature}" ],

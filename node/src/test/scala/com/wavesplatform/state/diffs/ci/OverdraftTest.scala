@@ -97,7 +97,7 @@ class OverdraftTest extends PropSpec with WithState {
     ) {
       case (genesis, setDApp, ci, settings, issue) =>
         assertDiffEi(Seq(TestBlock.create(genesis ++ List(setDApp, issue))), TestBlock.create(Seq(ci)), settings) {
-          _ should produce("leads to negative waves balance to (at least) temporary negative state")
+          _ should produce("leads to negative TN balance to (at least) temporary negative state")
         }
     }
   }

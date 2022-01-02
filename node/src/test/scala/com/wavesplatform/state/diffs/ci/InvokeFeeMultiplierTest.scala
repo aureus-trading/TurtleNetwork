@@ -108,7 +108,7 @@ class InvokeFeeMultiplierTest extends PropSpec with WithState with DBCacheSettin
       d.blockchainUpdater.height shouldBe estimatorV3ActivationHeight
 
       Try(d.appendBlock(invoke2)).toEither should produce(
-        s"Fee in WAVES for InvokeScriptTransaction (${invoke2.fee} in WAVES) with 3 invocation steps does not exceed minimal value of 1500000 WAVES"
+        s"Fee in TN for InvokeScriptTransaction (${invoke2.fee} in TN) with 3 invocation steps does not exceed minimal value of 18000000 TN"
       )
 
       d.appendBlock()

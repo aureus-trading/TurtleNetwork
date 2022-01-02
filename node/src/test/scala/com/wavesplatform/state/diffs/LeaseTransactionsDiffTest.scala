@@ -205,7 +205,7 @@ class LeaseTransactionsDiffTest extends PropSpec with WithDomain {
     }
   }
 
-  private val totalBalance = 1000.waves
+  private val totalBalance = 100.waves
   private val scenario: Gen[(GenesisTransaction, LeaseTransaction)] = for {
     sender    <- accountGen
     recipient <- accountGen

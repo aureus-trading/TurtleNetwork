@@ -223,8 +223,8 @@ class SmartAccountFeeTest extends PropSpec with WithDomain {
     e.getMessage should startWith
     "TransactionValidationError(cause = GenericError(Transaction sent from smart account. " +
       s"Requires $ScriptExtraFee extra fee.. " +
-      s"Fee for ${Constants.TransactionNames(tx.typeId)} (${tx.fee} in WAVES) " +
-      s"does not exceed minimal value of ${FeeConstants(tx.typeId) * FeeUnit + ScriptExtraFee} WAVES.)"
+      s"Fee for ${Constants.TransactionNames(tx.typeId)} (${tx.fee} in TN) " +
+      s"does not exceed minimal value of ${FeeConstants(tx.typeId) * FeeUnit + ScriptExtraFee} TN.)"
   }
 
   private def assertNoError(tx: Transaction, d: Domain) =

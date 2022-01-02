@@ -24,7 +24,7 @@ class OracleTransactionGenerator(settings: Settings, val accounts: Seq[KeyPair],
 
     val script = Gen.oracleScript(oracle, settings.requiredData, estimator)
 
-    val enoughFee = 0.005.waves
+    val enoughFee = 0.06.waves
 
     val setScript: Transaction =
       SetScriptTransaction

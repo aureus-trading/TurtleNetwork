@@ -25,7 +25,7 @@ class IssueTransactionV1Specification extends PropSpec {
                        "id": "9ekQuYn92natMnMq8KqeGK3Nn7cpKd3BvPEGgD6fFyyz",
                        "sender": "3N5GRqzDBhjVXnCn44baHcz2GoZy5qLxtTh",
                        "senderPublicKey": "FM5ojNqW7e9cZ9zhPYGkpSP1Pcd8Z3e3MNKYVS5pGJ8Z",
-                       "fee": 100000000,
+                       "fee": 100000000000,
                        "feeAssetId": null,
                        "timestamp": 1526287561757,
                        "version": 1,
@@ -82,7 +82,7 @@ class IssueTransactionV1Specification extends PropSpec {
       8.toByte,
       true,
       script = None,
-      100000000,
+      100000000000L,
       1526287561757L,
       Proofs(ByteStr.decodeBase58("28kE1uN1pX2bwhzr9UHw5UuB9meTFEDFgeunNgy6nZWpHX4pzkGYotu8DhQ88AdqUG6Yy5wcXgHseKPBUygSgRMJ").get)
     )

@@ -497,7 +497,7 @@ class BlockchainUpdatesSpec extends FreeSpec with WithDomain with ScalaFutures w
       d.appendBlock(
         GenesisTransaction.create(issuerAddress, 1000.waves, ntpTime.getTimestamp()).explicitGet(),
         GenesisTransaction.create(invoker.toAddress, 1000.waves, ntpTime.getTimestamp()).explicitGet(),
-        SetScriptTransaction.selfSigned(2.toByte, issuer, Some(dAppScript), 0.005.waves, ntpTime.getTimestamp()).explicitGet(),
+        SetScriptTransaction.selfSigned(2.toByte, issuer, Some(dAppScript), 0.06.waves, ntpTime.getTimestamp()).explicitGet(),
         invoke
       )
 

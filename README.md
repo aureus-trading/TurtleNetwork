@@ -46,7 +46,7 @@ cd TurtleNetwork
 *3. Compile and run tests*
 
 ```bash
-sbt checkPR
+sbt --mem 6144 --batch checkPR
 ```
 
 *4. Run integration tests (optional)*

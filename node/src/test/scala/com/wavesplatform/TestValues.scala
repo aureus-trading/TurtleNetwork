@@ -15,6 +15,7 @@ object TestValues {
   val bigMoney: Long     = com.wavesplatform.state.diffs.ENOUGH_AMT
   val timestamp: Long    = System.currentTimeMillis()
   val fee: Long          = 1e8.toLong
+  val feeSmall: Long     = 2e6.toLong
 
   val (script, scriptComplexity) = ScriptCompiler
     .compile(

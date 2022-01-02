@@ -26,7 +26,7 @@ class SerContextFunctionsTest extends PropSpec {
         1.toByte,
         PublicKey.fromBase58String("FM5ojNqW7e9cZ9zhPYGkpSP1Pcd8Z3e3MNKYVS5pGJ8Z").explicitGet(),
         List(entry1, entry2, entry3, entry4),
-        100000,
+        100000000,
         1526911531530L,
         Proofs(Seq(ByteStr.decodeBase58("32mNYSefBTrkVngG5REkmmGAVv69ZvNhpbegmnqDReMTmXNyYqbECPgHgXrX2UwyKGLFS45j7xDFyPXjF8jcfw94").get))
       )

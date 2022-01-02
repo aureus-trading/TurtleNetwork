@@ -35,11 +35,11 @@ class SubInvokeStateChangesSpec extends FlatSpec with WithDomain with JsonMatche
 
       val genesis = Seq(
         TxHelpers.genesis(TxHelpers.defaultAddress),
-        TxHelpers.genesis(dAppAddress.toAddress, 1.waves),
-        TxHelpers.genesis(addr2f.toAddress, 1.waves),
-        TxHelpers.genesis(addr3f.toAddress, 1.waves),
-        TxHelpers.genesis(addr2s.toAddress, 1.waves),
-        TxHelpers.genesis(addr3s.toAddress, 1.waves)
+        TxHelpers.genesis(dAppAddress.toAddress, 2.waves),
+        TxHelpers.genesis(addr2f.toAddress, 2.waves),
+        TxHelpers.genesis(addr3f.toAddress, 2.waves),
+        TxHelpers.genesis(addr2s.toAddress, 2.waves),
+        TxHelpers.genesis(addr3s.toAddress, 2.waves)
       )
       val setScripts = Seq(
         TxHelpers.setScript(dAppAddress, script1),

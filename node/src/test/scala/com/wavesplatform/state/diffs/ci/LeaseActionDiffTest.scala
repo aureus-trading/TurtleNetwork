@@ -574,7 +574,7 @@ class LeaseActionDiffTest extends PropSpec with WithDomain {
           v5Features
         ) {
           case (diff, _) =>
-            diff.errorMessage(invoke.id()).get.text shouldBe "NonPositiveAmount(0,waves)"
+            diff.errorMessage(invoke.id()).get.text shouldBe "NonPositiveAmount(0,TN)"
         }
     }
   }
@@ -588,7 +588,7 @@ class LeaseActionDiffTest extends PropSpec with WithDomain {
           v5Features
         ) {
           case (diff, _) =>
-            diff.errorMessage(invoke.id()).get.text shouldBe "NonPositiveAmount(-100,waves)"
+            diff.errorMessage(invoke.id()).get.text shouldBe "NonPositiveAmount(-100,TN)"
         }
     }
   }

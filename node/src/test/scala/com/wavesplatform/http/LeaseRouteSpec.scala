@@ -81,7 +81,7 @@ class LeaseRouteSpec
           |  ]
           |}
           |""".stripMargin)),
-        0.01.waves,
+        0.1.waves,
         ntpTime.getTimestamp()
       )
       .explicitGet()
@@ -99,14 +99,14 @@ class LeaseRouteSpec
           )
         ),
         Seq.empty,
-        0.005.waves,
+        0.06.waves,
         Asset.Waves,
         ntpTime.getTimestamp()
       )
       .explicitGet()
 
   private def leaseCancelTransaction(sender: KeyPair, leaseId: ByteStr) =
-    LeaseCancelTransaction.selfSigned(TxVersion.V3, sender, leaseId, 0.001.waves, ntpTime.getTimestamp()).explicitGet()
+    LeaseCancelTransaction.selfSigned(TxVersion.V3, sender, leaseId, 0.02.waves, ntpTime.getTimestamp()).explicitGet()
 
   private def checkDetails(id: ByteStr, details: LeaseDetails, json: JsObject): Unit = {
     (json \ "id").as[ByteStr] shouldEqual id
@@ -214,7 +214,7 @@ class LeaseRouteSpec
             )
           ),
           Seq.empty,
-          0.005.waves,
+          0.06.waves,
           Asset.Waves,
           ntpTime.getTimestamp()
         )
@@ -341,7 +341,7 @@ class LeaseRouteSpec
                 )
               ),
               Seq.empty,
-              0.005.waves,
+              0.06.waves,
               Asset.Waves,
               ntpTime.getTimestamp()
             )
