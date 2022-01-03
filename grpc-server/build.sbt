@@ -1,6 +1,6 @@
 import sbt.nio.file.FileAttributes
 
-name := "TN-grpc-server"
+name := "tn-grpc-server"
 
 libraryDependencies ++= Dependencies.grpc
 

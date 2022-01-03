@@ -2,7 +2,7 @@ import CommonSettings.autoImport.network
 import com.typesafe.sbt.SbtNativePackager.Universal
 import sbtassembly.MergeStrategy
 
-name := "TN"
+name := "tn"
 maintainer := "turtlenetwork.eu"
 
 enablePlugins(RunApplicationSettings, JavaServerAppPackaging, UniversalDeployPlugin, JDebPackaging, SystemdPlugin, GitVersioning, VersionObject)
@@ -25,7 +25,7 @@ inConfig(Compile)(
 inTask(assembly)(
   Seq(
     test := {},
-    assemblyJarName := s"TN-all-${version.value}.jar",
+    assemblyJarName := s"tn-all-${version.value}.jar",
     assemblyMergeStrategy := {
       case p
           if p.endsWith(".proto") ||
@@ -76,7 +76,7 @@ linuxScriptReplacements += ("network" -> network.value.toString)
 
 inConfig(Universal)(
   Seq(
-    mappings += (baseDirectory.value / s"TN-sample.conf" -> "doc/TN.conf.sample"),
+    mappings += (baseDirectory.value / s"tn-sample.conf" -> "doc/tn.conf.sample"),
     javaOptions ++= Seq(
       // -J prefix is required by the bash script
       "-J-server",
@@ -93,8 +93,8 @@ inConfig(Universal)(
 
 inConfig(Linux)(
   Seq(
-    packageSummary := "TN node",
-    packageDescription := "TN node",
+    packageSummary := "tn node",
+    packageDescription := "tn node",
     name := s"${name.value}${network.value.packageSuffix}",
     normalizedName := name.value,
     packageName := normalizedName.value

@@ -1,7 +1,7 @@
 ${{header}}
 ${{loader-functions}}
 
-config_file=/etc/${{app_name}}/TN.conf
+config_file=/etc/${{app_name}}/tn.conf
 
 if [ "$1" = configure ]; then
     # make sure the user exists
@@ -28,13 +28,13 @@ if [ "$1" = configure ]; then
     chmod 770 /var/log/${{app_name}}
     chown root:${{app_name}} /var/log/${{app_name}}
 
-    if [ -f /etc/${{app_name}}/TN.json ]; then
-        mv /etc/${{app_name}}/TN.json /etc/${{app_name}}/TN.json.bak
+    if [ -f /etc/${{app_name}}/tn.json ]; then
+        mv /etc/${{app_name}}/tn.json /etc/${{app_name}}/tn.json.bak
     fi
 
     if [ ! -f "$config_file" ]; then
         echo Creating default config file ...
-        cp /usr/share/${{app_name}}/doc/TN.conf.sample "$config_file"
+        cp /usr/share/${{app_name}}/doc/tn.conf.sample "$config_file"
         chmod 600 "$config_file"
         chown ${{app_name}}:${{app_name}} "$config_file"
     fi

@@ -106,7 +106,7 @@ package object settings {
         } else
           bc.toLowerCase
 
-      s"TN-$suffix"
+      s"tn-$suffix"
     }
 
     val parent =

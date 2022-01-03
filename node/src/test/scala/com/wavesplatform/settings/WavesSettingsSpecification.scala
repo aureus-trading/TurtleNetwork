@@ -10,7 +10,7 @@ class WavesSettingsSpecification extends FlatSpec {
   private def config(configName: String) = {
     WavesSettings.fromRootConfig(
       com.wavesplatform.settings.loadConfig(
-        ConfigFactory.parseFile(new File(s"TN-$configName.conf"))
+        ConfigFactory.parseFile(new File(s"tn-$configName.conf"))
       )
     )
   }

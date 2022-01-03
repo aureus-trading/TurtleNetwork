@@ -15,16 +15,16 @@ COPY build-scripts /tmp/
 RUN /bin/bash /tmp/setup-deps.sh
 
 # Node DEB files
-ENV WVDATA=/var/lib/TN
-ENV WVLOG=/var/log/TN
+ENV WVDATA=/var/lib/tn
+ENV WVLOG=/var/log/tn
 COPY target /tmp/
 RUN /bin/bash /tmp/setup-node.sh
 
 EXPOSE 6861 6860 6560 6862 6870
-VOLUME /var/lib/TN
-VOLUME /var/log/TN
-VOLUME /usr/share/TN/lib/plugins
-WORKDIR /var/lib/TN
+VOLUME /var/lib/tn
+VOLUME /var/log/tn
+VOLUME /usr/share/tn/lib/plugins
+WORKDIR /var/lib/tn
 
 STOPSIGNAL SIGINT
-ENTRYPOINT ["/usr/share/TN/bin/entrypoint.sh"]
+ENTRYPOINT ["/usr/share/tn/bin/entrypoint.sh"]

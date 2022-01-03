@@ -3,7 +3,7 @@ shopt -s nullglob
 NETWORKS="mainnet testnet stagenet custom"
 
 logEcho() {
-  echo $1 | gosu TN tee -a /var/log/TN/TN.log
+  echo $1 | gosu TN tee -a /var/log/tn/tn.log
 }
 
 mkdir -p $WVDATA $WVLOG
@@ -15,7 +15,7 @@ if [ "$user" = '0' ]; then
   find $WVLOG \! -user TN -exec chown TN '{}' +
 fi
 
-[ -z "${WAVES_CONFIG}" ] && WAVES_CONFIG="/etc/TN/TN.conf"
+[ -z "${WAVES_CONFIG}" ] && WAVES_CONFIG="/etc/tn/tn.conf"
 if [[ ! -f "$WAVES_CONFIG" ]]; then
   logEcho "Custom '$WAVES_CONFIG' not found. Using a default one for '${WAVES_NETWORK,,}' network."
   if [[ $NETWORKS == *"${WAVES_NETWORK,,}"* ]]; then
@@ -23,7 +23,7 @@ if [[ ! -f "$WAVES_CONFIG" ]]; then
     echo "TN.blockchain.type=${WAVES_NETWORK}" >>$WAVES_CONFIG
 
     sed -i 's/include "local.conf"//' "$WAVES_CONFIG"
-    for f in /etc/TN/ext/*.conf; do
+    for f in /etc/tn/ext/*.conf; do
       echo "Adding $f extension config to TN.conf"
       echo "include required(\"$f\")" >>$WAVES_CONFIG
     done
@@ -55,4 +55,4 @@ JAVA_OPTS="-Dlogback.stdout.level=${WAVES_LOG_LEVEL}
   -Dlogback.file.directory=$WVLOG
   -Dconfig.override_with_env_vars=true
   ${JAVA_OPTS}
-  -cp '/usr/share/TN/lib/plugins/*:/usr/share/TN/lib/*'" exec gosu TN TN "$WAVES_CONFIG"
+  -cp '/usr/share/tn/lib/plugins/*:/usr/share/tn/lib/*'" exec gosu tn tn "$WAVES_CONFIG"

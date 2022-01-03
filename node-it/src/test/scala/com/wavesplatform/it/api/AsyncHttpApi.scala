@@ -367,7 +367,7 @@ object AsyncHttpApi extends Assertions {
       )
 
     def payment(sourceAddress: String, recipient: String, amount: Long, fee: Long): Future[Transaction] =
-      postJson("/TN/payment", PaymentRequest(amount, fee, sourceAddress, recipient)).as[Transaction]
+      postJson("/tn/payment", PaymentRequest(amount, fee, sourceAddress, recipient)).as[Transaction]
 
     def lease(sender: KeyPair, recipient: String, amount: Long, fee: Long, version: TxVersion = TxVersion.V2): Future[Transaction] =
       signedBroadcast(
