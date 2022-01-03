@@ -215,7 +215,7 @@ class SetAssetScriptTransactionSuite extends BaseTransactionSuite {
       miner.assertBalances(firstAddress, balance, eff)
     }
 
-    val leaseAmount = 1.TN
+    val leaseAmount = 1.waves
     val leaseId     = sender.lease(firstKeyPair, secondAddress, leaseAmount, minFee).id
     nodes.waitForHeightAriseAndTxPresent(leaseId)
 

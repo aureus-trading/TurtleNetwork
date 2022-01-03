@@ -71,7 +71,7 @@ class LeasingTransactionsGrpcSuite extends GrpcBaseTransactionSuite {
 
       //secondAddress effective balance more than general balance
       assertGrpcError(
-        sender.broadcastLease(secondAcc, Recipient().withPublicKeyHash(firstAddress), secondBalance.regular + 1.TN, minFee, version = v),
+        sender.broadcastLease(secondAcc, Recipient().withPublicKeyHash(firstAddress), secondBalance.regular + 1.waves, minFee, version = v),
         errorMessage,
         Code.INVALID_ARGUMENT
       )

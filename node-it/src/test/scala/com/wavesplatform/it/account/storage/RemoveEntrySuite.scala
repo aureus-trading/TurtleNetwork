@@ -94,7 +94,7 @@ class RemoveEntrySuite extends BaseFreeSpec {
         StringDataEntry(s"$i", "q")
       } ++ List(IntegerDataEntry("93", 1), BooleanDataEntry("94", true), BinaryDataEntry("95", ByteStr("1212".getBytes())))
 
-      miner.putData(keyPair, data.toList, 1.TN, true)
+      miner.putData(keyPair, data.toList, 1.waves, true)
 
       miner.getData(keyPair.toAddress.toString) should have size 101
 
@@ -110,7 +110,7 @@ class RemoveEntrySuite extends BaseFreeSpec {
         StringDataEntry(s"$i", "q")
       }
 
-      miner.putData(keyPair, data.toList, 1.TN, true)
+      miner.putData(keyPair, data.toList, 1.waves, true)
       miner.getData(keyPair.toAddress.toString) should have size 101
 
       assertApiError(
@@ -140,7 +140,7 @@ class RemoveEntrySuite extends BaseFreeSpec {
       .explicitGet()
       ._1
 
-    miner.transfer(sender.keyPair, address.toAddress.toString, 10.TN, minFee, waitForTx = true)
+    miner.transfer(sender.keyPair, address.toAddress.toString, 10.waves, minFee, waitForTx = true)
 
     nodes.waitForTransaction(
       miner

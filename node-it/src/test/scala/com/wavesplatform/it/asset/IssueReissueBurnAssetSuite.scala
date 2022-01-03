@@ -25,9 +25,9 @@ class IssueReissueBurnAssetSuite extends BaseFreeSpec {
       .overrideBase(_.quorum(0))
       .withDefault(1)
       .buildNonConflicting()
-  private val initialWavesBalance = 2100.TN
-  private val initialWavesBalanceBig = 12000.TN
-  private val setScriptPrice      = 1.TN
+  private val initialWavesBalance = 2100.waves
+  private val initialWavesBalanceBig = 12000.waves
+  private val setScriptPrice      = 1.waves
 
   private val CallableMethod    = "@Callable"
   private val TransactionMethod = "Transaction"
@@ -582,7 +582,7 @@ class IssueReissueBurnAssetSuite extends BaseFreeSpec {
   }
 
   def invocationCost(aCount: Int, isSmartAcc: Boolean = true, sPCount: Int = 0, sAinActions: Int = 0): Long = {
-    0.1.TN + (if (isSmartAcc) 0.04.TN else 0L) + 0.04.TN * sPCount + 0.04.TN * sAinActions + 1000.TN * aCount
+    0.1.waves + (if (isSmartAcc) 0.04.waves else 0L) + 0.04.waves * sPCount + 0.04.waves * sAinActions + 1000.waves * aCount
   }
 
   def script(asset: Asset, function: String = ""): String = {

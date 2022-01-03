@@ -13,28 +13,28 @@ import com.wavesplatform.transaction.assets.IssueTransaction
 import com.wavesplatform.transaction.smart.script.ScriptCompiler
 
 package object sync {
-  val smartFee: Long                   = 0.04.TN
-  val minFee: Long                     = 0.02.TN
-  val leasingFee: Long                 = 0.02.TN
-  val issueFee: Long                   = 1000.TN
-  val reissueFee: Long                 = 1000.TN
-  val reissueReducedFee: Long          = 1.TN
-  val burnFee: Long                    = 0.02.TN
-  val aliasFeeAmount: Long                  = 10.TN
-  val invokeFee: Long                  = 1.TN
-  val sponsorFee: Long                 = 10.TN
-  val sponsorReducedFee: Long          = 0.02.TN
-  val setAssetScriptFee: Long          = 1.TN + smartFee
-  val setScriptFee: Long               = 1.TN
-  val transferAmount: Long             = 1100.TN
-  val tokenTransferAmount: Long        = 10.TN
+  val smartFee: Long                   = 0.04.waves
+  val minFee: Long                     = 0.02.waves
+  val leasingFee: Long                 = 0.02.waves
+  val issueFee: Long                   = 1000.waves
+  val reissueFee: Long                 = 1000.waves
+  val reissueReducedFee: Long          = 1.waves
+  val burnFee: Long                    = 0.02.waves
+  val aliasFeeAmount: Long                  = 10.waves
+  val invokeFee: Long                  = 1.waves
+  val sponsorFee: Long                 = 10.waves
+  val sponsorReducedFee: Long          = 0.02.waves
+  val setAssetScriptFee: Long          = 1.waves + smartFee
+  val setScriptFee: Long               = 1.waves
+  val transferAmount: Long             = 1100.waves
+  val tokenTransferAmount: Long        = 10.waves
   val leasingAmount: Long              = transferAmount
   val issueAmount: Long                = transferAmount
-  val massTransferFeePerTransfer: Long = 0.01.TN
+  val massTransferFeePerTransfer: Long = 0.01.waves
   val someAssetAmount: Long            = 9999999999999L
-  val matcherFee: Long                 = 0.04.TN
+  val matcherFee: Long                 = 0.04.waves
   val orderFee: Long                   = matcherFee
-  val smartMatcherFee: Long            = 0.08.TN
+  val smartMatcherFee: Long            = 0.08.waves
   val smartMinFee: Long                = minFee + smartFee
 
   def calcDataFee(data: List[DataEntry[_]], txVersion: Byte): Long = {

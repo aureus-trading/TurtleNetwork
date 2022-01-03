@@ -232,8 +232,8 @@ class SponsorshipSuite
     }
 
     "waves fee depends on sponsor fee and sponsored token decimals" in {
-      val transferTxCustomLargeFeeAlice1 = sender.transfer(alice, bobAddress, 1.TN, LargeFee, None, Some(firstSponsorAssetId)).id
-      val transferTxCustomLargeFeeAlice2 = sender.transfer(alice, bobAddress, 1.TN, LargeFee, None, Some(secondSponsorAssetId)).id
+      val transferTxCustomLargeFeeAlice1 = sender.transfer(alice, bobAddress, 1.waves, LargeFee, None, Some(firstSponsorAssetId)).id
+      val transferTxCustomLargeFeeAlice2 = sender.transfer(alice, bobAddress, 1.waves, LargeFee, None, Some(secondSponsorAssetId)).id
       nodes.waitForHeightAriseAndTxPresent(transferTxCustomLargeFeeAlice1)
       nodes.waitForHeightAriseAndTxPresent(transferTxCustomLargeFeeAlice2)
 
@@ -333,8 +333,8 @@ class SponsorshipSuite
         val minerFirstAssetBalance    = miner.assetBalance(miner.address, firstSponsorAssetId).balance
         val minerSecondAssetBalance   = miner.assetBalance(miner.address, secondSponsorAssetId).balance
 
-        val transferTxCustomFeeAlice1 = sender.transfer(alice, bobAddress, 1.TN, TinyFee, None, Some(firstSponsorAssetId)).id
-        val transferTxCustomFeeAlice2 = sender.transfer(alice, bobAddress, 1.TN, TinyFee, None, Some(secondSponsorAssetId)).id
+        val transferTxCustomFeeAlice1 = sender.transfer(alice, bobAddress, 1.waves, TinyFee, None, Some(firstSponsorAssetId)).id
+        val transferTxCustomFeeAlice2 = sender.transfer(alice, bobAddress, 1.waves, TinyFee, None, Some(secondSponsorAssetId)).id
         nodes.waitForHeight(
           math.max(
             sender.waitForTransaction(transferTxCustomFeeAlice1).height,
@@ -348,8 +348,8 @@ class SponsorshipSuite
         sender.assertAssetBalance(sponsorAddress, secondSponsorAssetId, sponsorSecondAssetBalance + TinyFee)
         sender.assertAssetBalance(aliceAddress, firstSponsorAssetId, aliceFirstAssetBalance - TinyFee)
         sender.assertAssetBalance(aliceAddress, secondSponsorAssetId, aliceSecondAssetBalance - TinyFee)
-        sender.assertBalances(aliceAddress, aliceWavesBalance._1 - 2.TN, aliceWavesBalance._2 - 2.TN)
-        sender.assertBalances(bobAddress, bobWavesBalance._1 + 2.TN, bobWavesBalance._2 + 2.TN)
+        sender.assertBalances(aliceAddress, aliceWavesBalance._1 - 2.waves, aliceWavesBalance._2 - 2.waves)
+        sender.assertBalances(bobAddress, bobWavesBalance._1 + 2.waves, bobWavesBalance._2 + 2.waves)
         sender.assertAssetBalance(bobAddress, firstSponsorAssetId, bobFirstAssetBalance)
         sender.assertAssetBalance(bobAddress, secondSponsorAssetId, bobSecondAssetBalance)
         miner.assertBalances(miner.address, minerBalance._2 + wavesFee)
@@ -403,8 +403,8 @@ class SponsorshipSuite
         val bobWavesBalance           = sender.accountBalances(bobAddress)
         val minerBalance              = miner.accountBalances(miner.address)
 
-        val transferTxCustomFeeAlice1 = sender.transfer(alice, bobAddress, 1.TN, LargeFee, None, Some(firstSponsorAssetId)).id
-        val transferTxCustomFeeAlice2 = sender.transfer(alice, bobAddress, 1.TN, LargeFee, None, Some(secondSponsorAssetId)).id
+        val transferTxCustomFeeAlice1 = sender.transfer(alice, bobAddress, 1.waves, LargeFee, None, Some(firstSponsorAssetId)).id
+        val transferTxCustomFeeAlice2 = sender.transfer(alice, bobAddress, 1.waves, LargeFee, None, Some(secondSponsorAssetId)).id
         nodes.waitForHeightArise()
         nodes.waitForTransaction(transferTxCustomFeeAlice1)
         nodes.waitForTransaction(transferTxCustomFeeAlice2)
@@ -417,8 +417,8 @@ class SponsorshipSuite
         sender.assertAssetBalance(aliceAddress, firstSponsorAssetId, aliceFirstAssetBalance - LargeFee)
         sender.assertAssetBalance(aliceAddress, secondSponsorAssetId, aliceSecondAssetBalance - LargeFee)
 
-        sender.assertBalances(aliceAddress, aliceWavesBalance._1 - 2.TN, aliceWavesBalance._2 - 2.TN)
-        sender.assertBalances(bobAddress, bobWavesBalance._1 + 2.TN, bobWavesBalance._2 + 2.TN)
+        sender.assertBalances(aliceAddress, aliceWavesBalance._1 - 2.waves, aliceWavesBalance._2 - 2.waves)
+        sender.assertBalances(bobAddress, bobWavesBalance._1 + 2.waves, bobWavesBalance._2 + 2.waves)
         miner.assertBalances(miner.address, minerBalance._1 + wavesFee, minerBalance._2 + wavesFee)
       }
 

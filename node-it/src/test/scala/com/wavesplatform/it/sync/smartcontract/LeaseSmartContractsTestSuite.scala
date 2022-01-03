@@ -48,7 +48,7 @@ class LeaseSmartContractsTestSuite extends BaseTransactionSuite with CancelAfter
           acc0.publicKey,
           acc2.toAddress,
           transferAmount,
-          minFee + 0.2.TN,
+          minFee + 0.2.waves,
           System.currentTimeMillis(),
           Proofs.empty
         )
@@ -65,8 +65,8 @@ class LeaseSmartContractsTestSuite extends BaseTransactionSuite with CancelAfter
 
     miner.assertBalances(
       firstAddress,
-      balance1 + 10 * transferAmount - (minFee + setScriptFee + 0.2.TN),
-      eff1 + 9 * transferAmount - (minFee + setScriptFee + 0.2.TN)
+      balance1 + 10 * transferAmount - (minFee + setScriptFee + 0.2.waves),
+      eff1 + 9 * transferAmount - (minFee + setScriptFee + 0.2.waves)
     )
     miner.assertBalances(thirdAddress, balance2, eff2 + transferAmount)
 
@@ -76,7 +76,7 @@ class LeaseSmartContractsTestSuite extends BaseTransactionSuite with CancelAfter
           version = 2.toByte,
           sender = acc0.publicKey,
           leaseId = ByteStr.decodeBase58(leasingId).get,
-          fee = minFee + 0.2.TN,
+          fee = minFee + 0.2.waves,
           timestamp = System.currentTimeMillis(),
           proofs = Proofs.empty
         )
@@ -92,8 +92,8 @@ class LeaseSmartContractsTestSuite extends BaseTransactionSuite with CancelAfter
 
     miner.assertBalances(
       firstAddress,
-      balance1 + 10 * transferAmount - (2 * minFee + setScriptFee + 2 * 0.2.TN),
-      eff1 + 10 * transferAmount - (2 * minFee + setScriptFee + 2 * 0.2.TN)
+      balance1 + 10 * transferAmount - (2 * minFee + setScriptFee + 2 * 0.2.waves),
+      eff1 + 10 * transferAmount - (2 * minFee + setScriptFee + 2 * 0.2.waves)
     )
     miner.assertBalances(thirdAddress, balance2, eff2)
 

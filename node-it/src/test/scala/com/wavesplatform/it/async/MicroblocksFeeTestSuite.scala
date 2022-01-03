@@ -24,7 +24,7 @@ class MicroblocksFeeTestSuite extends BaseFreeSpec {
           //Not mining node sends transfer transactions to another not mining node
           //Mining nodes collect fee
           (1 to n).map { _ =>
-            notMiner.transfer(notMiner.address, firstAddress, (1 + Random.nextInt(10)).TN, fee)
+            notMiner.transfer(notMiner.address, firstAddress, (1 + Random.nextInt(10)).waves, fee)
           }
         }
         .map(_ => ())
@@ -43,7 +43,7 @@ class MicroblocksFeeTestSuite extends BaseFreeSpec {
       _ <- traverse(nodes)(_.height).map(_.max)
 
       _ <- traverse(nodes)(_.waitForHeight(microblockActivationHeight - 1))
-      _ <- txRequestsGen(200, 2.TN)
+      _ <- txRequestsGen(200, 2.waves)
       _ <- traverse(nodes)(_.waitForHeight(microblockActivationHeight + 3))
 
       initialBalances <- notMiner.debugStateAt(microblockActivationHeight - 1) //100%

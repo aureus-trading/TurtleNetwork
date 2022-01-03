@@ -34,7 +34,7 @@ class InvokeScriptWithSmartAccountAndAssetSuite extends BaseTransactionSuite wit
         smartCaller,
         dAppAddress,
         Some("justWriteData"),
-        fee = 0.09999999.TN
+        fee = 0.09999999.waves
       ),
       s"does not exceed minimal value of 10000000 TN"
     )
@@ -50,7 +50,7 @@ class InvokeScriptWithSmartAccountAndAssetSuite extends BaseTransactionSuite wit
           dAppAddress,
           Some("spendMaxFee"),
           payment = Seq(Payment(paymentAmount, IssuedAsset(ByteStr.decodeBase58(asset2).get))),
-          fee = 0.14999999.TN
+          fee = 0.14999999.waves
         ),
       AssertiveApiError(
         ScriptExecutionError.Id,
@@ -203,9 +203,9 @@ class InvokeScriptWithSmartAccountAndAssetSuite extends BaseTransactionSuite wit
     super.beforeAll()
 
     withClue("send waves to dApp and caller accounts") {
-      val dAppTransferId        = sender.transfer(sender.keyPair, dAppAddress, 5.TN, minFee).id
-      val callerTransferId      = sender.transfer(sender.keyPair, callerAddress, 5.TN, minFee).id
-      val smartCallerTransferId = sender.transfer(sender.keyPair, smartCallerAddress, 5.TN, minFee).id
+      val dAppTransferId        = sender.transfer(sender.keyPair, dAppAddress, 5.waves, minFee).id
+      val callerTransferId      = sender.transfer(sender.keyPair, callerAddress, 5.waves, minFee).id
+      val smartCallerTransferId = sender.transfer(sender.keyPair, smartCallerAddress, 5.waves, minFee).id
 
       nodes.waitForHeightAriseAndTxPresent(smartCallerTransferId)
       nodes.waitForTransaction(callerTransferId)

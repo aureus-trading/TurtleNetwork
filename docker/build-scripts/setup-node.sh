@@ -8,7 +8,7 @@ useradd -r -g TN --uid=999 --home-dir=$WVDATA --shell=/bin/bash TN
 dpkg -i /tmp/TN.deb || exit 1
 if [[ $ENABLE_GRPC == "true" ]]; then
   echo "Installing gRPC server"
-  dpkg -i /tmp/waves-grpc-server.deb || exit 1
+  dpkg -i /tmp/TN-grpc-server.deb || exit 1
 fi
 
 # Set permissions

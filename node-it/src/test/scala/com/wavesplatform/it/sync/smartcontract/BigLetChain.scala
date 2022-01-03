@@ -33,7 +33,7 @@ class BigLetChain extends BaseTransactionSuite with CancelAfterFailure {
 
     val pkNewAddress = sender.createKeyPair()
 
-    sender.transfer(firstKeyPair, pkNewAddress.toAddress.toString, 10.TN, minFee, waitForTx = true)
+    sender.transfer(firstKeyPair, pkNewAddress.toAddress.toString, 10.waves, minFee, waitForTx = true)
 
     val scriptSet          = SetScriptTransaction.selfSigned(1.toByte, pkNewAddress, Some(compiledScript), setScriptFee, System.currentTimeMillis())
     val scriptSetBroadcast = sender.signedBroadcast(scriptSet.explicitGet().json())
@@ -44,7 +44,7 @@ class BigLetChain extends BaseTransactionSuite with CancelAfterFailure {
       pkNewAddress,
       pkNewAddress.toAddress,
       Waves,
-      1.TN,
+      1.waves,
       Waves,
       smartMinFee,
       ByteStr.empty,

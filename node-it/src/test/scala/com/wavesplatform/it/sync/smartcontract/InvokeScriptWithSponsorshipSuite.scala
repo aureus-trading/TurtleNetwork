@@ -31,8 +31,8 @@ class InvokeScriptWithSponsorshipSuite extends BaseTransactionSuite with CancelA
   private lazy val callerAddress: String = caller.toAddress.toString
 
   test("_send waves to dApp and caller accounts") {
-    sender.transfer(sender.keyPair, dAppAddress, 5.TN, minFee, waitForTx = true).id
-    sender.transfer(sender.keyPair, callerAddress, 5.TN, minFee, waitForTx = true).id
+    sender.transfer(sender.keyPair, dAppAddress, 5.waves, minFee, waitForTx = true).id
+    sender.transfer(sender.keyPair, callerAddress, 5.waves, minFee, waitForTx = true).id
 
   }
 
@@ -209,7 +209,7 @@ class InvokeScriptWithSponsorshipSuite extends BaseTransactionSuite with CancelA
 
     sender.assetBalance(dAppAddress, dAppAsset).balance shouldBe halfQuantity + (feeAmount - 10) + smartFeeAmount
     sender.assetBalance(dAppAddress, callerAsset).balance shouldBe halfQuantity + paymentAmount
-    sender.accountBalances(dAppAddress)._1 shouldBe dAppInitBalance - 0.1.TN - 0.54.TN
+    sender.accountBalances(dAppAddress)._1 shouldBe dAppInitBalance - 0.1.waves - 0.54.waves
 
     sender.assetBalance(callerAddress, dAppAsset).balance shouldBe halfQuantity + (-feeAmount + 10) - smartFeeAmount
     sender.assetBalance(callerAddress, callerAsset).balance shouldBe halfQuantity - paymentAmount
@@ -237,7 +237,7 @@ class InvokeScriptWithSponsorshipSuite extends BaseTransactionSuite with CancelA
       .id
 
     sender.assetBalance(dAppAddress, dAppAsset).balance shouldBe dAppAssetBalance
-    sender.accountBalances(dAppAddress)._1  shouldBe dAppWavesBalance - 0.12.TN
+    sender.accountBalances(dAppAddress)._1  shouldBe dAppWavesBalance - 0.12.waves
   }
 
 }

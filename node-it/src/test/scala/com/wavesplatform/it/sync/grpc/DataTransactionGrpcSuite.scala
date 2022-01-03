@@ -23,12 +23,12 @@ class DataTransactionGrpcSuite extends GrpcBaseTransactionSuite {
 
   protected override def beforeAll(): Unit = {
     super.beforeAll()
-    sender.broadcastTransfer(firstAcc, Recipient().withPublicKeyHash(fourthAddress), 10.TN, minFee, waitForTx = true)
+    sender.broadcastTransfer(firstAcc, Recipient().withPublicKeyHash(fourthAddress), 10.waves, minFee, waitForTx = true)
   }
 
   test("should not put 65-sized proof") {
     val keyPair = sender.generateKeyPair()
-    sender.broadcastTransfer(sender.keyPair, PBRecipients.create(keyPair.toAddress), 1.TN, minFee, waitForTx = true)
+    sender.broadcastTransfer(sender.keyPair, PBRecipients.create(keyPair.toAddress), 1.waves, minFee, waitForTx = true)
     sender.setScript(
       keyPair,
       Right(
@@ -229,7 +229,7 @@ class DataTransactionGrpcSuite extends GrpcBaseTransactionSuite {
         Code.INVALID_ARGUMENT
       )
       assertGrpcError(
-        sender.putData(firstAcc, List(DataEntry("", DataEntry.Value.BoolValue(false))), 1.TN, version = v),
+        sender.putData(firstAcc, List(DataEntry("", DataEntry.Value.BoolValue(false))), 1.waves, version = v),
         "Empty key found",
         Code.INVALID_ARGUMENT
       )
@@ -237,7 +237,7 @@ class DataTransactionGrpcSuite extends GrpcBaseTransactionSuite {
         sender.putData(
           firstAcc,
           List(DataEntry("abc", DataEntry.Value.BoolValue(false)), DataEntry("abc", DataEntry.Value.BoolValue(false))),
-          1.TN,
+          1.waves,
           version = v
         ),
         "Duplicated keys found",

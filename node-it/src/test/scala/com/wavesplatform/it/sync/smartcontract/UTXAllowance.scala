@@ -22,7 +22,7 @@ class UTXAllowance extends BaseFreeSpec with WaitForHeight2 {
 
       val acc = i.createKeyPair()
 
-      i.transfer(i.keyPair, acc.toAddress.toString, 10.TN, 0.02.TN, None, waitForTx = true)
+      i.transfer(i.keyPair, acc.toAddress.toString, 10.waves, 0.02.waves, None, waitForTx = true)
 
       val scriptText = s"""true""".stripMargin
       val script     = ScriptCompiler(scriptText, isAssetScript = false, ScriptEstimatorV2).explicitGet()._1.bytes().base64
@@ -37,8 +37,8 @@ class UTXAllowance extends BaseFreeSpec with WaitForHeight2 {
           accounts.head,
           recipient = accounts.head.toAddress.toString,
           assetId = None,
-          amount = 1.TN,
-          fee = minFee + 0.04.TN,
+          amount = 1.waves,
+          fee = minFee + 0.04.waves,
           version = 2
         ),
       "transactions from scripted accounts are denied from UTX pool"
@@ -50,8 +50,8 @@ class UTXAllowance extends BaseFreeSpec with WaitForHeight2 {
           accounts(1),
           recipient = accounts(1).toAddress.toString,
           assetId = None,
-          amount = 1.01.TN,
-          fee = minFee + 0.04.TN,
+          amount = 1.01.waves,
+          fee = minFee + 0.04.waves,
           version = 2
         )
         .id

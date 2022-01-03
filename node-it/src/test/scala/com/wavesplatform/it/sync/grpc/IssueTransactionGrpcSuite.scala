@@ -67,8 +67,8 @@ class IssueTransactionGrpcSuite extends GrpcBaseTransactionSuite with NTPTime wi
       )
 
       assertGrpcError(
-        sender.broadcastIssue(issuer, assetName, nftQuantity, nftDecimals, nftReissuable, 0.1.TN - 1, assetDescription, version = v),
-        s"does not exceed minimal value of ${0.1.TN}",
+        sender.broadcastIssue(issuer, assetName, nftQuantity, nftDecimals, nftReissuable, 0.1.waves - 1, assetDescription, version = v),
+        s"does not exceed minimal value of ${0.1.waves}",
         Code.INVALID_ARGUMENT
       )
 
@@ -121,7 +121,7 @@ class IssueTransactionGrpcSuite extends GrpcBaseTransactionSuite with NTPTime wi
   test("Not able to create asset when insufficient funds") {
     val assetName        = "myasset"
     val issuerEffBalance = sender.wavesBalance(issuerAddress).effective
-    val bigAssetFee      = issuerEffBalance + 1.TN
+    val bigAssetFee      = issuerEffBalance + 1.waves
 
     assertGrpcError(
       sender.broadcastIssue(issuer, assetName, someAssetAmount, 8, reissuable = false, bigAssetFee),

@@ -31,7 +31,7 @@ class ExchangeTransactionGrpcSuite extends GrpcBaseTransactionSuite with NTPTime
   val versions: immutable.Seq[(TxVersion, TxVersion, TxVersion)] = transactionV1versions +: transactionV2versions
 
   test("exchange tx with orders v1,v2") {
-    val exchAsset          = sender.broadcastIssue(buyer, Base64.encode("exchAsset".utf8Bytes), someAssetAmount, 8, reissuable = true, 1000.TN, waitForTx = true)
+    val exchAsset          = sender.broadcastIssue(buyer, Base64.encode("exchAsset".utf8Bytes), someAssetAmount, 8, reissuable = true, 1000.waves, waitForTx = true)
     val exchAssetId        = PBTransactions.vanilla(exchAsset).explicitGet().id().toString
     val price              = 500000L
     val amount             = 40000000L
@@ -57,7 +57,7 @@ class ExchangeTransactionGrpcSuite extends GrpcBaseTransactionSuite with NTPTime
   }
 
   test("exchange tx with orders v3") {
-    val feeAsset           = sender.broadcastIssue(buyer, "feeAsset", someAssetAmount, 8, reissuable = true, 1000.TN, waitForTx = true)
+    val feeAsset           = sender.broadcastIssue(buyer, "feeAsset", someAssetAmount, 8, reissuable = true, 1000.waves, waitForTx = true)
     val feeAssetId         = PBTransactions.vanilla(feeAsset).explicitGet().id()
     val price              = 500000L
     val amount             = 40000000L
@@ -121,7 +121,7 @@ class ExchangeTransactionGrpcSuite extends GrpcBaseTransactionSuite with NTPTime
       decimals = 2,
       reissuable = true,
       script = None,
-      fee = 1.TN,
+      fee = 1.waves,
       timestamp = System.currentTimeMillis()
     ).signWith(sender.keyPair.privateKey)
     for ((o1ver, o2ver, tver) <- versions) {

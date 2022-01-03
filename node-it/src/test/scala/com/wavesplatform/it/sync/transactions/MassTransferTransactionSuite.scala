@@ -275,7 +275,7 @@ class MassTransferTransactionSuite extends BaseTransactionSuite {
 
   test("reporting MassTransfer transactions") {
     for (v <- massTransferTxSupportedVersions) {
-      val transfers = List(Transfer(firstAddress, 5.TN), Transfer(secondAddress, 2.TN), Transfer(thirdAddress, 3.TN))
+      val transfers = List(Transfer(firstAddress, 5.waves), Transfer(secondAddress, 2.waves), Transfer(thirdAddress, 3.waves))
       val txId      = sender.massTransfer(firstKeyPair, transfers, 6000000, version = v).id
       nodes.waitForHeightAriseAndTxPresent(txId)
 
@@ -292,7 +292,7 @@ class MassTransferTransactionSuite extends BaseTransactionSuite {
         .head
       assert(txSender.as[MassTransferRequest].transfers.size == 3)
       assert((txSender \ "transferCount").as[Int] == 3)
-      assert((txSender \ "totalAmount").as[Long] == 10.TN)
+      assert((txSender \ "totalAmount").as[Long] == 10.waves)
       val transfersAfterTrans = txSender.as[MassTransferRequest].transfers
       assert(transfers.equals(transfersAfterTrans))
 
@@ -310,7 +310,7 @@ class MassTransferTransactionSuite extends BaseTransactionSuite {
 
       assert(txRecipient.as[MassTransferRequest].transfers.size == 1)
       assert((txRecipient \ "transferCount").as[Int] == 3)
-      assert((txRecipient \ "totalAmount").as[Long] == 10.TN)
+      assert((txRecipient \ "totalAmount").as[Long] == 10.waves)
       val transferToSecond = txRecipient.as[MassTransferRequest].transfers.head
       assert(transfers contains transferToSecond)
     }
@@ -323,7 +323,7 @@ class MassTransferTransactionSuite extends BaseTransactionSuite {
       createAliasTxs.foreach(sender.waitForTransaction(_))
 
       val transfers = aliases.map { alias =>
-        Transfer(Alias.create(alias).explicitGet().stringRepr, 2.TN)
+        Transfer(Alias.create(alias).explicitGet().stringRepr, 2.waves)
       }
       val txId = sender.massTransfer(firstKeyPair, transfers, 6000000, version = v).id
       nodes.waitForHeightAriseAndTxPresent(txId)

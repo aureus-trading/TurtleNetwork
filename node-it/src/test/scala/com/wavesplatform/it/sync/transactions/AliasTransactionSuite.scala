@@ -123,7 +123,7 @@ class AliasTransactionSuite extends BaseTransactionSuite with TableDrivenPropert
     val aliasFee  = createAlias(thirdKeyPair, thirdAddressAlias)
     val aliasFull = fullAliasByAddress(thirdAddress, thirdAddressAlias)
     //lease maximum value, to pass next thirdAddress
-    val leasingAmount = balance1 - aliasFeeAmount - 0.5.TN
+    val leasingAmount = balance1 - aliasFeeAmount - 0.5.waves
 
     val leasingTx = sender.lease(firstKeyPair, aliasFull, leasingAmount, aliasFeeAmount).id
     nodes.waitForHeightAriseAndTxPresent(leasingTx)

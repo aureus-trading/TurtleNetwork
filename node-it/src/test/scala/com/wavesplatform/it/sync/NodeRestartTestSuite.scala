@@ -39,7 +39,7 @@ class NodeRestartTestSuite extends BaseFreeSpec with WaitForHeight2 {
         nodeB.keyPair,
         AddressOrAlias.fromString(nodeA.address).explicitGet(),
         Waves,
-        1.TN,
+        1.waves,
         Waves,
         minFee,
         ByteStr.empty,

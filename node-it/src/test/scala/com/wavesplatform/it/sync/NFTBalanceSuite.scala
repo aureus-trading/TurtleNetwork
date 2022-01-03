@@ -44,7 +44,7 @@ class NFTBalanceSuite extends BaseFreeSpec {
     val fundAndIssue =
       for {
         _      <- traverse(nodes)(_.waitForHeight(2))
-        fundTx <- node.transfer(node.address, issuer.toAddress.toString, 110000.TN, 0.02.TN)
+        fundTx <- node.transfer(node.address, issuer.toAddress.toString, 110000.waves, 0.02.waves)
         _      <- node.waitForTransaction(fundTx.id)
         _ <- Future.sequence((simple ++ nft) map { tx =>
           for {
@@ -84,7 +84,7 @@ class NFTBalanceSuite extends BaseFreeSpec {
       val other = KeyPair("other".getBytes)
 
       val transfer = TransferTransaction
-        .selfSigned(1.toByte, issuer, other.toAddress, randomTokenToTransfer, 1, Waves, 0.02.TN, ByteStr.empty, System.currentTimeMillis())
+        .selfSigned(1.toByte, issuer, other.toAddress, randomTokenToTransfer, 1, Waves, 0.02.waves, ByteStr.empty, System.currentTimeMillis())
         .explicitGet()
 
       val assertion = for {
@@ -167,7 +167,7 @@ object NFTBalanceSuite {
         8,
         reissuable = true,
         script = None,
-        1000.TN,
+        1000.waves,
         System.currentTimeMillis()
       ).signWith(issuer.privateKey)
     }
@@ -182,7 +182,7 @@ object NFTBalanceSuite {
         0,
         reissuable = false,
         script = None,
-        1.TN,
+        1.waves,
         System.currentTimeMillis()
       ).signWith(issuer.privateKey)
     }
@@ -196,7 +196,7 @@ object NFTBalanceSuite {
     val transactions =
       Future.sequence(addrs map { addr =>
         NodeAsyncHttpApi(faucet)
-          .transfer(faucet.address, addr, 1000.TN, 0.02.TN)
+          .transfer(faucet.address, addr, 1000.waves, 0.02.waves)
           .flatMap { tx =>
             NodeAsyncHttpApi(faucet)
               .waitForTransaction(tx.id, retryInterval = 1.second)

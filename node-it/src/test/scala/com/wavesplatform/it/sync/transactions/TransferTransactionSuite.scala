@@ -24,7 +24,7 @@ class TransferTransactionSuite extends BaseTransactionSuite with CancelAfterFail
     sender.signedBroadcast(json, waitForTx = true)
   }
 
-  test("asset transfer changes sender's and recipient's asset balance; issuer's.TN balance is decreased by fee") {
+  test("asset transfer changes sender's and recipient's asset balance; issuer's.waves balance is decreased by fee") {
     for (v <- transferTxSupportedVersions) {
       val (firstBalance, firstEffBalance)   = miner.accountBalances(firstAddress)
       val (secondBalance, secondEffBalance) = miner.accountBalances(secondAddress)
@@ -103,7 +103,7 @@ class TransferTransactionSuite extends BaseTransactionSuite with CancelAfterFail
       val (secondBalance, secondEffBalance) = miner.accountBalances(secondAddress)
 
       assertBadRequestAndResponse(
-        sender.transfer(secondKeyPair, firstAddress, secondBalance + 1.TN, minFee, version = v),
+        sender.transfer(secondKeyPair, firstAddress, secondBalance + 1.waves, minFee, version = v),
         "Attempt to transfer unavailable funds"
       )
       miner.assertBalances(secondAddress, secondBalance, secondEffBalance)

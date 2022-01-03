@@ -91,7 +91,7 @@ class IssueTransactionSuite extends BaseTransactionSuite with TableDrivenPropert
       val assetName        = "myasset"
       val assetDescription = "my asset description"
       val eff1             = miner.accountBalances(firstAddress)._2
-      val bigAssetFee      = eff1 + 1.TN
+      val bigAssetFee      = eff1 + 1.waves
 
       assertApiError(sender.issue(firstKeyPair, assetName, assetDescription, someAssetAmount, 2, reissuable = false, bigAssetFee, version = v)) {
         error =>

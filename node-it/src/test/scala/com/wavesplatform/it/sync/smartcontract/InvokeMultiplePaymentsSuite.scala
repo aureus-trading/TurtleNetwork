@@ -35,7 +35,7 @@ class InvokeMultiplePaymentsSuite extends BaseTransactionSuite with CancelAfterF
         caller,
         dAppAddress,
         Some("f"),
-        payment = Seq(Payment(0.06.TN, Waves)),
+        payment = Seq(Payment(0.06.waves, Waves)),
         args = List(CONST_STRING("recipientalias").explicitGet()),
         waitForTx = true
       )
@@ -53,7 +53,7 @@ class InvokeMultiplePaymentsSuite extends BaseTransactionSuite with CancelAfterF
           caller,
           dAppAddress,
           Some("f"),
-          payment = Seq(Payment(1.TN, Waves)),
+          payment = Seq(Payment(1.waves, Waves)),
           args = List(CONST_STRING(alias).explicitGet())
         ),
       s"Alias 'alias:I:$alias"
@@ -65,7 +65,7 @@ class InvokeMultiplePaymentsSuite extends BaseTransactionSuite with CancelAfterF
           caller,
           dAppAddress,
           Some("f"),
-          payment = Seq(Payment(1.TN, Waves)),
+          payment = Seq(Payment(1.waves, Waves)),
           args = List(CONST_STRING(s"alias:I:$alias").explicitGet()),
           waitForTx = true
         ),
@@ -79,9 +79,9 @@ class InvokeMultiplePaymentsSuite extends BaseTransactionSuite with CancelAfterF
   }
 
   test("can invoke with single payment of Waves") {
-    sender.invokeScript(caller, dAppAddress, payment = Seq(Payment(1.TN, Waves)), waitForTx = true)
+    sender.invokeScript(caller, dAppAddress, payment = Seq(Payment(1.waves, Waves)), waitForTx = true)
     sender.getData(dAppAddress).size shouldBe 2
-    sender.getDataByKey(dAppAddress, "amount_0").as[IntegerDataEntry].value shouldBe 1.TN
+    sender.getDataByKey(dAppAddress, "amount_0").as[IntegerDataEntry].value shouldBe 1.waves
     sender.getDataByKey(dAppAddress, "asset_0").as[BinaryDataEntry].value shouldBe ByteStr.empty
   }
 
@@ -141,7 +141,7 @@ class InvokeMultiplePaymentsSuite extends BaseTransactionSuite with CancelAfterF
       sender.invokeScript(
         caller,
         dAppAddress,
-        payment = Seq(Payment(wavesBalance - 1.TN, Waves), Payment(2.TN, Waves))
+        payment = Seq(Payment(wavesBalance - 1.waves, Waves), Payment(2.waves, Waves))
       )
     ) { error =>
       error.message should include("Transaction application leads to negative TN balance to (at least) temporary negative state")
@@ -164,10 +164,10 @@ class InvokeMultiplePaymentsSuite extends BaseTransactionSuite with CancelAfterF
 
   test("can't attach leased Waves") {
     val wavesBalance = sender.accountBalances(callerAddress)._1
-    sender.lease(caller, dAppAddress, wavesBalance - 1.TN, waitForTx = true)
+    sender.lease(caller, dAppAddress, wavesBalance - 1.waves, waitForTx = true)
 
     assertApiError(
-      sender.invokeScript(caller, dAppAddress, payment = Seq(Payment(0.75.TN, Waves), Payment(0.75.TN, Waves)))
+      sender.invokeScript(caller, dAppAddress, payment = Seq(Payment(0.75.waves, Waves), Payment(0.75.waves, Waves)))
     ) { error =>
       error.message should include("Accounts balance errors")
       error.id shouldBe StateCheckFailed.Id

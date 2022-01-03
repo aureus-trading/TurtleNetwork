@@ -33,13 +33,13 @@ class IssueNFTSuite extends BaseTransactionSuite with TableDrivenPropertyChecks 
     firstNode.transfer(
       firstNode.keyPair,
       firstNodeIssuer.toAddress.toString,
-      10.TN,
-      0.02.TN,
+      10.waves,
+      0.02.waves,
       waitForTx = true
     )
 
     assertApiErrorRaised(
-      firstNode.issue(firstKeyPair, assetName, assetDescription, 1, 0, reissuable = false, 1000.TN / 10000, waitForTx = true)
+      firstNode.issue(firstKeyPair, assetName, assetDescription, 1, 0, reissuable = false, 1000.waves / 10000, waitForTx = true)
     )
   }
 
@@ -57,7 +57,7 @@ class IssueNFTSuite extends BaseTransactionSuite with TableDrivenPropertyChecks 
         quantity = 1,
         decimals = 0,
         reissuable = false,
-        fee = 0.1.TN,
+        fee = 0.1.waves,
         script = None,
         waitForTx = true
       )
@@ -80,7 +80,7 @@ class IssueNFTSuite extends BaseTransactionSuite with TableDrivenPropertyChecks 
         quantity = 1,
         decimals = 0,
         reissuable = true,
-        fee = 0.01.TN,
+        fee = 0.01.waves,
         script = None,
         waitForTx = true
       ),
@@ -100,7 +100,7 @@ class IssueNFTSuite extends BaseTransactionSuite with TableDrivenPropertyChecks 
         quantity = 2,
         decimals = 0,
         reissuable = false,
-        fee = 0.01.TN,
+        fee = 0.01.waves,
         script = None,
         waitForTx = true
       ),
@@ -120,7 +120,7 @@ class IssueNFTSuite extends BaseTransactionSuite with TableDrivenPropertyChecks 
         quantity = 1,
         decimals = 1,
         reissuable = false,
-        fee = 0.01.TN,
+        fee = 0.01.waves,
         script = None,
         waitForTx = true
       ),
@@ -129,7 +129,7 @@ class IssueNFTSuite extends BaseTransactionSuite with TableDrivenPropertyChecks 
   }
   test("nft assets balance should be returned by separate api endpoint") {
     secondNode
-      .issue(secondNode.keyPair, "Common", "Common asset", quantity = 1, decimals = 1, reissuable = false, fee = 1000.TN, script = None)
+      .issue(secondNode.keyPair, "Common", "Common asset", quantity = 1, decimals = 1, reissuable = false, fee = 1000.waves, script = None)
       .id
     val issetsId = issueManyAssets(20)
     secondNode.waitForTransaction(issetsId.last)
@@ -166,7 +166,7 @@ class IssueNFTSuite extends BaseTransactionSuite with TableDrivenPropertyChecks 
             quantity = 1,
             decimals = 0,
             reissuable = false,
-            fee = 0.1.TN,
+            fee = 0.1.waves,
             script = None
           )
           .id

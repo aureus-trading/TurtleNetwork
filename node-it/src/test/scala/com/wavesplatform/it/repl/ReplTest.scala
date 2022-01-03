@@ -37,8 +37,8 @@ class ReplTest extends BaseTransactionSuite with FailedTransactionSuiteLike[Stri
   test("waves context") {
     val issuer = miner.createKeyPair()
     val sample = miner.createKeyPair()
-    val trans  = miner.transfer(miner.keyPair, issuer.toAddress.toString, 1800.TN , 0.02.TN, version = TxVersion.V3, waitForTx = true)
-    miner.transfer(miner.keyPair, sample.toAddress.toString, 2000.TN , 0.02.TN, waitForTx = true)
+    val trans  = miner.transfer(miner.keyPair, issuer.toAddress.toString, 1800.waves , 0.02.waves, version = TxVersion.V3, waitForTx = true)
+    miner.transfer(miner.keyPair, sample.toAddress.toString, 2000.waves , 0.02.waves, waitForTx = true)
     miner.createAlias(miner.keyPair, "aaaa", waitForTx = true)
 
     val failDApp = ScriptCompiler
@@ -97,7 +97,7 @@ class ReplTest extends BaseTransactionSuite with FailedTransactionSuiteLike[Stri
           reissuable = true,
           script = Some(assetScript),
           waitForTx = true,
-          fee = 1000.TN
+          fee = 1000.waves
         )
         .id
     val height = miner.height
@@ -110,11 +110,11 @@ class ReplTest extends BaseTransactionSuite with FailedTransactionSuiteLike[Stri
         BinaryDataEntry("bin", ByteStr(Base58.decode("r1Mw3j9J"))),
         BooleanDataEntry("bool", true)
       ),
-      1.TN,
+      1.waves,
       waitForTx = true
     )
 
-    miner.setScript(issuer, Some(failDApp), 1.TN, waitForTx = true)
+    miner.setScript(issuer, Some(failDApp), 1.waves, waitForTx = true)
 
     // used to fail invoke
     val priorityData = List(StringDataEntry("crash", "yes"))
@@ -220,7 +220,7 @@ class ReplTest extends BaseTransactionSuite with FailedTransactionSuiteLike[Stri
       )
     ).explicitGet() shouldBe "res11: Int = 1000"
 
-    await(repl.execute(s""" wavesBalance(Address(base58'${sample.toAddress}')).regular """)) shouldBe Right(s"res12: Int = ${2000.TN}")
+    await(repl.execute(s""" wavesBalance(Address(base58'${sample.toAddress}')).regular """)) shouldBe Right(s"res12: Int = ${2000.waves}")
     await(repl.execute(""" this.wavesBalance() """))
       .explicitGet() should fullyMatch regex "res13: BalanceDetails = BalanceDetails\\(\\s+available = \\d+\\s+regular = \\d+\\s+generating = \\d+\\s+effective = \\d+\\s+\\)".r
 

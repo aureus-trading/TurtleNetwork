@@ -13,7 +13,7 @@ class MinerStateTestSuite extends BaseFunSuite {
 
   override protected def nodeConfigs: Seq[Config] = Configs
 
-  private val transferAmount = 1000.TN
+  private val transferAmount = 1000.waves
 
   private def last  = nodes.last
 

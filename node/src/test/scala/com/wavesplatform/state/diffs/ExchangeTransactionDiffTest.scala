@@ -66,6 +66,7 @@ class ExchangeTransactionDiffTest extends PropSpec with Inside with WithDomain w
   private val estimator = ScriptEstimatorV2
 
   property("Not enough order sender balance and failed script") {
+
     val buyer  = TxHelpers.signer(10)
     val seller = TxHelpers.signer(11)
 
@@ -126,7 +127,6 @@ class ExchangeTransactionDiffTest extends PropSpec with Inside with WithDomain w
           TxHelpers.transfer(TxHelpers.defaultSigner, seller.toAddress, 1, Waves),
           TxHelpers.transfer(TxHelpers.defaultSigner, seller.toAddress, 1, issue.asset)
         )
-
         val exchange = TxHelpers.exchange(
           TxHelpers.orderV3(OrderType.BUY, issue.asset, Waves, Waves, 1L, 1_0000_0000L, 1L, buyer),
           TxHelpers.orderV3(OrderType.SELL, issue.asset, Waves, Waves, 1L, 1_0000_0000L, 1L, seller)

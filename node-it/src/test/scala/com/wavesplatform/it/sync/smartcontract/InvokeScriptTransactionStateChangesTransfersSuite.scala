@@ -48,7 +48,7 @@ class InvokeScriptTransactionStateChangesTransfersSuite extends BaseTransactionS
       func = Some("sendToCaller"),
       args = List(CONST_LONG(transferAmount)),
       payment = Seq(Payment(pamentAmount, Waves)),
-      fee = 1.TN,
+      fee = 1.waves,
       waitForTx = true
     )
     nodes.waitForHeightAriseAndTxPresent(invokeScriptTx._1.id)
@@ -73,7 +73,7 @@ class InvokeScriptTransactionStateChangesTransfersSuite extends BaseTransactionS
       func = Some("sendToCaller"),
       args = List(CONST_LONG(transferAmount)),
       payment = Seq(Payment(pamentAmount, Waves)),
-      fee = 1.TN,
+      fee = 1.waves,
       waitForTx = true
     )
     nodes.waitForHeightAriseAndTxPresent(invokeScriptTx._1.id)
@@ -98,7 +98,7 @@ class InvokeScriptTransactionStateChangesTransfersSuite extends BaseTransactionS
       func = Some("sendToCaller"),
       args = List(CONST_LONG(transferAmount)),
       payment = Seq(Payment(paymentAmount, Waves)),
-      fee = 1.TN,
+      fee = 1.waves,
       waitForTx = true
     )
     nodes.waitForHeightAriseAndTxPresent(invokeScriptTx._1.id)
@@ -123,7 +123,7 @@ class InvokeScriptTransactionStateChangesTransfersSuite extends BaseTransactionS
       func = Some("sendToCaller"),
       args = List(CONST_LONG(transferAmount)),
       payment = Seq(Payment(paymentAmount, Waves)),
-      fee = 1.TN,
+      fee = 1.waves,
       waitForTx = true
     )
     nodes.waitForHeightAriseAndTxPresent(invokeScriptTx._1.id)

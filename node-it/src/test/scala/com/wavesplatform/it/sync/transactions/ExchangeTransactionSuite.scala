@@ -27,7 +27,7 @@ class ExchangeTransactionSuite extends BaseTransactionSuite with NTPTime {
     decimals = 2,
     reissuable = true,
     script = None,
-    fee = 1000.TN,
+    fee = 1000.waves,
     timestamp = System.currentTimeMillis()
   ).signWith(sender.keyPair.privateKey)
 
@@ -125,7 +125,7 @@ class ExchangeTransactionSuite extends BaseTransactionSuite with NTPTime {
       decimals = 8,
       reissuable = true,
       script = None,
-      fee = 1000.TN,
+      fee = 1000.waves,
       timestamp = System.currentTimeMillis()
     ).signWith(buyer.privateKey)
 
@@ -193,7 +193,7 @@ class ExchangeTransactionSuite extends BaseTransactionSuite with NTPTime {
 
   test("exchange tx with orders v4 can use price that is impossible for orders v3/v2/v1") {
 
-    sender.transfer(sender.keyPair, firstAddress, 1000.TN, waitForTx = true)
+    sender.transfer(sender.keyPair, firstAddress, 1000.waves, waitForTx = true)
 
     val seller        = acc1
     val buyer         = acc0
@@ -209,7 +209,7 @@ class ExchangeTransactionSuite extends BaseTransactionSuite with NTPTime {
         decimals = 0,
         reissuable = false,
         script = None,
-        fee = 1.TN,
+        fee = 1.waves,
         waitForTx = true
       )
       .id
@@ -223,7 +223,7 @@ class ExchangeTransactionSuite extends BaseTransactionSuite with NTPTime {
         decimals = 6,
         reissuable = false,
         script = None,
-        fee = 1000.TN,
+        fee = 1000.waves,
         waitForTx = true
       )
       .id

@@ -45,7 +45,7 @@ class FailedTransactionGrpcSuite extends GrpcBaseTransactionSuite with FailedTra
   protected override def beforeAll(): Unit = {
     super.beforeAll()
 
-    sender.broadcastTransfer(sender.keyPair, Recipient().withPublicKeyHash(contractAddr), 2200.TN , minFee, waitForTx = true)
+    sender.broadcastTransfer(sender.keyPair, Recipient().withPublicKeyHash(contractAddr), 2200.waves , minFee, waitForTx = true)
 
     smartAsset = PBTransactions
       .vanillaUnsafe(
@@ -133,7 +133,7 @@ class FailedTransactionGrpcSuite extends GrpcBaseTransactionSuite with FailedTra
   }
 
   test("InvokeScriptTransaction: dApp error propagates failed transaction") {
-    val invokeFee    = 0.06.TN
+    val invokeFee    = 0.06.waves
     val priorityData = List(DataEntry("crash", DataEntry.Value.StringValue("yes")))
     val putDataFee   = calcDataFee(priorityData)
     val priorityFee  = putDataFee + invokeFee
@@ -152,7 +152,7 @@ class FailedTransactionGrpcSuite extends GrpcBaseTransactionSuite with FailedTra
   }
 
   test("InvokeScriptTransaction: insufficient action fees propagates failed transaction") {
-    val invokeFee            = 0.06.TN
+    val invokeFee            = 0.06.waves
     val setAssetScriptMinFee = setAssetScriptFee + smartFee * 2
     val priorityFee          = setAssetScriptMinFee + invokeFee
 
@@ -177,7 +177,7 @@ class FailedTransactionGrpcSuite extends GrpcBaseTransactionSuite with FailedTra
   }
 
   test("InvokeScriptTransaction: invoking asset script error in action asset propagates failed transaction") {
-    val invokeFee            = 0.06.TN + smartFee
+    val invokeFee            = 0.06.waves + smartFee
     val setAssetScriptMinFee = setAssetScriptFee + smartFee * 2
     val priorityFee          = setAssetScriptMinFee + invokeFee
 
@@ -201,7 +201,7 @@ class FailedTransactionGrpcSuite extends GrpcBaseTransactionSuite with FailedTra
   }
 
   test("InvokeScriptTransaction: invoke script error in payment asset propagates failed transaction") {
-    val invokeFee            = 0.06.TN + smartFee
+    val invokeFee            = 0.06.waves + smartFee
     val setAssetScriptMinFee = setAssetScriptFee + smartFee
     val priorityFee          = setAssetScriptMinFee + invokeFee
 
@@ -240,7 +240,7 @@ class FailedTransactionGrpcSuite extends GrpcBaseTransactionSuite with FailedTra
   }
 
   test("InvokeScriptTransaction: sponsored fee on failed transaction should be charged correctly") {
-    val invokeFee            = 0.06.TN + smartFee
+    val invokeFee            = 0.06.waves + smartFee
     val invokeFeeInAsset     = invokeFee / 2000000 // assetFee = feeInWaves / feeUnit * sponsorship
     val setAssetScriptMinFee = setAssetScriptFee + smartFee * 2
     val priorityFee          = setAssetScriptMinFee + invokeFee
@@ -281,7 +281,7 @@ class FailedTransactionGrpcSuite extends GrpcBaseTransactionSuite with FailedTra
   }
 
   test("InvokeScriptTransaction: account state should not be changed after accepting failed transaction") {
-    val invokeFee            = 0.06.TN + smartFee
+    val invokeFee            = 0.06.waves + smartFee
     val setAssetScriptMinFee = setAssetScriptFee + smartFee * 2
     val priorityFee          = setAssetScriptMinFee + invokeFee
 
@@ -341,7 +341,7 @@ class FailedTransactionGrpcSuite extends GrpcBaseTransactionSuite with FailedTra
   }
 
   test("InvokeScriptTransaction: reject transactions if account script failed") {
-    val invokeFee            = 0.06.TN
+    val invokeFee            = 0.06.waves
     val setAssetScriptMinFee = setAssetScriptFee + smartFee * 2
     val priorityFee          = setAssetScriptMinFee + invokeFee
 
@@ -436,7 +436,7 @@ class FailedTransactionGrpcSuite extends GrpcBaseTransactionSuite with FailedTra
     val amountAssetId  = PBTransactions.vanillaUnsafe(amountAsset).id().toString
     val priceAssetId   = PBTransactions.vanillaUnsafe(priceAsset).id().toString
     val assetPair      = AssetPair.createAssetPair(amountAssetId, priceAssetId).get
-    val fee            = 0.003.TN + 4 * smartFee
+    val fee            = 0.003.waves + 4 * smartFee
     val sellMatcherFee = fee / 2000000L
     val buyMatcherFee  = fee / 2000000L
     val priorityFee    = setAssetScriptFee + smartFee + fee * 10
@@ -502,7 +502,7 @@ class FailedTransactionGrpcSuite extends GrpcBaseTransactionSuite with FailedTra
     val amountAssetId  = PBTransactions.vanillaUnsafe(amountAsset).id().toString
     val priceAssetId   = PBTransactions.vanillaUnsafe(priceAsset).id().toString
     val assetPair      = AssetPair.createAssetPair(amountAssetId, priceAssetId).get
-    val fee            = 0.003.TN + smartFee
+    val fee            = 0.003.waves + smartFee
     val sellMatcherFee = fee / 2000000L
     val buyMatcherFee  = fee / 2000000L
     val priorityFee    = setScriptFee + smartFee + fee * 10

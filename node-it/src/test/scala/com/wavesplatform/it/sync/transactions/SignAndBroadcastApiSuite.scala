@@ -29,7 +29,7 @@ import scala.util.Random
 
 class SignAndBroadcastApiSuite extends BaseTransactionSuite with NTPTime with BeforeAndAfterAll {
   test("height should always be reported for transactions") {
-    val txId = sender.transfer(firstKeyPair, secondAddress, 1.TN, fee = minFee).id
+    val txId = sender.transfer(firstKeyPair, secondAddress, 1.waves, fee = minFee).id
 
     sender.waitForTransaction(txId)
     val jsv1               = Json.parse(sender.get(s"/transactions/info/$txId").getResponseBody)
@@ -142,7 +142,7 @@ class SignAndBroadcastApiSuite extends BaseTransactionSuite with NTPTime with Be
         Json.obj(
           "type"        -> IssueTransaction.typeId,
           "name"        -> "Gigacoin",
-          "quantity"    -> 100.TN,
+          "quantity"    -> 100.waves,
           "description" -> "Gigacoin",
           "sender"      -> firstAddress,
           "decimals"    -> 8,
@@ -153,7 +153,7 @@ class SignAndBroadcastApiSuite extends BaseTransactionSuite with NTPTime with Be
       )
 
       signBroadcastAndCalcFee(
-        Json.obj("type" -> ReissueTransaction.typeId, "quantity" -> 200.TN, "assetId" -> issueId, "sender" -> firstAddress, "reissuable" -> false),
+        Json.obj("type" -> ReissueTransaction.typeId, "quantity" -> 200.waves, "assetId" -> issueId, "sender" -> firstAddress, "reissuable" -> false),
         usesProofs = isProof,
         version = v
       )
@@ -165,7 +165,7 @@ class SignAndBroadcastApiSuite extends BaseTransactionSuite with NTPTime with Be
       )
 
       signBroadcastAndCalcFee(
-        Json.obj("type" -> BurnTransaction.typeId, "amount" -> 100.TN, "assetId" -> issueId, "sender" -> firstAddress),
+        Json.obj("type" -> BurnTransaction.typeId, "amount" -> 100.waves, "assetId" -> issueId, "sender" -> firstAddress),
         usesProofs = isProof,
         version = v
       )
@@ -176,7 +176,7 @@ class SignAndBroadcastApiSuite extends BaseTransactionSuite with NTPTime with Be
           "sender"     -> firstAddress,
           "recipient"  -> secondAddress,
           "assetId"    -> issueId,
-          "amount"     -> 1.TN,
+          "amount"     -> 1.waves,
           "attachment" -> Base58.encode("asset transfer".getBytes("UTF-8"))
         ),
         usesProofs = isProof,
@@ -207,7 +207,7 @@ class SignAndBroadcastApiSuite extends BaseTransactionSuite with NTPTime with Be
         "type"       -> MassTransferTransaction.typeId,
         "version"    -> 1,
         "sender"     -> firstAddress,
-        "transfers"  -> Json.toJson(Seq(Transfer(secondAddress, 1.TN), Transfer(thirdAddress, 2.TN))),
+        "transfers"  -> Json.toJson(Seq(Transfer(secondAddress, 1.waves), Transfer(thirdAddress, 2.waves))),
         "attachment" -> Base58.encode("masspay".getBytes("UTF-8"))
       ),
       usesProofs = true,
@@ -284,7 +284,7 @@ class SignAndBroadcastApiSuite extends BaseTransactionSuite with NTPTime with Be
         Json.obj(
           "type"        -> IssueTransaction.typeId,
           "name"        -> "Sponsored Coin",
-          "quantity"    -> 100.TN,
+          "quantity"    -> 100.waves,
           "description" -> "Sponsored Coin",
           "sender"      -> firstAddress,
           "decimals"    -> 2,

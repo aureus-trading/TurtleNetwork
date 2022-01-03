@@ -130,7 +130,7 @@ class InvokeScriptTransactionGrpcSuite extends GrpcBaseTransactionSuite {
         caller,
         Recipient().withPublicKeyHash(contract),
         Some(FUNCTION_CALL(FunctionHeader.User("foo"), List(CONST_BYTESTR(arg).explicitGet()))),
-        fee = 1.TN,
+        fee = 1.waves,
         waitForTx = true
       )
       sender.getDataByKey(contract, "a") shouldBe List(DataEntry("a", DataEntry.Value.BinaryValue(ByteString.copyFrom(arg.arr))))
@@ -147,7 +147,7 @@ class InvokeScriptTransactionGrpcSuite extends GrpcBaseTransactionSuite {
         caller,
         Recipient().withPublicKeyHash(contract),
         functionCall = None,
-        fee = 1.TN,
+        fee = 1.waves,
         waitForTx = true
       )
       sender.getDataByKey(contract, "a") shouldBe List(DataEntry("a", DataEntry.Value.StringValue("b")))
@@ -160,7 +160,7 @@ class InvokeScriptTransactionGrpcSuite extends GrpcBaseTransactionSuite {
       val contract    = if (v < 2) firstContractAddr else secondContractAddr
       val dAppBalance = sender.wavesBalance(contract)
       assertGrpcError(
-        sender.broadcastTransfer(firstAcc, Recipient().withPublicKeyHash(contract), transferAmount, 1.TN),
+        sender.broadcastTransfer(firstAcc, Recipient().withPublicKeyHash(contract), transferAmount, 1.waves),
         "Transaction is not allowed by account-script",
         Code.INVALID_ARGUMENT
       )
@@ -175,7 +175,7 @@ class InvokeScriptTransactionGrpcSuite extends GrpcBaseTransactionSuite {
         caller,
         Recipient().withPublicKeyHash(secondContractAddr),
         Some(FUNCTION_CALL(FunctionHeader.User("emptyKey"), List.empty)),
-        fee = 1.TN,
+        fee = 1.waves,
         version = TxVersion.V2
       ),
       "Empty keys aren't allowed in tx version >= 2"
@@ -186,7 +186,7 @@ class InvokeScriptTransactionGrpcSuite extends GrpcBaseTransactionSuite {
         caller,
         Recipient().withPublicKeyHash(thirdContractAddr),
         Some(FUNCTION_CALL(FunctionHeader.User("foo"), List.empty)),
-        fee = 1.TN,
+        fee = 1.waves,
         version = TxVersion.V2,
         waitForTx = true
       ),

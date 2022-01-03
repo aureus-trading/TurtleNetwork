@@ -58,7 +58,7 @@ class Ride4DAppsActivationTestSuite extends BaseTransactionSuite with CancelAfte
         sender.keyPair,
         recipient = smartAcc.toAddress.toString,
         assetId = None,
-        amount = 5.TN,
+        amount = 5.waves,
         fee = minFee,
         waitForTx = true
       )
@@ -69,7 +69,7 @@ class Ride4DAppsActivationTestSuite extends BaseTransactionSuite with CancelAfte
         sender.keyPair,
         recipient = callerAcc.toAddress.toString,
         assetId = None,
-        amount = 5.TN,
+        amount = 5.waves,
         fee = minFee,
         waitForTx = true
       )
