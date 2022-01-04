@@ -83,5 +83,5 @@ object RebroadcastTransactionSuite {
     parseString("TN.synchronization.utx-synchronizer.allow-tx-rebroadcasting = false")
 
   private def configWithMinimumPeers(n: Int) =
-    parseString(s"waves.rest-api.minimum-peers = $n")
+    parseString(s"TN.rest-api.minimum-peers = $n")
 }
