@@ -3,7 +3,7 @@ shopt -s nullglob
 NETWORKS="mainnet testnet stagenet custom"
 
 logEcho() {
-  echo $1 | gosu TN tee -a /var/log/tn/tn.log
+  echo $1 | gosu tn tee -a /var/log/tn/tn.log
 }
 
 mkdir -p $WVDATA $WVLOG
@@ -11,8 +11,8 @@ chmod 700 $WVDATA $WVLOG || :
 
 user="$(id -u)"
 if [ "$user" = '0' ]; then
-  find $WVDATA \! -user TN -exec chown TN '{}' +
-  find $WVLOG \! -user TN -exec chown TN '{}' +
+  find $WVDATA \! -user tn -exec chown tn '{}' +
+  find $WVLOG \! -user tn -exec chown tn '{}' +
 fi
 
 [ -z "${WAVES_CONFIG}" ] && WAVES_CONFIG="/etc/tn/tn.conf"
@@ -24,7 +24,7 @@ if [[ ! -f "$WAVES_CONFIG" ]]; then
 
     sed -i 's/include "local.conf"//' "$WAVES_CONFIG"
     for f in /etc/tn/ext/*.conf; do
-      echo "Adding $f extension config to TN.conf"
+      echo "Adding $f extension config to tn.conf"
       echo "include required(\"$f\")" >>$WAVES_CONFIG
     done
     echo 'include "local.conf"' >>$WAVES_CONFIG
