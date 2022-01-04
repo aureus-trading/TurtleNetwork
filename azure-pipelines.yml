@@ -15,7 +15,7 @@ trigger:
 #  always: true
 
 pool:
-  name: Default
+  name: Turtle
 
 steps:
 - task: CmdLine@2
