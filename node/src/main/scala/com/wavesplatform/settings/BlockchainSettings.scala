@@ -77,7 +77,8 @@ case class FunctionalitySettings(
     checkTotalDataEntriesBytesHeight: Int = 0,
     syncDAppCheckTransfersHeight: Int = 0,
     estimationOverflowFixHeight: Int = 0,
-    estimatorSumOverflowFixHeight: Int = 0
+    estimatorSumOverflowFixHeight: Int = 0,
+    forbidSyncDAppNegativePaymentHeight: Int = 0
 ) {
   val allowLeasedBalanceTransferUntilHeight: Int        = blockVersion3AfterHeight
   val allowTemporaryNegativeUntil                       = lastTimeBasedForkParameter
@@ -129,7 +130,8 @@ object FunctionalitySettings {
     checkTotalDataEntriesBytesHeight = 0,
     syncDAppCheckTransfersHeight = 0,
     estimationOverflowFixHeight = 0,
-    estimatorSumOverflowFixHeight = 0
+    estimatorSumOverflowFixHeight = 0,
+    forbidSyncDAppNegativePaymentHeight = 0
   )
 
   val TESTNET = apply(
@@ -143,7 +145,8 @@ object FunctionalitySettings {
     checkTotalDataEntriesBytesHeight = 0,
     syncDAppCheckTransfersHeight = 0,
     estimationOverflowFixHeight = 0,
-    estimatorSumOverflowFixHeight = 0
+    estimatorSumOverflowFixHeight = 0,
+    forbidSyncDAppNegativePaymentHeight = 0
   )
 
   val STAGENET = apply(

@@ -29,7 +29,7 @@ class InvokeAssetChecksTest extends PropSpec with Inside with WithState with DBC
   private val time = new TestTime
   private def ts   = time.getTimestamp()
 
-  private val invalidLengthAsset = IssuedAsset(ByteStr.decodeBase58("WAVES").get)
+  private val invalidLengthAsset = IssuedAsset(ByteStr.decodeBase58("TN").get)
   private val unexistingAsset    = IssuedAsset(ByteStr.decodeBase58("WAVESwavesWAVESwavesWAVESwavesWAVESwaves123").get)
 
   property("invoke asset checks") {
