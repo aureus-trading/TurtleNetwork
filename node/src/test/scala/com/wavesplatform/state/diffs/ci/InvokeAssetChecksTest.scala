@@ -82,7 +82,7 @@ class InvokeAssetChecksTest extends PropSpec with Inside with WithState with DBC
         if (activated) {
           val expectingMessage =
             if (func == "invalidLength")
-              s"Transfer error: invalid asset ID '$invalidLengthAsset' length = 4 bytes, must be 32"
+              s"Transfer error: invalid asset ID '$invalidLengthAsset' length = 2 bytes, must be 32"
             else
               s"Transfer error: asset '$unexistingAsset' is not found on the blockchain"
           Diff.empty.copy(
@@ -204,7 +204,7 @@ class InvokeAssetChecksTest extends PropSpec with Inside with WithState with DBC
     withDomain(domainSettingsWithFS(features)) { d =>
       d.appendBlock(preparingTxs: _*)
       (the[RuntimeException] thrownBy d.appendBlock(invokeInvalidLength)).getMessage should include(
-        s"Transfer error: invalid asset ID '$invalidLengthAsset' length = 4 bytes, must be 32"
+        s"Transfer error: invalid asset ID '$invalidLengthAsset' length = 2 bytes, must be 32"
       )
       (the[RuntimeException] thrownBy d.appendBlock(invokeUnexisting)).getMessage should include(
         s"Transfer error: asset '$unexistingAsset' is not found on the blockchain"
