@@ -130,7 +130,7 @@ class LeaseRouteSpec
     for {
       fee       <- extraSmallFeeGen
       recipient <- accountGen
-      amount    <- Gen.chooseNum(1, (maxAmount - fee).max(1))
+      amount    <- Gen.chooseNum(1, (maxAmount/2 - fee).max(1))
       version   <- Gen.oneOf(1.toByte, 2.toByte, 3.toByte)
     } yield LeaseTransaction.selfSigned(version, sender, recipient.toAddress, amount, fee, timestamp).explicitGet()
 

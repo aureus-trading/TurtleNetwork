@@ -93,7 +93,7 @@ class SyncDAppNegativePaymentTest extends PropSpec with WithDomain with Transact
           if (customAsset)
             s"DApp $dApp1 invoked DApp $dApp2 with attached token $asset amount = -1"
           else
-            s"DApp $dApp1 invoked DApp $dApp2 with attached WAVES amount = -1"
+            s"DApp $dApp1 invoked DApp $dApp2 with attached TN amount = -1"
         )
       }
     }
