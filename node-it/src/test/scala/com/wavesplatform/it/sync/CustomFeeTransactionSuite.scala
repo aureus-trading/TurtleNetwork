@@ -32,7 +32,7 @@ class CustomFeeTransactionSuite extends BaseTransactionSuite with CancelAfterFai
     val issuedAssetId = notMiner.signedIssue(req).id
     nodes.waitForHeightAriseAndTxPresent(issuedAssetId)
 
-    val sponsorAssetId = notMiner.sponsorAsset(senderKeyPair, issuedAssetId, assetToken, assetFee).id
+    val sponsorAssetId = notMiner.sponsorAsset(senderKeyPair, issuedAssetId, assetToken, sponsorFee).id
     assert(sponsorAssetId.nonEmpty)
     nodes.waitForHeightAriseAndTxPresent(sponsorAssetId)
 
