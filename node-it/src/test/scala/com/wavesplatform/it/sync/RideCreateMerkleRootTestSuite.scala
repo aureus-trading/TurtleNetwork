@@ -34,7 +34,7 @@ class RideCreateMerkleRootTestSuite
           BlockchainFeatures.BlockV5.id.toInt    -> 0
         )
       )
-      .withDefault(1)
+      .withDefault(2)
       .buildNonConflicting()
 
   test("Ride createMerkleRoot") {
@@ -48,7 +48,7 @@ class RideCreateMerkleRootTestSuite
         |]
         """.stripMargin
     val cscript = ScriptCompiler.compile(script, ScriptEstimatorV3(fixOverflow = true)).explicitGet()._1.bytes().base64
-    val node    = nodes.head
+    val node    = nodes.last
     nodes.waitForHeightArise()
     val tx1   = node.broadcastTransfer(node.keyPair, sender.address, setScriptFee, minFee, None, None, version = TxVersion.V3, waitForTx = false)
     val txId1 = tx1.id
@@ -87,7 +87,6 @@ class RideCreateMerkleRootTestSuite
     val proofs = nodes.head.getMerkleProof(txId1, txId2, txId3, txId4, txId5)
 
     sender.setScript(sender.keyPair, Some(cscript), setScriptFee, waitForTx = true).id
-
     for (p <- proofs) {
       node.invokeScript(
         node.keyPair,
