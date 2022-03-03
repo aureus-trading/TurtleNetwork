@@ -24,7 +24,7 @@ class InvokeScriptTransactionGrpcSuite extends GrpcBaseTransactionSuite {
   override protected def nodeConfigs: Seq[Config] =
     NodeConfigs.newBuilder
       .overrideBase(_.quorum(0))
-      .overrideBase(_ => """waves.blockchain.custom.functionality.pre-activated-features.16 = 0""")
+      .overrideBase(_ => """TN.blockchain.custom.functionality.pre-activated-features.16 = 0""")
       .withDefault(1)
       .withSpecial(_.nonMiner)
       .buildNonConflicting()

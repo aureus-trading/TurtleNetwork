@@ -29,7 +29,7 @@ class BlockchainUpdates(private val context: Context) extends Extension with Sco
     rejectedExecutionHandler = new akka.dispatch.SaneRejectedExecutionHandler
   )
 
-  private[this] val settings = context.settings.config.as[BlockchainUpdatesSettings]("waves.blockchain-updates")
+  private[this] val settings = context.settings.config.as[BlockchainUpdatesSettings]("TN.blockchain-updates")
   private[this] val repo     = new Repo(context.settings.directory + "/blockchain-updates", context.blocksApi)
 
   private[this] val grpcServer: Server = NettyServerBuilder
