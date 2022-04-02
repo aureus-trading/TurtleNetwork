@@ -67,17 +67,6 @@ class ReissueTransactionDiffTest extends PropSpec with WithState with EitherValu
     }
   }
 
-<<<<<<< HEAD
-  property("Reissue transaction's fee after feature activation is 1 TN") {
-    forAll(afterActivationScenario) {
-      case (bs, txs) =>
-        checkFee(bs, txs) {
-          case (result, lessResult, moreResult) =>
-            result.explicitGet()
-            lessResult.left.value
-            moreResult.explicitGet()
-        }
-=======
   property("Reissue transaction's fee after feature activation is 0.001 WAVES") {
     afterActivationScenario.foreach { case (bs, txs) =>
       checkFee(bs, txs) {
@@ -86,7 +75,6 @@ class ReissueTransactionDiffTest extends PropSpec with WithState with EitherValu
           lessResult.left.value
           moreResult.explicitGet()
       }
->>>>>>> 3ea6614e12e7151b5c60954f9cbca9d183ceeb7c
     }
   }
 
