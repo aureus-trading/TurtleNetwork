@@ -55,7 +55,7 @@ class SyncDAppPaymentBalanceCheckTest extends PropSpec with WithDomain {
       val dApp1   = TxHelpers.signer(1)
       val dApp2   = TxHelpers.signer(2)
 
-      val balances = AddrWithBalance.enoughBalances(invoker, dApp2) :+ AddrWithBalance(dApp1.toAddress, 0.01.waves)
+      val balances = AddrWithBalance.enoughBalances(invoker, dApp2) :+ AddrWithBalance(dApp1.toAddress, 1.waves)
 
       val setScript1 = TxHelpers.setScript(dApp1, dApp1Script(dApp2.toAddress, bigComplexityDApp1))
       val setScript2 = TxHelpers.setScript(dApp2, dApp2Script(bigComplexityDApp2))

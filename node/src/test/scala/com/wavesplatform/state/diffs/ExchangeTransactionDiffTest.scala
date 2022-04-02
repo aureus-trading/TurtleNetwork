@@ -711,7 +711,7 @@ class ExchangeTransactionDiffTest extends PropSpec with Inside with WithDomain w
       val matcher = TxHelpers.signer(3)
 
       val genesis = Seq(
-        TxHelpers.genesis(buyer.toAddress, 1 * Constants.UnitsInWave),
+        TxHelpers.genesis(buyer.toAddress, 1000 * Constants.UnitsInWave),
         TxHelpers.genesis(seller.toAddress)
       )
       val issue = TxHelpers.issue(buyer)
@@ -821,7 +821,7 @@ class ExchangeTransactionDiffTest extends PropSpec with Inside with WithDomain w
     assertDiffAndState(Seq(TestBlock.create(genesis :+ issue)), TestBlock.create(Seq(tx)), fs) {
       case (blockDiff, state) =>
         blockDiff.portfolios(tx.sender.toAddress).balance shouldBe tx.buyMatcherFee + tx.sellMatcherFee - tx.fee
-        state.balance(tx.sender.toAddress) shouldBe 0L
+        state.balance(tx.sender.toAddress) shouldBe 4L
     }
   }
 
@@ -924,7 +924,7 @@ class ExchangeTransactionDiffTest extends PropSpec with Inside with WithDomain w
         case Right(diff) =>
           import diff.portfolios
           portfolios(buyer.toAddress).balance shouldBe (-41L + 425532L)
-          portfolios(seller.toAddress).balance shouldBe (-4000000L - 425532L)
+          portfolios(seller.toAddress).balance shouldBe (-4000000L - 725532L)
           portfolios(matcher.toAddress).balance shouldBe (+41L + 4000000L - tx.fee)
       }
     }

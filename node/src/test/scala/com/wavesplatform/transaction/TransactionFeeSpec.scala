@@ -64,7 +64,7 @@ class TransactionFeeSpec extends FreeSpec with WithDomain {
                                                       |  ]
                                                       |}
                                                       |""".stripMargin)),
-              0.01.waves,
+              0.06.waves,
               ntpTime.getTimestamp()
             )
             .explicitGet()
@@ -100,7 +100,7 @@ class TransactionFeeSpec extends FreeSpec with WithDomain {
                                                         |  true
                                                         |}
                                                         |""".stripMargin)),
-                0.01.waves,
+                0.06.waves,
                 ntpTime.getTimestamp()
               )
               .explicitGet(),
@@ -131,7 +131,7 @@ class TransactionFeeSpec extends FreeSpec with WithDomain {
                   .mkString(" || ")}
                                                          |  [ScriptTransfer(i.caller, 100, unit)]
                                                          |}""".stripMargin)),
-                0.01.waves,
+                0.06.waves,
                 ntpTime.getTimestamp()
               )
               .explicitGet()
@@ -140,9 +140,9 @@ class TransactionFeeSpec extends FreeSpec with WithDomain {
           d.blockchain.accountScript(sender.toAddress).get.verifierComplexity should be <= 200L
 
           val invoke = InvokeScriptTransaction
-            .selfSigned(TxVersion.V2, sender, dappAccount.toAddress, None, Seq.empty, 0.009.waves, Asset.Waves, ntpTime.getTimestamp())
+            .selfSigned(TxVersion.V2, sender, dappAccount.toAddress, None, Seq.empty, 0.06.waves, Asset.Waves, ntpTime.getTimestamp())
             .explicitGet()
-          d.commonApi.calculateWavesFee(invoke) shouldBe 0.005.waves
+          d.commonApi.calculateWavesFee(invoke) shouldBe 0.06.waves
           d.appendAndAssertFailed(invoke)
 
           val invoke2 = InvokeScriptTransaction
@@ -188,7 +188,7 @@ class TransactionFeeSpec extends FreeSpec with WithDomain {
                                                         |  p0 + p1 + p2 >= 1
                                                         |}
                                                         |""".stripMargin)),
-                0.01.waves,
+                0.06.waves,
                 ntpTime.getTimestamp()
               )
               .explicitGet(),
@@ -212,7 +212,7 @@ class TransactionFeeSpec extends FreeSpec with WithDomain {
                                                          |  )
                                                          |}
                                                          |""".stripMargin)),
-                0.01.waves,
+                0.06.waves,
                 ntpTime.getTimestamp()
               )
               .explicitGet()
@@ -221,7 +221,7 @@ class TransactionFeeSpec extends FreeSpec with WithDomain {
           d.blockchain.accountScript(sender.toAddress).get.verifierComplexity should be > 200L
 
           val invoke = InvokeScriptTransaction
-            .selfSigned(2.toByte, sender, dappAccount.toAddress, None, Seq.empty, 0.009.waves, Asset.Waves, ntpTime.getTimestamp())
+            .selfSigned(2.toByte, sender, dappAccount.toAddress, None, Seq.empty, 0.06.waves, Asset.Waves, ntpTime.getTimestamp())
             .explicitGet()
           d.commonApi.calculateWavesFee(invoke) shouldBe 0.1.waves
           d.appendAndAssertFailed(invoke)
@@ -232,13 +232,13 @@ class TransactionFeeSpec extends FreeSpec with WithDomain {
 
   "transfer transaction" - {
     "with sponsored asset fee" in {
-      val balances = Seq(AddrWithBalance(TxHelpers.defaultAddress, 10.waves))
+      val balances = Seq(AddrWithBalance(TxHelpers.defaultAddress, 1010.waves))
 
       withDomain(DomainPresets.ScriptsAndSponsorship.withActivationPeriod(1), balances) { d =>
         val issue = TxHelpers.issue()
         d.appendBlock(issue)
         d.appendBlock(
-          SponsorFeeTransaction.selfSigned(TxVersion.V1, TxHelpers.defaultSigner, issue.asset, Some(1L), 1.waves, ntpTime.getTimestamp()).explicitGet()
+          SponsorFeeTransaction.selfSigned(TxVersion.V1, TxHelpers.defaultSigner, issue.asset, Some(1L), 10.waves, ntpTime.getTimestamp()).explicitGet()
         )
 
         val transfer = TransferTransaction
@@ -249,7 +249,7 @@ class TransactionFeeSpec extends FreeSpec with WithDomain {
     }
 
     "smart asset with smart account" in {
-      val balances = Seq(AddrWithBalance(TxHelpers.defaultAddress, 10.waves))
+      val balances = Seq(AddrWithBalance(TxHelpers.defaultAddress, 1010.waves))
 
       withDomain(DomainPresets.RideV4, balances) { d =>
         val verifier = TxHelpers.script(
@@ -295,7 +295,7 @@ class TransactionFeeSpec extends FreeSpec with WithDomain {
                                                         |
                                                         |sigVerify_16Kb(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
                                                         |""".stripMargin)),
-              0.01.waves,
+              0.06.waves,
               ntpTime.getTimestamp()
             )
             .explicitGet(),
@@ -316,7 +316,7 @@ class TransactionFeeSpec extends FreeSpec with WithDomain {
                                                         |    s0 + s1 + s2 > 1
                                                         |}
                                                         |""".stripMargin)),
-              0.01.waves,
+              0.06.waves,
               ntpTime.getTimestamp()
             )
             .explicitGet()

@@ -211,7 +211,7 @@ class LeaseRouteSpec
               )
             ),
             Seq.empty,
-            0.005.waves,
+            0.06.waves,
             Asset.Waves,
             ntpTime.getTimestamp()
           )
@@ -337,7 +337,7 @@ class LeaseRouteSpec
               )
             ),
             Seq.empty,
-            0.005.waves,
+            0.06.waves,
             Asset.Waves,
             ntpTime.getTimestamp()
           )

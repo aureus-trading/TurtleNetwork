@@ -35,7 +35,7 @@ class RollbackSpec extends FreeSpec with WithDomain {
     import com.wavesplatform.transaction.transfer.MassTransferTransaction.ParsedTransfer
     op match {
       case 1 =>
-        val lease = TxHelpers.lease(sender, recipient, amount, fee = 100000L, timestamp = nextTs, version = TxVersion.V1)
+        val lease = TxHelpers.lease(sender, recipient, amount, fee = 2000000L, timestamp = nextTs, version = TxVersion.V1)
         val cancelLease = TxHelpers.leaseCancel(lease.id(), sender, fee = 1, timestamp = nextTs, version = TxVersion.V1)
         List(lease, cancelLease)
       case 2 =>
@@ -150,7 +150,7 @@ class RollbackSpec extends FreeSpec with WithDomain {
     "lease balances and states" in {
       val sender = TxHelpers.signer(1)
       val recipient = TxHelpers.signer(2)
-      val initialBalance = 100.waves
+      val initialBalance = 1100.waves
       withDomain(balances = Seq(AddrWithBalance(sender.toAddress, initialBalance))) { d =>
         d.blockchainUpdater.height shouldBe 1
         val genesisBlockId = d.lastBlockId
@@ -204,7 +204,7 @@ class RollbackSpec extends FreeSpec with WithDomain {
     "asset balances" in {
       val sender = TxHelpers.signer(1)
       val recipient = TxHelpers.signer(2)
-      val initialBalance = 100.waves
+      val initialBalance = 1100.waves
       val assetAmount = 100
       withDomain(balances = Seq(AddrWithBalance(sender.toAddress, initialBalance))) { d =>
         val genesisBlockId = d.lastBlockId
@@ -247,7 +247,7 @@ class RollbackSpec extends FreeSpec with WithDomain {
 
     "asset quantity and reissuability" in {
       val sender = TxHelpers.signer(1)
-      val initialBalance = 100.waves
+      val initialBalance = 1100.waves
       withDomain(balances = Seq(AddrWithBalance(sender.toAddress, initialBalance))) { d =>
         val genesisBlockId = d.lastBlockId
 
@@ -416,24 +416,24 @@ class RollbackSpec extends FreeSpec with WithDomain {
 
       def sponsorFunctionCall(assetId: ByteStr): (Long, Terms.FUNCTION_CALL) =
         (
-          100000L,
+          2000000L,
           Terms.FUNCTION_CALL(
             FunctionHeader.User("sponsor"),
             List(
               Terms.CONST_BYTESTR(assetId).explicitGet(),
-              Terms.CONST_LONG(100000L)
+              Terms.CONST_LONG(2000000L)
             )
           )
         )
 
       def leaseFunctionCall(address: Address): (Long, Terms.FUNCTION_CALL) =
         (
-          100000L,
+          2000000L,
           Terms.FUNCTION_CALL(
             FunctionHeader.User("lease"),
             List(
               Terms.CONST_BYTESTR(ByteStr(address.bytes)).explicitGet(),
-              Terms.CONST_LONG(100000L)
+              Terms.CONST_LONG(2000000L)
             )
           )
         )

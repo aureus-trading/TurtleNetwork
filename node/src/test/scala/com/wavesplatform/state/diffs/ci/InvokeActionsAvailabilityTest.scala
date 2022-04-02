@@ -113,7 +113,7 @@ class InvokeActionsAvailabilityTest
     val asset                = IssuedAsset(issue.id.value())
     val payments             = Seq(Payment(paymentAmount, asset))
     val preparingTxs         = Seq(issue, setScriptCallingDApp, setScriptProxyDApp)
-    val invoke               = TxHelpers.invoke(proxyDApp.toAddress, func = None, invoker = invoker, payments = payments, fee = 1.005.waves)
+    val invoke               = TxHelpers.invoke(proxyDApp.toAddress, func = None, invoker = invoker, payments = payments, fee = 5000.1.waves)
 
     withDomain(RideV5, balances) { d =>
       d.appendBlock(preparingTxs: _*)

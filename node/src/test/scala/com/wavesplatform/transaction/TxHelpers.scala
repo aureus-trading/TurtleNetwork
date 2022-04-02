@@ -82,7 +82,7 @@ object TxHelpers {
             decimals: Byte = 0,
             name: String = "test",
             description: String = "description",
-            fee: Long = 1.waves,
+            fee: Long = 1000.waves,
             script: Option[Script] = None,
             reissuable: Boolean = true,
             timestamp: TxTimestamp = timestamp,
@@ -283,7 +283,7 @@ object TxHelpers {
   def sponsor(asset: IssuedAsset,
               minSponsoredAssetFee: Option[TxAmount] = Some(TestValues.fee),
               sender: KeyPair = defaultSigner,
-              fee: TxAmount = 1.waves,
+              fee: TxAmount = 10.waves,
               version: TxVersion = TxVersion.V1,
               chainId: Byte = AddressScheme.current.chainId): SponsorFeeTransaction = {
     SponsorFeeTransaction.selfSigned(version, sender, asset, minSponsoredAssetFee, fee, timestamp, chainId).explicitGet()

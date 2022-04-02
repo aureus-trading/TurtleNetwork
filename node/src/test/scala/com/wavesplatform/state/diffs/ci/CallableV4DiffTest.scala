@@ -35,7 +35,7 @@ class CallableV4DiffTest extends PropSpec with WithDomain with EitherValues {
   )
 
   property("reissue and burn actions result state") {
-    val (genesis, setScript, invoke, issue, master, reissueAmount, burnAmount) = paymentPreconditions(0.005.waves)
+    val (genesis, setScript, invoke, issue, master, reissueAmount, burnAmount) = paymentPreconditions(0.06.waves)
     assertDiffAndState(
       Seq(TestBlock.create(genesis :+ setScript :+ issue)),
       TestBlock.create(Seq(invoke)),
@@ -61,7 +61,7 @@ class CallableV4DiffTest extends PropSpec with WithDomain with EitherValues {
         """.stripMargin
       )
 
-    val (genesis, setScript, invoke, issue, _, _, _) = paymentPreconditions(0.013.waves, Some(disallowReissueAsset))
+    val (genesis, setScript, invoke, issue, _, _, _) = paymentPreconditions(0.14.waves, Some(disallowReissueAsset))
     assertDiffEi(
       Seq(TestBlock.create(genesis :+ setScript :+ issue)),
       TestBlock.create(Seq(invoke)),
@@ -80,7 +80,7 @@ class CallableV4DiffTest extends PropSpec with WithDomain with EitherValues {
         """.stripMargin
       )
 
-    val (genesis, setScript, invoke, issue, _, _, _) = paymentPreconditions(0.013.waves, Some(disallowBurnAsset))
+    val (genesis, setScript, invoke, issue, _, _, _) = paymentPreconditions(0.14.waves, Some(disallowBurnAsset))
     assertDiffEi(
       Seq(TestBlock.create(genesis :+ setScript :+ issue)),
       TestBlock.create(Seq(invoke)),
@@ -99,7 +99,7 @@ class CallableV4DiffTest extends PropSpec with WithDomain with EitherValues {
         """.stripMargin
       )
 
-    val (genesis, setScript, invoke, issue, _, _, _) = paymentPreconditions(0.005.waves, Some(allowBurnAndReissueAsset))
+    val (genesis, setScript, invoke, issue, _, _, _) = paymentPreconditions(0.14.waves, Some(allowBurnAndReissueAsset))
     assertDiffEi(
       Seq(TestBlock.create(genesis :+ setScript :+ issue)),
       TestBlock.create(Seq(invoke)),
@@ -109,7 +109,7 @@ class CallableV4DiffTest extends PropSpec with WithDomain with EitherValues {
 
   property("action state changes affects subsequent actions") {
     val (genesis, setScript, invoke, issue, master, invoker, reissueAmount, burnAmount, transferAmount) =
-      multiActionPreconditions(invokeFee = 0.029.waves, withScriptError = false)
+      multiActionPreconditions(invokeFee = 0.06.waves, withScriptError = false)
     assertDiffAndState(
       Seq(TestBlock.create(genesis :+ setScript :+ issue)),
       TestBlock.create(Seq(invoke)),
@@ -129,7 +129,7 @@ class CallableV4DiffTest extends PropSpec with WithDomain with EitherValues {
 
   property("check fee") {
     val minimalFee                                         = 6 * ScriptExtraFee + FeeConstants(InvokeScriptTransaction.typeId) * FeeValidation.FeeUnit
-    val (genesis, setScript, invoke, issue, _, _, _, _, _) = multiActionPreconditions(invokeFee = 0.005.waves, withScriptError = false)
+    val (genesis, setScript, invoke, issue, _, _, _, _, _) = multiActionPreconditions(invokeFee = 0.06.waves, withScriptError = false)
     assertDiffEi(
       Seq(TestBlock.create(genesis :+ setScript :+ issue)),
       TestBlock.create(Seq(invoke)),
@@ -138,7 +138,7 @@ class CallableV4DiffTest extends PropSpec with WithDomain with EitherValues {
   }
 
   ignore("trace") {
-    val (genesis, setScript, invoke, issue, _, _, _, _, _) = multiActionPreconditions(invokeFee = 0.005.waves, withScriptError = true)
+    val (genesis, setScript, invoke, issue, _, _, _, _, _) = multiActionPreconditions(invokeFee = 0.06.waves, withScriptError = true)
     assertDiffEiTraced(
       Seq(TestBlock.create(genesis :+ setScript :+ issue)),
       TestBlock.create(Seq(invoke)),
@@ -403,7 +403,7 @@ class CallableV4DiffTest extends PropSpec with WithDomain with EitherValues {
     )
 
   property("issue action results state") {
-    val (setScript, invoke, master, invoker, amount) = issuePreconditions(1.005.waves)
+    val (setScript, invoke, master, invoker, amount) = issuePreconditions(1000.06.waves)
     withDomain(balances = AddrWithBalance.enoughBalances(invoker, master)) { d =>
       val tb1 = TestBlock.create(System.currentTimeMillis(), d.blockchain.lastBlockId.get, Seq(setScript))
       d.blockchainUpdater.processBlock(tb1, ByteStr(new Array[Byte](32)), false).explicitGet()
@@ -425,7 +425,7 @@ class CallableV4DiffTest extends PropSpec with WithDomain with EitherValues {
   }
 
   property("sponsor fee action results state") {
-    val (genesis, setScript, invoke, minSponsoredAssetFee) = sponsorFeePreconditions(1.005.waves)
+    val (genesis, setScript, invoke, minSponsoredAssetFee) = sponsorFeePreconditions(1000.06.waves)
     assertDiffAndState(
       Seq(TestBlock.create(genesis :+ setScript)),
       TestBlock.create(Seq(invoke)),

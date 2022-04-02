@@ -148,7 +148,7 @@ class TransactionsRouteSpec
                       |  "id" : "${leaseCancel.id()}",
                       |  "sender" : "${sender.toAddress}",
                       |  "senderPublicKey" : "${sender.publicKey}",
-                      |  "fee" : ${0.001.waves},
+                      |  "fee" : ${0.02.waves},
                       |  "feeAssetId" : null,
                       |  "timestamp" : ${leaseCancel.timestamp},
                       |  "proofs" : [ "${leaseCancel.signature}" ],
@@ -868,7 +868,7 @@ class TransactionsRouteSpec
                                                        |  ]
                                                        |}
                                                        |""".stripMargin)),
-              0.01.waves,
+              0.06.waves,
               ntpTime.getTimestamp()
             )
             .explicitGet(),
@@ -876,7 +876,7 @@ class TransactionsRouteSpec
         )
 
         val invoke = InvokeScriptTransaction
-          .selfSigned(2.toByte, sender, sender.toAddress, None, Seq.empty, 0.005.waves, Asset.Waves, ntpTime.getTimestamp())
+          .selfSigned(2.toByte, sender, sender.toAddress, None, Seq.empty, 0.06.waves, Asset.Waves, ntpTime.getTimestamp())
           .explicitGet()
 
         Post(routePath("/broadcast?trace=true"), invoke.json()) ~> mkRoute(d) ~> check {
