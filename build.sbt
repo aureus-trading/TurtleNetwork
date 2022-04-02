@@ -118,9 +118,15 @@ inScope(Global)(
     scalaVersion := "2.13.6",
     organization := "com.wavesplatform",
     organizationName := "Waves Platform",
+<<<<<<< HEAD
     V.fallback := (1, 3, 12),
     organizationHomepage := Some(url("https://turtlenetwork.eu")),
     licenses := Seq(("MIT", url("https://github.com/turtlenetwork/Turtlenetwork/blob/master/LICENSE"))),
+=======
+    V.fallback := (1, 3, 14),
+    organizationHomepage := Some(url("https://wavesplatform.com")),
+    licenses := Seq(("MIT", url("https://github.com/wavesplatform/Waves/blob/master/LICENSE"))),
+>>>>>>> 3ea6614e12e7151b5c60954f9cbca9d183ceeb7c
     scalacOptions ++= Seq(
       "-feature",
       "-deprecation",
@@ -137,7 +143,9 @@ inScope(Global)(
     crossPaths := false,
     dependencyOverrides ++= Dependencies.enforcedVersions.value,
     cancelable := true,
-    parallelExecution := false,
+    parallelExecution := true,
+    Test / fork := true,
+    Test / testForkedParallel := true,
     testListeners := Seq.empty, // Fix for doubled test reports
     /* http://www.scalatest.org/user_guide/using_the_runner
      * o - select the standard output reporter

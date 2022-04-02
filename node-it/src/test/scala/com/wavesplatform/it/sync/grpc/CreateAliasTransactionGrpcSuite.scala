@@ -1,16 +1,16 @@
 package com.wavesplatform.it.sync.grpc
 
+import scala.util.{Random, Try}
+
 import com.wavesplatform.account.AddressScheme
 import com.wavesplatform.common.utils.EitherExt2
 import com.wavesplatform.it.NTPTime
 import com.wavesplatform.it.api.SyncGrpcApi._
-import com.wavesplatform.it.sync.{aliasFeeAmount, aliasTxSupportedVersions, minFee, transferAmount}
-import com.wavesplatform.test._
+import com.wavesplatform.it.sync.{aliasTxSupportedVersions, minFee, transferAmount}
 import com.wavesplatform.protobuf.transaction.{PBRecipients, Recipient}
+import com.wavesplatform.test._
 import io.grpc.Status.Code
 import org.scalatest.prop.TableDrivenPropertyChecks
-
-import scala.util.Random
 
 class CreateAliasTransactionGrpcSuite extends GrpcBaseTransactionSuite with NTPTime with TableDrivenPropertyChecks {
 
@@ -45,7 +45,14 @@ class CreateAliasTransactionGrpcSuite extends GrpcBaseTransactionSuite with NTPT
       sender.wavesBalance(aliasCreatorAddr).available shouldBe creatorBalance - aliasFeeAmount
       sender.wavesBalance(aliasCreatorAddr).effective shouldBe creatorEffBalance - aliasFeeAmount
 
+<<<<<<< HEAD
       assertGrpcError(sender.broadcastCreateAlias(aliasCreator, alias, aliasFeeAmount, version = v), "Alias already claimed", Code.INVALID_ARGUMENT)
+=======
+      Try(assertGrpcError(sender.broadcastCreateAlias(aliasCreator, alias, minFee, version = v), "Alias already claimed", Code.INVALID_ARGUMENT))
+        .getOrElse(
+          assertGrpcError(sender.broadcastCreateAlias(aliasCreator, alias, minFee, version = v), "is already in the state", Code.INVALID_ARGUMENT)
+        )
+>>>>>>> 3ea6614e12e7151b5c60954f9cbca9d183ceeb7c
 
       sender.wavesBalance(aliasCreatorAddr).available shouldBe creatorBalance - aliasFeeAmount
       sender.wavesBalance(aliasCreatorAddr).effective shouldBe creatorEffBalance - aliasFeeAmount
@@ -58,8 +65,15 @@ class CreateAliasTransactionGrpcSuite extends GrpcBaseTransactionSuite with NTPT
       val secondBalance    = sender.wavesBalance(secondAddress).available
       val secondEffBalance = sender.wavesBalance(secondAddress).effective
 
+<<<<<<< HEAD
       sender.broadcastCreateAlias(aliasCreator, alias, aliasFeeAmount, version = v, waitForTx = true)
       assertGrpcError(sender.broadcastCreateAlias(secondAcc, alias, aliasFeeAmount, version = v), "Alias already claimed", Code.INVALID_ARGUMENT)
+=======
+      sender.broadcastCreateAlias(aliasCreator, alias, minFee, version = v, waitForTx = true)
+      
+      Try(assertGrpcError(sender.broadcastCreateAlias(secondAcc, alias, minFee, version = v), "Alias already claimed", Code.INVALID_ARGUMENT))
+        .getOrElse(assertGrpcError(sender.broadcastCreateAlias(secondAcc, alias, minFee, version = v), "is already in the state", Code.INVALID_ARGUMENT))
+>>>>>>> 3ea6614e12e7151b5c60954f9cbca9d183ceeb7c
 
       sender.wavesBalance(secondAddress).available shouldBe secondBalance
       sender.wavesBalance(secondAddress).effective shouldBe secondEffBalance

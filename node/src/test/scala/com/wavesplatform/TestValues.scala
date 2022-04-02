@@ -4,8 +4,11 @@ import com.wavesplatform.account.{Address, KeyPair}
 import com.wavesplatform.common.state.ByteStr
 import com.wavesplatform.common.utils.EitherExt2
 import com.wavesplatform.lang.v1.estimator.ScriptEstimatorV1
+import com.wavesplatform.state.diffs.FeeValidation.{FeeConstants, FeeUnit, ScriptExtraFee}
 import com.wavesplatform.transaction.Asset.IssuedAsset
 import com.wavesplatform.transaction.TxHelpers
+import com.wavesplatform.transaction.assets.IssueTransaction
+import com.wavesplatform.transaction.smart.InvokeScriptTransaction
 import com.wavesplatform.transaction.smart.script.ScriptCompiler
 
 object TestValues {
@@ -17,6 +20,11 @@ object TestValues {
   val fee: Long          = 1e8.toLong
   val feeMiddle: Long    = 4e6.toLong
   val feeSmall: Long     = 2e6.toLong
+
+  val invokeFee: Long = FeeUnit * FeeConstants(InvokeScriptTransaction.typeId)
+
+  def invokeFee(scripts: Int = 0, issues: Int = 0): Long =
+    invokeFee + scripts * ScriptExtraFee + issues * FeeConstants(IssueTransaction.typeId) * FeeUnit
 
   val (script, scriptComplexity) = ScriptCompiler
     .compile(
