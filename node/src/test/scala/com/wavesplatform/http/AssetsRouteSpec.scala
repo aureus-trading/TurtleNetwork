@@ -47,7 +47,7 @@ class AssetsRouteSpec extends RouteSpec("/assets") with WithDomain with RestAPIS
     "multiple ids" in routeTest { (d, route) =>
       val issuer = testWallet.generateNewAccount().get
 
-      d.appendBlock(TxHelpers.genesis(issuer.toAddress, 1000.waves))
+      d.appendBlock(TxHelpers.genesis(issuer.toAddress, 10100.waves))
       val issueTransactions = Seq.tabulate(4) { i =>
         TxHelpers.issue(issuer, 1000 * (i + 1), 2, name = s"ISSUE_$i")
       } :+ TxHelpers.issue(issuer, 1, reissuable = false)
