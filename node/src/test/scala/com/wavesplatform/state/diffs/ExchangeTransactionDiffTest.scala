@@ -924,7 +924,7 @@ class ExchangeTransactionDiffTest extends PropSpec with Inside with WithDomain w
         case Right(diff) =>
           import diff.portfolios
           portfolios(buyer.toAddress).balance shouldBe (-41L + 425532L)
-          portfolios(seller.toAddress).balance shouldBe (-4000000L - 725532L)
+          portfolios(seller.toAddress).balance shouldBe (-725532)
           portfolios(matcher.toAddress).balance shouldBe (+41L + 4000000L - tx.fee)
       }
     }
