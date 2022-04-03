@@ -47,7 +47,7 @@ class AssetsRouteSpec extends RouteSpec("/assets") with WithDomain with RestAPIS
     "multiple ids" in routeTest { (d, route) =>
       val issuer = testWallet.generateNewAccount().get
 
-      d.appendBlock(TxHelpers.genesis(issuer.toAddress, 100.waves))
+      d.appendBlock(TxHelpers.genesis(issuer.toAddress, 1000.waves))
       val issueTransactions = Seq.tabulate(4) { i =>
         TxHelpers.issue(issuer, 1000 * (i + 1), 2, name = s"ISSUE_$i")
       } :+ TxHelpers.issue(issuer, 1, reissuable = false)
@@ -163,7 +163,7 @@ class AssetsRouteSpec extends RouteSpec("/assets") with WithDomain with RestAPIS
   routePath("/{assetId}/distribution/{height}/limit/{limit}") in routeTest { (d, route) =>
     val issuer           = testWallet.generateNewAccount().get
     val issueTransaction = TxHelpers.issue(issuer, 100_0000, 4, "PA_01")
-    d.appendBlock(TxHelpers.genesis(issuer.toAddress, 10.waves))
+    d.appendBlock(TxHelpers.genesis(issuer.toAddress, 1100.waves))
     val recipients = testWallet.generateNewAccounts(5)
     val transfers  = recipients.zipWithIndex.map { case (kp, i) => MassTransferTransaction.ParsedTransfer(kp.toAddress, (i + 1) * 10000) }
     d.appendBlock(
@@ -219,7 +219,7 @@ class AssetsRouteSpec extends RouteSpec("/assets") with WithDomain with RestAPIS
   routePath(s"/details/{id}") in routeTest { (d, route) =>
     val sender = testWallet.generateNewAccount().get
 
-    d.appendBlock(GenesisTransaction.create(sender.toAddress, 100.waves, System.currentTimeMillis()).explicitGet())
+    d.appendBlock(GenesisTransaction.create(sender.toAddress, 10100.waves, System.currentTimeMillis()).explicitGet())
 
     forAll(nonNftTestData) {
       case (version, reissuable, script) =>
@@ -256,9 +256,9 @@ class AssetsRouteSpec extends RouteSpec("/assets") with WithDomain with RestAPIS
   routePath("/nft/list") in routeTest { (d, route) =>
     val issuer = testWallet.generateNewAccount().get
     val nfts = Seq.tabulate(5) { i =>
-      TxHelpers.issue(issuer, 1, name = s"NFT_0$i", reissuable = false, fee = 0.001.waves)
+      TxHelpers.issue(issuer, 1, name = s"NFT_0$i", reissuable = false, fee = 0.02.waves)
     }
-    d.appendBlock(TxHelpers.genesis(issuer.toAddress, 100.waves))
+    d.appendBlock(TxHelpers.genesis(issuer.toAddress, 1100.waves))
     val nonNFT = TxHelpers.issue(issuer, 100, 2.toByte)
     d.appendBlock((nfts :+ nonNFT): _*)
 

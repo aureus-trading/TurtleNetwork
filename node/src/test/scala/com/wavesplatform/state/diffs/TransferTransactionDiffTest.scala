@@ -36,7 +36,7 @@ class TransferTransactionDiffTest extends PropSpec with WithDomain {
       d.appendAndAssertSucceed(assetTransfer)
       d.blockchain.balance(recipient) shouldBe 0L
       d.blockchain.balance(recipient, asset) shouldBe 1000L
-      d.blockchain.balance(sender) shouldBe ENOUGH_AMT - assetTransfer.fee - 1.waves
+      d.blockchain.balance(sender) shouldBe ENOUGH_AMT - assetTransfer.fee - 1000.waves
       d.blockchain.balance(sender, asset) shouldBe 0L
     }
   }

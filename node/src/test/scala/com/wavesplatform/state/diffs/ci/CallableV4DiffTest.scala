@@ -109,7 +109,7 @@ class CallableV4DiffTest extends PropSpec with WithDomain with EitherValues {
 
   property("action state changes affects subsequent actions") {
     val (genesis, setScript, invoke, issue, master, invoker, reissueAmount, burnAmount, transferAmount) =
-      multiActionPreconditions(invokeFee = 0.06.waves, withScriptError = false)
+      multiActionPreconditions(invokeFee = 1000.06.waves, withScriptError = false)
     assertDiffAndState(
       Seq(TestBlock.create(genesis :+ setScript :+ issue)),
       TestBlock.create(Seq(invoke)),
@@ -121,9 +121,9 @@ class CallableV4DiffTest extends PropSpec with WithDomain with EitherValues {
         val issuerResultAmount    = issue.quantity + (reissueAmount - burnAmount - transferAmount) * 2
         val recipientResultAmount = transferAmount * 2
 
-        blockchain.assetDescription(asset).get.totalVolume shouldBe totalResultAmount
-        blockchain.balance(master.toAddress, asset) shouldBe issuerResultAmount
-        blockchain.balance(invoker.toAddress, asset) shouldBe recipientResultAmount
+        blockchain.assetDescription(asset).get.totalVolume shouldBe totalResultAmount //100vs 160
+        blockchain.balance(master.toAddress, asset) shouldBe issuerResultAmount //100vs130
+        blockchain.balance(invoker.toAddress, asset) shouldBe recipientResultAmount //0vs 30
     }
   }
 
