@@ -58,10 +58,10 @@ class AliasTransactionSuite extends BaseTransactionSuite with TableDrivenPropert
       val aliasFee         = createAlias(firstKeyPair, alias)
 
       try {
-        assertBadRequestAndMessage(createAliasFromJson(secondKeyPair, alias, minFee, version = v), "Alias already claimed")
+        assertBadRequestAndMessage(createAliasFromJson(secondKeyPair, alias, aliasFeeAmount, version = v), "Alias already claimed")
       } catch {
         case _: Throwable =>
-          assertBadRequestAndMessage(createAliasFromJson(secondKeyPair, alias, minFee, version = v), "is already in the state on a height")
+          assertBadRequestAndMessage(createAliasFromJson(secondKeyPair, alias, aliasFeeAmount, version = v), "is already in the state on a height")
       }
 
       miner.assertBalances(firstAddress, balance1 - aliasFee, eff1 - aliasFee)

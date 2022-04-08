@@ -95,7 +95,7 @@ class ExchangeTransactionDiffTest extends PropSpec with Inside with WithDomain w
       } withClue(s"$scriptType script on $accName") {
         val isScriptSimple = scriptType == "simple"
 
-        withClue("without fix")(withDomain(DomainPresets.RideV5) { d =>
+        withClue("without fix")(withDomain(DomainPresets.RideV5.configure(_.copy(estimatorSumOverflowFixHeight = 400))) { d =>
           d.appendAndAssertSucceed(TxHelpers.genesis(TxHelpers.defaultAddress))
           d.appendAndAssertSucceed(issue, TxHelpers.transfer(TxHelpers.defaultSigner, setScript.sender.toAddress, TestValues.fee), setScript)
           f(d, isScriptSimple)
@@ -218,7 +218,7 @@ class ExchangeTransactionDiffTest extends PropSpec with Inside with WithDomain w
     preconditionsAndExchange.foreach {
       case (genesis, issue1, issue2, exchange) =>
         assertDiffEi(Seq(TestBlock.create(genesis :+ issue1 :+ issue2)), TestBlock.create(Seq(exchange)), fs) { blockDiffEi =>
-          blockDiffEi should produce("Order Version 3 feature has not been activated yet")
+          blockDiffEi should produce("Smart Orders feature has not been activated yet")
         }
     }
   }
