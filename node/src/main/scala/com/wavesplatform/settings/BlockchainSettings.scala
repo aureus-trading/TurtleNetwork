@@ -135,7 +135,7 @@ object FunctionalitySettings {
     estimatorSumOverflowFixHeight = 0,
     forbidSyncDAppNegativePaymentHeight = 0,
     forbidNegativeMatcherFee = 0,
-    allowMultipleProofsInCreateAliasUntil = 0
+    allowMultipleProofsInCreateAliasUntil = 2200000
   )
 
   val TESTNET = apply(
