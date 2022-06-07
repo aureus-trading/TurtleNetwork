@@ -128,7 +128,7 @@ object FunctionalitySettings {
       3.toShort -> 0,
       5.toShort -> 0,
       6.toShort -> 0) ,
-    syncDAppCheckPaymentsHeight = 0,
+    syncDAppCheckPaymentsHeight = 1980000,
     checkTotalDataEntriesBytesHeight = 0,
     syncDAppCheckTransfersHeight = 0,
     estimationOverflowFixHeight = 0,
