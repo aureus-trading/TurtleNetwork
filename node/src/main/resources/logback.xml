@@ -50,7 +50,7 @@
     <if condition='property("logback.file.enabled").contains("true")'>
         <then>
             <property name="appender.name" value="FILE"/>
-            <property name="appender.file" value="TN"/>
+            <property name="appender.file" value="tn"/>
             <property name="appender.level" value="${logback.file.level}"/>
 
             <include resource="file-appender-template.xml"/>
