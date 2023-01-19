@@ -41,19 +41,12 @@ RUN mkdir -p $WVDATA $WVLOG; \
     # Cleanup
     rm -rf /tmp/*
 
-<<<<<<< HEAD
 EXPOSE 6859 6860 6560 6862 6870
-VOLUME /var/lib/tn
-VOLUME /var/log/tn
-VOLUME /usr/share/tn/lib/plugins
-WORKDIR /var/lib/tn
-=======
-EXPOSE 6869 6868 6863 6862 6870
 VOLUME $WVDATA
 VOLUME $WVLOG
 VOLUME $WAVES_INSTALL_PATH/lib/plugins
 WORKDIR $WVDATA
->>>>>>> b05b3d7e16bb8c573b48a010c22b09a1f5d6aab5
+
 
 STOPSIGNAL SIGINT
 ENTRYPOINT ["/usr/share/tn/bin/entrypoint.sh"]

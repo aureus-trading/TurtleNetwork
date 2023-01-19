@@ -202,19 +202,11 @@ class SponsorshipDiffTest extends PropSpec with WithState {
 
       val sponsorTxFee = (0.02 * Constants.UnitsInWave).toLong
 
-<<<<<<< HEAD
-      val genesis = Seq(master, notSponsor).map(acc => TxHelpers.genesis(acc.toAddress, 400000000000L))
-      val issue = TxHelpers.issue(master, version = TxVersion.V1)
-      val sponsor = TxHelpers.sponsor(issue.asset, Some(1), master, fee = sponsorTxFee)
-      val senderNotIssuer = TxHelpers.sponsor(issue.asset, None, notSponsor, fee = 1 * Constants.UnitsInWave)
-      val insufficientFee = TxHelpers.sponsor(issue.asset, None, notSponsor, fee = 1 * Constants.UnitsInWave - 1)
-=======
-      val genesis                = Seq(master, notSponsor).map(acc => TxHelpers.genesis(acc.toAddress, 400000000))
+      val genesis                = Seq(master, notSponsor).map(acc => TxHelpers.genesis(acc.toAddress, 400000000000L))
       val issue                  = TxHelpers.issue(master, version = TxVersion.V1)
       val sponsor                = TxHelpers.sponsor(issue.asset, Some(1), master, fee = sponsorTxFee)
       val senderNotIssuer        = TxHelpers.sponsor(issue.asset, None, notSponsor, fee = 1 * Constants.UnitsInWave)
       val insufficientFee        = TxHelpers.sponsor(issue.asset, None, notSponsor, fee = 1 * Constants.UnitsInWave - 1)
->>>>>>> b05b3d7e16bb8c573b48a010c22b09a1f5d6aab5
       val insufficientReducedFee = TxHelpers.sponsor(issue.asset, None, notSponsor, fee = (0.001 * Constants.UnitsInWave).toLong - 1)
 
       (genesis :+ issue :+ sponsor, senderNotIssuer, insufficientFee, insufficientReducedFee)
@@ -236,21 +228,12 @@ class SponsorshipDiffTest extends PropSpec with WithState {
       val master     = TxHelpers.signer(1)
       val notSponsor = TxHelpers.signer(2)
 
-<<<<<<< HEAD
       val sponsorTxFee = (0.02 * Constants.UnitsInWave).toLong
-      val sponsorFee = 400000L
-
-      val genesis = Seq(master, notSponsor).map(acc => TxHelpers.genesis(acc.toAddress, 400000000000L))
-      val issue = TxHelpers.issue(master, version = TxVersion.V1)
-      val sponsor = TxHelpers.sponsor(issue.asset, Some(1), master, fee = sponsorTxFee)
-=======
-      val sponsorTxFee = (0.001 * Constants.UnitsInWave).toLong
       val sponsorFee   = 400000L
 
-      val genesis         = Seq(master, notSponsor).map(acc => TxHelpers.genesis(acc.toAddress, 400000000))
+      val genesis         = Seq(master, notSponsor).map(acc => TxHelpers.genesis(acc.toAddress, 400000000000L))
       val issue           = TxHelpers.issue(master, version = TxVersion.V1)
       val sponsor         = TxHelpers.sponsor(issue.asset, Some(1), master, fee = sponsorTxFee)
->>>>>>> b05b3d7e16bb8c573b48a010c22b09a1f5d6aab5
       val senderNotIssuer = TxHelpers.sponsor(issue.asset, Some(sponsorFee), notSponsor, fee = 1 * Constants.UnitsInWave)
       val insufficientFee = TxHelpers.sponsor(issue.asset, Some(sponsorFee), master, fee = (0.001 * Constants.UnitsInWave).toLong - 1)
 
@@ -273,19 +256,11 @@ class SponsorshipDiffTest extends PropSpec with WithState {
       val master    = TxHelpers.signer(1)
       val recipient = TxHelpers.signer(2)
 
-<<<<<<< HEAD
-      val genesis = TxHelpers.genesis(master.toAddress, 200105700000L)
-      val issue = TxHelpers.issue(master, amount = 100, decimals = 2, reissuable = false, fee = 100000000000L, version = TxVersion.V1)
-      val sponsor = TxHelpers.sponsor(issue.asset, Some(100), master, fee = 100000000000L)
-      val assetTransfer = TxHelpers.transfer(master, recipient.toAddress, issue.quantity, issue.asset, fee = 2000000, version = TxVersion.V1)
-      val wavesTransfer = TxHelpers.transfer(master, recipient.toAddress, 99800000, fee = 2000000, version = TxVersion.V1)
-=======
-      val genesis           = TxHelpers.genesis(master.toAddress, 300000000)
-      val issue             = TxHelpers.issue(master, amount = 100, decimals = 2, reissuable = false, fee = 100000000, version = TxVersion.V1)
-      val sponsor           = TxHelpers.sponsor(issue.asset, Some(100), master, fee = 100000000)
-      val assetTransfer     = TxHelpers.transfer(master, recipient.toAddress, issue.quantity.value, issue.asset, fee = 100000, version = TxVersion.V1)
-      val wavesTransfer     = TxHelpers.transfer(master, recipient.toAddress, 99800000, fee = 100000, version = TxVersion.V1)
->>>>>>> b05b3d7e16bb8c573b48a010c22b09a1f5d6aab5
+      val genesis           = TxHelpers.genesis(master.toAddress, 200105700000L)
+      val issue             = TxHelpers.issue(master, amount = 100, decimals = 2, reissuable = false, fee = 100000000000L, version = TxVersion.V1)
+      val sponsor           = TxHelpers.sponsor(issue.asset, Some(100), master, fee = 100000000000L)
+      val assetTransfer     = TxHelpers.transfer(master, recipient.toAddress, issue.quantity.value, issue.asset, fee = 2000000, version = TxVersion.V1)
+      val wavesTransfer     = TxHelpers.transfer(master, recipient.toAddress, 99800000, fee = 2000000, version = TxVersion.V1)
       val backWavesTransfer = TxHelpers.transfer(recipient, master.toAddress, 100000, feeAsset = issue.asset, fee = 100, version = TxVersion.V1)
 
       (genesis, issue, sponsor, assetTransfer, wavesTransfer, backWavesTransfer)
