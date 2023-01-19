@@ -75,17 +75,13 @@ class SmartTransactionsConstraintsSuite extends BaseFreeSpec with TransferSendin
 
   private def setScriptTx(sender: KeyPair) =
     SetScriptTransaction
-<<<<<<< HEAD
-      .selfSigned(1.toByte, sender = sender, script = Some(ExprScript(V1, Terms.TRUE, checkSize = false).explicitGet()), fee = 100000000, timestamp = System.currentTimeMillis() - 5.minutes.toMillis)
-=======
       .selfSigned(
         1.toByte,
         sender = sender,
         script = Some(ExprScript(V1, Terms.TRUE, checkSize = false).explicitGet()),
-        fee = 1000000,
+        fee = 100000000,
         timestamp = System.currentTimeMillis() - 5.minutes.toMillis
       )
->>>>>>> b05b3d7e16bb8c573b48a010c22b09a1f5d6aab5
       .explicitGet()
 
   private def toRequest(tx: SetScriptTransaction): SignedSetScriptRequest = SignedSetScriptRequest(

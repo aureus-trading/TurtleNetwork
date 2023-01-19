@@ -136,15 +136,9 @@ class ExchangeTransactionGrpcSuite extends GrpcBaseTransactionSuite with NTPTime
       val expirationTimestamp = ts + Order.MaxLiveTime
       val price               = 2 * Order.PriceConstant
       val amount              = 1
-<<<<<<< HEAD
       val pair                = AssetPair.createAssetPair("TN", assetId).get
-      val buy                 = Order.buy(o1ver, buyer, matcher.publicKey, pair, amount, price, ts, expirationTimestamp, matcherFee)
-      val sell                = Order.sell(o2ver, seller, matcher.publicKey, pair, amount, price, ts, expirationTimestamp, matcherFee)
-=======
-      val pair                = AssetPair.createAssetPair("WAVES", assetId).get
       val buy                 = Order.buy(o1ver, buyer, matcher.publicKey, pair, amount, price, ts, expirationTimestamp, matcherFee).explicitGet()
       val sell                = Order.sell(o2ver, seller, matcher.publicKey, pair, amount, price, ts, expirationTimestamp, matcherFee).explicitGet()
->>>>>>> b05b3d7e16bb8c573b48a010c22b09a1f5d6aab5
 
       assertGrpcError(
         sender.exchange(matcher, buy, sell, amount, price, matcherFee, matcherFee, matcherFee, ts, tver),

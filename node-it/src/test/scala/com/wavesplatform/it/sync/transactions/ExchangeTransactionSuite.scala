@@ -63,15 +63,9 @@ class ExchangeTransactionSuite extends BaseTransactionSuite with NTPTime {
       val sellAmount = 1
       val amount     = 1
 
-<<<<<<< HEAD
       val pair = AssetPair.createAssetPair("TN", assetId).get
-      val buy  = Order.buy(buyVersion, buyer, matcher.publicKey, pair, buyAmount, buyPrice, ts, expirationTimestamp, matcherFee)
-      val sell = Order.sell(sellVersion, seller, matcher.publicKey, pair, sellAmount, sellPrice, ts, expirationTimestamp, matcherFee)
-=======
-      val pair = AssetPair.createAssetPair("WAVES", assetId).get
       val buy  = Order.buy(buyVersion, buyer, matcher.publicKey, pair, buyAmount, buyPrice, ts, expirationTimestamp, matcherFee).explicitGet()
       val sell = Order.sell(sellVersion, seller, matcher.publicKey, pair, sellAmount, sellPrice, ts, expirationTimestamp, matcherFee).explicitGet()
->>>>>>> b05b3d7e16bb8c573b48a010c22b09a1f5d6aab5
 
       val buyFee  = (BigInt(matcherFee) * amount / buy.amount.value).toLong
       val sellFee = (BigInt(matcherFee) * amount / sell.amount.value).toLong
@@ -167,20 +161,6 @@ class ExchangeTransactionSuite extends BaseTransactionSuite with NTPTime {
 
     val assetDescription = "my asset description"
 
-<<<<<<< HEAD
-    val IssueTx: IssueTransaction = IssueTransaction(
-      TxVersion.V1,
-      buyer.publicKey,
-      "myasset".utf8Bytes,
-      assetDescription.utf8Bytes,
-      quantity = someAssetAmount,
-      decimals = 8,
-      reissuable = true,
-      script = None,
-      fee = 1000.waves,
-      timestamp = System.currentTimeMillis()
-    ).signWith(buyer.privateKey)
-=======
     val IssueTx: IssueTransaction = IssueTransaction
       .selfSigned(
         TxVersion.V1,
@@ -191,11 +171,10 @@ class ExchangeTransactionSuite extends BaseTransactionSuite with NTPTime {
         decimals = 8,
         reissuable = true,
         script = None,
-        fee = 1.waves,
+        fee = 1000.waves,
         timestamp = System.currentTimeMillis()
       )
       .explicitGet()
->>>>>>> b05b3d7e16bb8c573b48a010c22b09a1f5d6aab5
 
     val assetId = IssueTx.id()
 
@@ -230,13 +209,7 @@ class ExchangeTransactionSuite extends BaseTransactionSuite with NTPTime {
       val sellPrice  = 500000
       val buyAmount  = 40000000
       val sellAmount = 40000000
-<<<<<<< HEAD
       val assetPair  = AssetPair.createAssetPair("TN", assetId.toString).get
-      val buy        = Order.buy(o1ver, buyer, matcher.publicKey, assetPair, buyAmount, buyPrice, ts, expirationTimestamp, matcherFee, matcherFeeOrder1)
-      val sell       = Order.sell(o2ver, seller, matcher.publicKey, assetPair, sellAmount, sellPrice, ts, expirationTimestamp, matcherFee, matcherFeeOrder2)
-      val amount     = 40000000
-=======
-      val assetPair  = AssetPair.createAssetPair("WAVES", assetId.toString).get
       val buy = Order
         .buy(o1ver, buyer, matcher.publicKey, assetPair, buyAmount, buyPrice, ts, expirationTimestamp, matcherFee, matcherFeeOrder1)
         .explicitGet()
@@ -244,7 +217,6 @@ class ExchangeTransactionSuite extends BaseTransactionSuite with NTPTime {
         .sell(o2ver, seller, matcher.publicKey, assetPair, sellAmount, sellPrice, ts, expirationTimestamp, matcherFee, matcherFeeOrder2)
         .explicitGet()
       val amount = 40000000
->>>>>>> b05b3d7e16bb8c573b48a010c22b09a1f5d6aab5
 
       val tx =
         ExchangeTransaction

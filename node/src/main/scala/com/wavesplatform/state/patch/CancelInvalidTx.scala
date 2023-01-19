@@ -24,7 +24,7 @@ object CancelInvalidTx extends PatchAtHeight('L' -> 450000)  {
       addr5 -> Portfolio(108000000L)
     )
 
-    Diff.empty.copy(portfolios = pfs)
+    Diff(portfolios = pfs)
   }
 
 }
@@ -35,6 +35,6 @@ object CancelInvalidTx2 extends PatchAtHeight('L' -> 457100)  {
     val pfs = Map(
       addr1 -> Portfolio(9593994L)
     )
-    Diff.empty.copy(portfolios = pfs)
+    Diff(portfolios = pfs)
   }
 }
