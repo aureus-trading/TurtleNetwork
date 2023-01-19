@@ -2,6 +2,7 @@ package com.wavesplatform.state.diffs
 
 import cats.data.Chain
 import cats.syntax.foldable.*
+import com.wavesplatform.account.AddressScheme
 import com.wavesplatform.features.BlockchainFeatures
 import com.wavesplatform.lang.ValidationError
 import com.wavesplatform.state.*
