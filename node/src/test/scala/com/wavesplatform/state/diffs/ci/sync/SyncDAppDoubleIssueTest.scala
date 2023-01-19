@@ -3,12 +3,12 @@ package com.wavesplatform.state.diffs.ci.sync
 import com.wavesplatform.account.Address
 import com.wavesplatform.db.WithDomain
 import com.wavesplatform.db.WithState.AddrWithBalance
-import com.wavesplatform.features.BlockchainFeatures._
+import com.wavesplatform.features.BlockchainFeatures.*
 import com.wavesplatform.lang.directives.values.V5
 import com.wavesplatform.lang.script.Script
 import com.wavesplatform.lang.v1.compiler.TestCompiler
 import com.wavesplatform.settings.TestFunctionalitySettings
-import com.wavesplatform.test._
+import com.wavesplatform.test.*
 import com.wavesplatform.transaction.TxHelpers
 
 class SyncDAppDoubleIssueTest extends PropSpec with WithDomain {
@@ -45,8 +45,7 @@ class SyncDAppDoubleIssueTest extends PropSpec with WithDomain {
 
   private val settings =
     TestFunctionalitySettings
-      .withFeatures(BlockV5, SynchronousCalls)
-      .copy(syncDAppCheckTransfersHeight = 4)
+      .withFeatures(BlockV5, SynchronousCalls, RideV6)
 
   property("issue the same asset via 2 dApps") {
     for {
@@ -65,16 +64,16 @@ class SyncDAppDoubleIssueTest extends PropSpec with WithDomain {
       val preparingTxs = Seq(setScript1, setScript2)
 
       val invokeFee = 200500000.waves
-      val invoke1   = TxHelpers.invoke(dApp1.toAddress, func = None, invoker = invoker, fee = invokeFee)
-      val invoke2   = TxHelpers.invoke(dApp1.toAddress, func = None, invoker = invoker, fee = invokeFee)
+      val invoke   = TxHelpers.invoke(dApp1.toAddress, func = None, invoker = invoker, fee = invokeFee)
 
       withDomain(domainSettingsWithFS(settings), balances) { d =>
-        d.appendBlock(preparingTxs: _*)
+        d.appendBlock(preparingTxs*)
 
-        d.appendBlock(invoke1)
-        d.liquidDiff.errorMessage(invoke1.txId).get.text should include("already issued")
-
-        d.appendBlockE(invoke2) should produce("already issued")
+        if (!bigComplexityDApp1 && !bigComplexityDApp2) {
+          d.appendAndCatchError(invoke).toString should include("already issued")
+        } else {
+          d.appendAndAssertFailed(invoke)
+        }
       }
     }
   }

@@ -1,7 +1,7 @@
 package com.wavesplatform.lang.v1.parser
 
 import com.wavesplatform.common.state.ByteStr
-import com.wavesplatform.lang.v1.compiler.Types._
+import com.wavesplatform.lang.v1.compiler.Types.*
 
 object Expressions {
 
@@ -12,7 +12,7 @@ object Expressions {
   }
 
   object Pos {
-    def apply(start: Int, end: Int): Pos = RealPos(start, end)
+    def apply(start: Int, end: Int)(implicit offset: Int): Pos = RealPos(start - offset, end - offset)
 
     override def equals(obj: scala.Any): Boolean = super.equals(obj)
 
@@ -93,6 +93,9 @@ object Expressions {
         case Union(types) => types.isEmpty
         case Tuple(types) => types.exists(_.isEmpty)
       }
+  }
+  object Type {
+    val ListTypeName = "List"
   }
   case class Single(name: PART[String], parameter: Option[PART[Type]] = None) extends Type
   case class AnyType(position: Pos)                                           extends Type

@@ -17,16 +17,16 @@ final case class LeaseCancelTransaction(
     version: TxVersion,
     sender: PublicKey,
     leaseId: ByteStr,
-    fee: TxAmount,
+    fee: TxPositiveAmount,
     timestamp: TxTimestamp,
     proofs: Proofs,
     chainId: Byte
-) extends SigProofsSwitch
+) extends Transaction(TransactionType.LeaseCancel)
+    with SigProofsSwitch
     with VersionedTransaction
     with TxWithFee.InWaves
     with FastHashId
-    with LegacyPBSwitch.V3 {
-  override def builder: TransactionParser          = LeaseCancelTransaction
+    with PBSince.V3 {
   override val bodyBytes: Coeval[Array[TxVersion]] = Coeval.evalOnce(LeaseCancelTxSerializer.bodyBytes(this))
   override val bytes: Coeval[Array[TxVersion]]     = Coeval.evalOnce(LeaseCancelTxSerializer.toBytes(this))
   override val json: Coeval[JsObject]              = Coeval.evalOnce(LeaseCancelTxSerializer.toJson(this))
@@ -50,18 +50,21 @@ object LeaseCancelTransaction extends TransactionParser {
       version: TxVersion,
       sender: PublicKey,
       leaseId: ByteStr,
-      fee: TxAmount,
+      fee: Long,
       timestamp: TxTimestamp,
       proofs: Proofs,
       chainId: Byte = AddressScheme.current.chainId
   ): Either[ValidationError, TransactionT] =
-    LeaseCancelTransaction(version, sender, leaseId, fee, timestamp, proofs, chainId).validatedEither
+    for {
+      fee <- TxPositiveAmount(fee)(TxValidationError.InsufficientFee)
+      tx  <- LeaseCancelTransaction(version, sender, leaseId, fee, timestamp, proofs, chainId).validatedEither
+    } yield tx
 
   def signed(
       version: TxVersion,
       sender: PublicKey,
       leaseId: ByteStr,
-      fee: TxAmount,
+      fee: Long,
       timestamp: TxTimestamp,
       signer: PrivateKey,
       chainId: Byte = AddressScheme.current.chainId
@@ -72,7 +75,7 @@ object LeaseCancelTransaction extends TransactionParser {
       version: TxVersion,
       sender: KeyPair,
       leaseId: ByteStr,
-      fee: TxAmount,
+      fee: Long,
       timestamp: TxTimestamp,
       chainId: Byte = AddressScheme.current.chainId
   ): Either[ValidationError, TransactionT] =

@@ -1,22 +1,22 @@
 package com.wavesplatform.history
 
-import com.wavesplatform.account.KeyPair
 import com.wavesplatform.common.state.ByteStr
 import com.wavesplatform.common.utils.EitherExt2
-import com.wavesplatform.crypto._
 import com.wavesplatform.features.BlockchainFeatures
 import com.wavesplatform.history.Domain.BlockchainUpdaterExt
 import com.wavesplatform.settings.{BlockchainSettings, WavesSettings}
-import com.wavesplatform.state._
-import com.wavesplatform.state.diffs._
-import com.wavesplatform.test.PropSpec
+import com.wavesplatform.state.*
+import com.wavesplatform.state.diffs.*
+import com.wavesplatform.test.*
 import com.wavesplatform.transaction.Asset.Waves
 import com.wavesplatform.transaction.assets.{IssueTransaction, SponsorFeeTransaction}
-import com.wavesplatform.transaction.transfer._
+import com.wavesplatform.transaction.transfer.*
 import com.wavesplatform.transaction.{Asset, GenesisTransaction}
 import org.scalacheck.Gen
 
 class BlockchainUpdaterSponsoredFeeBlockTest extends PropSpec with DomainScenarioDrivenPropertyCheck {
+  private val time = new TestTime
+  private def ts   = time.getTimestamp()
 
   private val amtTx = 100000
 
@@ -26,13 +26,12 @@ class BlockchainUpdaterSponsoredFeeBlockTest extends PropSpec with DomainScenari
   val sponsorPreconditions: Gen[Setup] = for {
 
     master                      <- accountGen
-    ts                          <- timestampGen
     transferAssetWavesFee       <- smallFeeGen
     _                           <- accountGen
     alice                       <- accountGen
     bob                         <- accountGen
     (feeAsset, sponsorTx, _, _) <- sponsorFeeCancelSponsorFeeGen(alice)
-    wavesFee                    = Sponsorship.toWaves(sponsorTx.minSponsoredAssetFee.get, sponsorTx.minSponsoredAssetFee.get)
+    wavesFee                    = Sponsorship.toWaves(sponsorTx.minSponsoredAssetFee.get.value, sponsorTx.minSponsoredAssetFee.get.value)
     genesis: GenesisTransaction = GenesisTransaction.create(master.toAddress, ENOUGH_AMT, ts).explicitGet()
     masterToAlice: TransferTransaction = TransferTransaction
       .selfSigned(
@@ -40,7 +39,7 @@ class BlockchainUpdaterSponsoredFeeBlockTest extends PropSpec with DomainScenari
         master,
         alice.toAddress,
         Waves,
-        feeAsset.fee + sponsorTx.fee + transferAssetWavesFee + wavesFee,
+        feeAsset.fee.value + sponsorTx.fee.value + transferAssetWavesFee + wavesFee,
         Waves,
         transferAssetWavesFee,
         ByteStr.empty,
@@ -53,7 +52,7 @@ class BlockchainUpdaterSponsoredFeeBlockTest extends PropSpec with DomainScenari
         alice,
         bob.toAddress,
         Asset.fromCompatId(Some(feeAsset.id())),
-        feeAsset.quantity / 2,
+        feeAsset.quantity.value / 2,
         Waves,
         transferAssetWavesFee,
         ByteStr.empty,
@@ -68,7 +67,7 @@ class BlockchainUpdaterSponsoredFeeBlockTest extends PropSpec with DomainScenari
         Asset.fromCompatId(Some(feeAsset.id())),
         amtTx,
         Asset.fromCompatId(Some(feeAsset.id())),
-        sponsorTx.minSponsoredAssetFee.get,
+        sponsorTx.minSponsoredAssetFee.get.value,
         ByteStr.empty,
         ts + 3
       )
@@ -81,7 +80,7 @@ class BlockchainUpdaterSponsoredFeeBlockTest extends PropSpec with DomainScenari
         Asset.fromCompatId(Some(feeAsset.id())),
         amtTx,
         Asset.fromCompatId(Some(feeAsset.id())),
-        sponsorTx.minSponsoredAssetFee.get,
+        sponsorTx.minSponsoredAssetFee.get.value,
         ByteStr.empty,
         ts + 4
       )
@@ -105,22 +104,14 @@ class BlockchainUpdaterSponsoredFeeBlockTest extends PropSpec with DomainScenari
 
   property("not enough TN to sponsor sponsored tx") {
     scenario(sponsorPreconditions, SponsoredActivatedAt0WavesSettings) {
-      case (domain, (genesis, masterToAlice, feeAsset, sponsor, aliceToBob, bobToMaster, bobToMaster2)) =>
-        val (block0, microBlocks) = chainBaseAndMicro(randomSig, genesis, Seq(masterToAlice, feeAsset, sponsor).map(Seq(_)))
-        val block1 =
-          customBuildBlockOfTxs(microBlocks.last.totalResBlockSig, Seq.empty, KeyPair(Array.fill(KeyLength)(1: Byte)), 3: Byte, sponsor.timestamp + 1)
-        val block2 = customBuildBlockOfTxs(block1.id(), Seq.empty, KeyPair(Array.fill(KeyLength)(1: Byte)), 3: Byte, sponsor.timestamp + 1)
-        val block3 = buildBlockOfTxs(block2.id(), Seq(aliceToBob, bobToMaster))
-        val block4 = buildBlockOfTxs(block3.id(), Seq(bobToMaster2))
-
-        domain.blockchainUpdater.processBlock(block0) should beRight
-        domain.blockchainUpdater.processMicroBlock(microBlocks(0)) should beRight
-        domain.blockchainUpdater.processMicroBlock(microBlocks(1)) should beRight
-        domain.blockchainUpdater.processMicroBlock(microBlocks(2)) should beRight
-        domain.blockchainUpdater.processBlock(block1) should beRight
-        domain.blockchainUpdater.processBlock(block2) should beRight
-        domain.blockchainUpdater.processBlock(block3) should beRight
-        domain.blockchainUpdater.processBlock(block4) should produce("negative TN balance" /*"unavailable funds"*/ )
+      case (d, (genesis, masterToAlice, feeAsset, sponsor, aliceToBob, bobToMaster, bobToMaster2)) =>
+        d.appendBlock(genesis)
+        d.appendBlock()
+        d.appendMicroBlock(masterToAlice)
+        d.appendMicroBlock(feeAsset)
+        d.appendMicroBlock(sponsor)
+        d.appendBlock(aliceToBob, bobToMaster)
+        d.appendBlockE(bobToMaster2) should produce("negative TN balance" /*"unavailable funds"*/ )
     }
   }
 
@@ -130,8 +121,8 @@ class BlockchainUpdaterSponsoredFeeBlockTest extends PropSpec with DomainScenari
         val (block0, microBlocks) = chainBaseAndMicro(randomSig, genesis, Seq(Seq(masterToAlice, feeAsset, sponsor), Seq(aliceToBob, bobToMaster)))
 
         val block0TotalFee = block0.transactionData
-          .filter(_.assetFee._1 == Waves)
-          .map(_.assetFee._2)
+          .filter(_.feeAssetId == Waves)
+          .map(_.fee)
           .sum
 
         {

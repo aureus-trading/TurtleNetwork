@@ -7,15 +7,15 @@ import com.wavesplatform.lang.directives.DirectiveDictionary
 import com.wavesplatform.lang.directives.values.{StdLibVersion, V4, V5}
 import com.wavesplatform.lang.script.Script
 import com.wavesplatform.lang.v1.compiler.TestCompiler
-import com.wavesplatform.test.{PropSpec, produce}
+import com.wavesplatform.test.*
+import com.wavesplatform.transaction.{Transaction, TxHelpers}
 import com.wavesplatform.transaction.Asset.IssuedAsset
 import com.wavesplatform.transaction.smart.InvokeScriptTransaction
 import com.wavesplatform.transaction.smart.InvokeScriptTransaction.Payment
-import com.wavesplatform.transaction.{Transaction, TxHelpers}
 import org.scalatest.{EitherValues, Inside}
 
 class InvokePaymentsLimitTest extends PropSpec with Inside with WithState with DBCacheSettings with WithDomain with EitherValues {
-  import DomainPresets._
+  import DomainPresets.*
 
   private def dApp(version: StdLibVersion, nestedInvoke: Option[(Address, Seq[Payment])]): Script = {
     val nested = nestedInvoke.fold("") {
@@ -34,7 +34,11 @@ class InvokePaymentsLimitTest extends PropSpec with Inside with WithState with D
     )
   }
 
-  private def scenario(version: StdLibVersion, paymentsCount: Int, nested: Boolean): (Seq[AddrWithBalance], Seq[Transaction], InvokeScriptTransaction) = {
+  private def scenario(
+      version: StdLibVersion,
+      paymentsCount: Int,
+      nested: Boolean
+  ): (Seq[AddrWithBalance], Seq[Transaction], InvokeScriptTransaction) = {
     val invoker  = TxHelpers.signer(0)
     val dApp1    = TxHelpers.signer(1)
     val dApp2    = TxHelpers.signer(2)
@@ -49,20 +53,20 @@ class InvokePaymentsLimitTest extends PropSpec with Inside with WithState with D
     }
     val ssTx     = TxHelpers.setScript(dApp1, dApp(version, nestedInvoke))
     val ssTx2    = TxHelpers.setScript(dApp2, dApp(version, None))
-    val invokeTx = TxHelpers.invoke(dApp1.toAddress, payments = txPayments)
+    val invokeTx = TxHelpers.invoke(dApp1.toAddress, payments = txPayments, invoker = invoker)
     (balances, Seq(ssTx, ssTx2) ++ issues, invokeTx)
   }
 
   private def assertLimit(version: StdLibVersion, count: Int, nested: Boolean) = {
     val (balances1, preparingTxs, invoke) = scenario(version, count, nested)
-    withDomain(RideV5, balances1) { d =>
-      d.appendBlock(preparingTxs: _*)
+    withDomain(settingsForRide(version), balances1) { d =>
+      d.appendBlock(preparingTxs*)
       d.appendBlock(invoke)
       d.blockchain.transactionSucceeded(invoke.id.value()) shouldBe true
     }
     val (balances2, preparingTxs2, invoke2) = scenario(version, count + 1, nested)
-    withDomain(RideV5, balances2) { d =>
-      d.appendBlock(preparingTxs2: _*)
+    withDomain(settingsForRide(version), balances2) { d =>
+      d.appendBlock(preparingTxs2*)
       d.appendBlockE(invoke2) should produce(s"Script payment amount=${count + 1} should not exceed $count")
     }
   }

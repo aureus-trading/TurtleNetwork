@@ -91,7 +91,7 @@ class InvokeScriptErrorMsgSuite extends BaseTransactionSuite with CancelAfterFai
         ),
       AssertiveApiError(
         ScriptExecutionError.Id,
-        "Error while executing account-script: Fee in TN for InvokeScriptTransaction (14000000 in TN) with 12 total scripts invoked does not exceed minimal value of 54000000 TN."
+        "Error while executing dApp: Fee in WAVES for InvokeScriptTransaction (14000000 in TN) with 12 total scripts invoked does not exceed minimal value of 54000000 TN."
       )
     )
   }

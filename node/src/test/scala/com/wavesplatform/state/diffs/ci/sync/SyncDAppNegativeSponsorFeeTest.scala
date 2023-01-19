@@ -3,12 +3,12 @@ package com.wavesplatform.state.diffs.ci.sync
 import com.wavesplatform.account.Address
 import com.wavesplatform.db.WithDomain
 import com.wavesplatform.db.WithState.AddrWithBalance
-import com.wavesplatform.features.BlockchainFeatures._
+import com.wavesplatform.features.BlockchainFeatures
 import com.wavesplatform.lang.directives.values.V5
 import com.wavesplatform.lang.script.Script
 import com.wavesplatform.lang.v1.compiler.TestCompiler
-import com.wavesplatform.settings.TestFunctionalitySettings
-import com.wavesplatform.test._
+import com.wavesplatform.test.*
+import com.wavesplatform.test.DomainPresets.*
 import com.wavesplatform.transaction.Asset.IssuedAsset
 import com.wavesplatform.transaction.{Asset, TxHelpers}
 
@@ -43,9 +43,9 @@ class SyncDAppNegativeSponsorFeeTest extends PropSpec with WithDomain {
     )
 
   private val settings =
-    TestFunctionalitySettings
-      .withFeatures(BlockV5, SynchronousCalls)
-      .copy(syncDAppCheckTransfersHeight = 4)
+    DomainPresets.RideV5
+      .configure(_.copy(enforceTransferValidationAfter = 3))
+      .setFeaturesHeight(BlockchainFeatures.RideV6 -> 4)
 
   property("negative sponsor amount") {
     for {
@@ -65,22 +65,18 @@ class SyncDAppNegativeSponsorFeeTest extends PropSpec with WithDomain {
 
       val preparingTxs = Seq(issue, setScript1, setScript2)
 
-      val invoke1 = TxHelpers.invoke(dApp1.toAddress, func = None, invoker = invoker)
-      val invoke2 = TxHelpers.invoke(dApp1.toAddress, func = None, invoker = invoker)
+      val invoke = TxHelpers.invoke(dApp1.toAddress, func = None, invoker = invoker)
 
-      withDomain(domainSettingsWithFS(settings), balances) { d =>
-        d.appendBlock(preparingTxs: _*)
-
-        if (bigComplexityDApp1 || bigComplexityDApp2) {
-          d.appendBlock(invoke1)
-          d.liquidDiff.errorMessage(invoke1.txId).get.text should include("NegativeMinFee(-1,asset)")
-        } else {
-          d.appendBlockE(invoke1) should produce("NegativeMinFee(-1,asset)")
-          d.appendBlock()
-        }
-
+      withDomain(settings, balances) { d =>
+        d.appendBlock(preparingTxs*)
+        d.appendAndCatchError(invoke).toString should include("Negative sponsor amount")
         d.appendBlock()
-        d.appendBlockE(invoke2) should produce("Negative sponsor amount = -1")
+
+        if (!bigComplexityDApp1 && !bigComplexityDApp2) {
+          d.appendAndCatchError(invoke).toString should include("Negative sponsor amount")
+        } else {
+          d.appendAndAssertFailed(invoke)
+        }
       }
     }
   }

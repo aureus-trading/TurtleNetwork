@@ -1,36 +1,35 @@
 package com.wavesplatform.api.http
 
-import scala.concurrent.Future
-import scala.util.Success
-
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.server.Route
-import cats.instances.either._
-import cats.instances.list._
-import cats.instances.try_._
-import cats.syntax.alternative._
-import cats.syntax.either._
-import cats.syntax.traverse._
-import com.wavesplatform.account.{Address, AddressOrAlias}
-import com.wavesplatform.api.common.CommonTransactionsApi
-import com.wavesplatform.api.common.CommonTransactionsApi.TransactionMeta
-import com.wavesplatform.api.http.ApiError._
+import cats.instances.either.*
+import cats.instances.list.*
+import cats.syntax.alternative.*
+import cats.syntax.either.*
+import cats.syntax.traverse.*
+import com.wavesplatform.account.{Address, Alias}
+import com.wavesplatform.api.common.{CommonTransactionsApi, TransactionMeta}
+import com.wavesplatform.api.http.ApiError.*
 import com.wavesplatform.block.Block
 import com.wavesplatform.block.Block.TransactionProof
 import com.wavesplatform.common.state.ByteStr
-import com.wavesplatform.common.utils.{Base58, _}
+import com.wavesplatform.common.utils.{Base58, *}
+import com.wavesplatform.database.protobuf.EthereumTransactionMeta.Payload
 import com.wavesplatform.features.BlockchainFeatures
+import com.wavesplatform.lang.v1.serialization.SerdeV1
 import com.wavesplatform.network.TransactionPublisher
+import com.wavesplatform.protobuf.transaction.PBAmounts
 import com.wavesplatform.settings.RestAPISettings
 import com.wavesplatform.state.{Blockchain, InvokeScriptResult, TxMeta}
 import com.wavesplatform.state.reader.LeaseDetails
-import com.wavesplatform.transaction._
-import com.wavesplatform.transaction.lease._
-import com.wavesplatform.utils.Time
+import com.wavesplatform.transaction.*
+import com.wavesplatform.transaction.lease.*
+import com.wavesplatform.transaction.serialization.impl.InvokeScriptTxSerializer
+import com.wavesplatform.transaction.smart.InvokeScriptTransaction
+import com.wavesplatform.utils.{EthEncoding, Time}
 import com.wavesplatform.wallet.Wallet
 import monix.eval.Task
-import monix.execution.Scheduler
-import play.api.libs.json._
+import play.api.libs.json.*
 
 case class TransactionsApiRoute(
     settings: RestAPISettings,
@@ -39,11 +38,12 @@ case class TransactionsApiRoute(
     blockchain: Blockchain,
     utxPoolSize: () => Int,
     transactionPublisher: TransactionPublisher,
-    time: Time
+    time: Time,
+    routeTimeout: RouteTimeout
 ) extends ApiRoute
     with BroadcastRoute
     with AuthRoute {
-  import TransactionsApiRoute._
+  import TransactionsApiRoute.*
 
   private[this] val serializer                     = TransactionJsonSerializer(blockchain, commonApi)
   private[this] implicit val transactionMetaWrites = OWrites[TransactionMeta](serializer.transactionWithMetaJson)
@@ -55,11 +55,12 @@ case class TransactionsApiRoute(
 
   def addressWithLimit: Route = {
     (get & path("address" / AddrSegment / "limit" / IntNumber) & parameter("after".?)) { (address, limit, maybeAfter) =>
-      val after =
-        maybeAfter.map(s => ByteStr.decodeBase58(s).getOrElse(throw ApiException(CustomValidationError(s"Unable to decode transaction id $s"))))
-      if (limit > settings.transactionsByAddressLimit) throw ApiException(TooBigArrayAllocation)
-      extractScheduler { implicit sc =>
-        complete(transactionsByAddress(address, limit, after).map(txs => List(txs))) // Double list - [ [tx1, tx2, ...] ]
+      routeTimeout.executeToFuture {
+        val after =
+          maybeAfter.map(s => ByteStr.decodeBase58(s).getOrElse(throw ApiException(CustomValidationError(s"Unable to decode transaction id $s"))))
+        if (limit > settings.transactionsByAddressLimit) throw ApiException(TooBigArrayAllocation)
+
+        transactionsByAddress(address, limit, after).map(txs => List(txs)) // Double list - [ [tx1, tx2, ...] ]
       }
     }
   }
@@ -73,18 +74,18 @@ case class TransactionsApiRoute(
   def info: Route = pathPrefix("info") {
     (get & path(TransactionId)) { id =>
       complete(commonApi.transactionById(id).toRight(ApiError.TransactionDoesNotExist))
-    } ~ (pathEndOrSingleSlash & anyParam("id")) { ids =>
+    } ~ (pathEndOrSingleSlash & anyParam("id", limit = settings.transactionsByAddressLimit)) { ids =>
       val result = for {
-        _        <- Either.cond(ids.nonEmpty, (), InvalidTransactionId("Transaction ID was not specified"))
-        statuses <- ids.map(readTransactionMeta).toList.sequence
-      } yield statuses
+        _    <- Either.cond(ids.nonEmpty, (), InvalidTransactionId("Transaction ID was not specified"))
+        meta <- ids.map(readTransactionMeta).toList.sequence
+      } yield meta
 
       complete(result)
     }
   }
 
   private[this] def loadTransactionStatus(id: ByteStr): JsObject = {
-    import Status._
+    import Status.*
     val statusJson = blockchain.transactionInfo(id) match {
       case Some((tm, tx)) =>
         Json.obj(
@@ -169,50 +170,57 @@ case class TransactionsApiRoute(
   }
 
   def signWithSigner: Route = path(AddrSegment) { address =>
-    jsonPost[JsObject](TransactionFactory.parseRequestAndSign(wallet, address.stringRepr, time, _))
+    jsonPost[JsObject](TransactionFactory.parseRequestAndSign(wallet, address.toString, time, _))
   }
 
-  def signedBroadcast: Route = path("broadcast")(broadcast[JsValue](TransactionFactory.fromSignedRequest))
+  def signedBroadcast: Route = path("broadcast")(
+    broadcast[JsValue](TransactionFactory.fromSignedRequest)
+  )
 
   def merkleProof: Route = path("merkleProof") {
-    (get & parameters("id".as[String].*))(ids => complete(merkleProof(ids.toList.reverse))) ~
-      jsonPost[JsObject](
-        jsv =>
-          (jsv \ "ids").validate[List[String]] match {
-            case JsSuccess(ids, _) => merkleProof(ids)
-            case JsError(err)      => WrongJson(errors = err.toSeq)
-          }
-      )
+    anyParam("id", limit = settings.transactionsByAddressLimit) { ids =>
+      val result = Either
+        .cond(ids.nonEmpty, (), InvalidTransactionId("Transaction ID was not specified"))
+        .map(_ => merkleProof(ids.toList))
+      complete(result)
+    }
   }
 
   private def merkleProof(encodedIds: List[String]): ToResponseMarshallable =
-    encodedIds.traverse(ByteStr.decodeBase58) match {
-      case Success(txIds) =>
+    encodedIds.map(id => ByteStr.decodeBase58(id).toEither.leftMap(_ => id)).separate match {
+      case (Nil, txIds) =>
         commonApi.transactionProofs(txIds) match {
           case Nil    => CustomValidationError(s"transactions do not exist or block version < ${Block.ProtoBlockVersion}")
           case proofs => proofs
         }
-      case _ => InvalidSignature
+      case (errors, _) => InvalidIds(errors)
     }
 
-  def transactionsByAddress(address: Address, limitParam: Int, maybeAfter: Option[ByteStr])(implicit sc: Scheduler): Future[List[JsObject]] = {
-    val aliasesOfAddress: Task[Set[AddressOrAlias]] =
+  def transactionsByAddress(address: Address, limitParam: Int, maybeAfter: Option[ByteStr]): Task[List[JsObject]] = {
+    val aliasesOfAddress: Task[Set[Alias]] =
       commonApi
         .aliasesOfAddress(address)
         .collect { case (_, cat) => cat.alias }
         .toListL
-        .map(aliases => (address :: aliases).toSet)
+        .map(aliases => aliases.toSet)
         .memoize
 
-    /**
-      * Produces compact representation for large transactions by stripping unnecessary data.
-      * Currently implemented for MassTransfer transaction only.
+    /** Produces compact representation for large transactions by stripping unnecessary data. Currently implemented for MassTransfer transaction only.
       */
     def compactJson(address: Address, meta: TransactionMeta): Task[JsObject] = {
-      import com.wavesplatform.transaction.transfer._
+      import com.wavesplatform.transaction.transfer.*
       meta.transaction match {
         case mtt: MassTransferTransaction if mtt.sender.toAddress != address =>
-          aliasesOfAddress.map(mtt.compactJson(_) ++ serializer.transactionMetaJson(meta))
+          (if (
+             mtt.transfers.exists(pt =>
+               pt.address match {
+                 case address: Address => false
+                 case a: Alias         => true
+               }
+             )
+           ) aliasesOfAddress.map(aliases => mtt.compactJson(address, aliases))
+           else Task.now(mtt.compactJson(address, Set.empty))).map(_ ++ serializer.transactionMetaJson(meta))
+
         case _ => Task.now(serializer.transactionWithMetaJson(meta))
       }
     }
@@ -222,14 +230,13 @@ case class TransactionsApiRoute(
       .take(limitParam)
       .mapEval(compactJson(address, _))
       .toListL
-      .runToFuture
   }
 }
 
 object TransactionsApiRoute {
   type LeaseStatus = LeaseStatus.Value
 
-  //noinspection TypeAnnotation
+  // noinspection TypeAnnotation
   object LeaseStatus extends Enumeration {
     val active   = Value(1)
     val canceled = Value(0)
@@ -290,8 +297,37 @@ object TransactionsApiRoute {
       }
 
       val stateChanges = meta match {
-        case i: TransactionMeta.Invoke => Json.obj("stateChanges" -> i.invokeScriptResult)
-        case _                         => JsObject.empty
+        case i: TransactionMeta.Invoke =>
+          Json.obj("stateChanges" -> i.invokeScriptResult)
+
+        case e: TransactionMeta.Ethereum =>
+          val payloadJson: JsObject = e.meta
+            .map(_.payload)
+            .collect {
+              case Payload.Invocation(i) =>
+                val functionCallEi = SerdeV1.deserializeFunctionCall(i.functionCall.toByteArray).map(InvokeScriptTxSerializer.functionCallToJson)
+                val payments       = i.payments.map(p => InvokeScriptTransaction.Payment(p.amount, PBAmounts.toVanillaAssetId(p.assetId)))
+                Json.obj(
+                  "type"         -> "invocation",
+                  "dApp"         -> Address(EthEncoding.toBytes(e.transaction.underlying.getTo)),
+                  "call"         -> functionCallEi.toOption,
+                  "payment"      -> payments,
+                  "stateChanges" -> e.invokeScriptResult
+                )
+
+              case Payload.Transfer(t) =>
+                val (asset, amount) = PBAmounts.toAssetAndAmount(t.getAmount)
+                Json.obj(
+                  "type"      -> "transfer",
+                  "recipient" -> Address(t.publicKeyHash.toByteArray),
+                  "asset"     -> asset,
+                  "amount"    -> amount
+                )
+            }
+            .getOrElse(JsObject.empty)
+          Json.obj("payload" -> payloadJson)
+
+        case _ => JsObject.empty
       }
 
       Seq(
@@ -359,7 +395,7 @@ object TransactionsApiRoute {
       originTransactionId: ByteStr,
       sender: Address,
       recipient: Address,
-      amount: TxAmount,
+      amount: Long,
       height: Int,
       status: LeaseStatus = LeaseStatus.active,
       cancelHeight: Option[Int] = None,

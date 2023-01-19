@@ -1,21 +1,20 @@
 package com.wavesplatform.it.api
 
-import java.util.concurrent.TimeoutException
-
 import com.google.protobuf.ByteString
 import com.wavesplatform.account.{AddressScheme, KeyPair}
 import com.wavesplatform.api.grpc.BalanceResponse.WavesBalances
-import com.wavesplatform.api.grpc.{TransactionStatus => PBTransactionStatus, _}
+import com.wavesplatform.api.grpc.{TransactionStatus as PBTransactionStatus, *}
 import com.wavesplatform.common.utils.{Base58, EitherExt2}
 import com.wavesplatform.it.Node
 import com.wavesplatform.it.api.SyncHttpApi.RequestAwaitTime
-import com.wavesplatform.it.sync._
+import com.wavesplatform.it.sync.*
 import com.wavesplatform.lang.script.Script
+import com.wavesplatform.lang.script.v1.ExprScript
 import com.wavesplatform.lang.v1.compiler.Terms.FUNCTION_CALL
 import com.wavesplatform.protobuf.Amount
 import com.wavesplatform.protobuf.block.Block.Header
 import com.wavesplatform.protobuf.block.{PBBlocks, VanillaBlock}
-import com.wavesplatform.protobuf.transaction._
+import com.wavesplatform.protobuf.transaction.*
 import com.wavesplatform.transaction.Asset.Waves
 import com.wavesplatform.transaction.assets.exchange.Order
 import com.wavesplatform.transaction.{Asset, TxVersion}
@@ -23,8 +22,9 @@ import io.grpc.Status.Code
 import io.grpc.StatusRuntimeException
 import org.scalatest.{Assertion, Assertions}
 
+import java.util.concurrent.TimeoutException
 import scala.annotation.tailrec
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{Await, Awaitable, Future}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
@@ -56,8 +56,8 @@ object SyncGrpcApi extends Assertions {
 
   implicit class NodeExtGrpc(n: Node) {
     def grpc: NodeExtGrpc = this
-    import com.wavesplatform.account.{Address => Addr}
-    import com.wavesplatform.it.api.AsyncGrpcApi.{NodeAsyncGrpcApi => async}
+    import com.wavesplatform.account.Address as Addr
+    import com.wavesplatform.it.api.AsyncGrpcApi.NodeAsyncGrpcApi as async
 
     private[this] lazy val accounts     = AccountsApiGrpc.blockingStub(n.grpcChannel)
     private[this] lazy val assets       = AssetsApiGrpc.blockingStub(n.grpcChannel)
@@ -214,9 +214,9 @@ object SyncGrpcApi extends Assertions {
         val status        = getStatuses(TransactionsByIdRequest.of(Seq(ByteString.copyFrom(Base58.decode(txId))))).head
         val currentHeight = this.height
 
-        if (status.status.isNotExists) throw new IllegalArgumentException(s"Transaction not exists: $txId")
-        else if (status.status.isConfirmed && currentHeight > status.height) ()
-        else if (status.status.isUnconfirmed) {
+        if (status.status.isConfirmed && currentHeight > status.height)
+          ()
+        else if (status.status.isUnconfirmed || status.status.isNotExists) {
           waitForTransaction(txId)
           recWait()
         } else {
@@ -303,7 +303,7 @@ object SyncGrpcApi extends Assertions {
     }
 
     def signedBroadcast(tx: PBSignedTransaction, waitForTx: Boolean = false): PBSignedTransaction = {
-      maybeWaitForTransaction(sync(async(n).broadcast(tx.getTransaction, tx.proofs)), waitForTx)
+      maybeWaitForTransaction(sync(async(n).broadcast(tx.getWavesTransaction, tx.proofs)), waitForTx)
     }
 
     def broadcast(tx: PBTransaction, proofs: Seq[ByteString], waitForTx: Boolean = false): PBSignedTransaction = {
@@ -325,6 +325,17 @@ object SyncGrpcApi extends Assertions {
         waitForTx: Boolean = false
     ): PBSignedTransaction = {
       maybeWaitForTransaction(sync(async(n).broadcastInvokeScript(caller, dApp, functionCall, payments, fee, version, feeAssetId)), waitForTx)
+    }
+
+    def broadcastInvokeExpression(
+        caller: KeyPair,
+        expression: ExprScript,
+        fee: Long = invokeExpressionFee,
+        version: Int = 1,
+        feeAssetId: ByteString = ByteString.EMPTY,
+        waitForTx: Boolean = false
+    ): PBSignedTransaction = {
+      maybeWaitForTransaction(sync(async(n).broadcastInvokeExpression(caller, expression, fee, version, feeAssetId)), waitForTx)
     }
 
     def broadcastLease(

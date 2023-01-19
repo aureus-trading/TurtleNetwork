@@ -3,20 +3,20 @@ package com.wavesplatform.state.diffs.smart.scenarios
 import com.wavesplatform.account.PublicKey
 import com.wavesplatform.common.state.ByteStr
 import com.wavesplatform.common.utils.EitherExt2
+import com.wavesplatform.crypto
 import com.wavesplatform.db.WithState
 import com.wavesplatform.lagonaki.mocks.TestBlock
 import com.wavesplatform.lang.directives.values.{Expression, V1}
 import com.wavesplatform.lang.script.v1.ExprScript
-import com.wavesplatform.lang.utils._
+import com.wavesplatform.lang.utils.*
 import com.wavesplatform.lang.v1.compiler.ExpressionCompiler
-import com.wavesplatform.lang.v1.compiler.Terms._
+import com.wavesplatform.lang.v1.compiler.Terms.*
 import com.wavesplatform.lang.v1.parser.Parser
-import com.wavesplatform.state.diffs.smart._
-import com.wavesplatform.transaction._
+import com.wavesplatform.state.diffs.smart.*
+import com.wavesplatform.test.*
+import com.wavesplatform.transaction.*
 import com.wavesplatform.transaction.smart.SetScriptTransaction
-import com.wavesplatform.transaction.transfer._
-import com.wavesplatform.crypto
-import com.wavesplatform.test.PropSpec
+import com.wavesplatform.transaction.transfer.*
 
 class MultiSig2of3Test extends PropSpec with WithState {
 
@@ -41,14 +41,14 @@ class MultiSig2of3Test extends PropSpec with WithState {
   }
 
   val preconditionsAndTransfer: (GenesisTransaction, SetScriptTransaction, TransferTransaction, Seq[ByteStr]) = {
-    val master = TxHelpers.signer(1)
-    val s0 = TxHelpers.signer(2)
-    val s1 = TxHelpers.signer(3)
-    val s2 = TxHelpers.signer(4)
+    val master    = TxHelpers.signer(1)
+    val s0        = TxHelpers.signer(2)
+    val s1        = TxHelpers.signer(3)
+    val s2        = TxHelpers.signer(4)
     val recipient = TxHelpers.signer(5)
 
-    val genesis = TxHelpers.genesis(master.toAddress)
-    val setScript = TxHelpers.setScript(master, ExprScript(multisigTypedExpr(s0.publicKey, s1.publicKey, s2.publicKey)).explicitGet())
+    val genesis          = TxHelpers.genesis(master.toAddress)
+    val setScript        = TxHelpers.setScript(master, ExprScript(multisigTypedExpr(s0.publicKey, s1.publicKey, s2.publicKey)).explicitGet())
     val transferUnsigned = TxHelpers.transferUnsigned(master, recipient.toAddress)
 
     val sig0 = crypto.sign(s0.privateKey, transferUnsigned.bodyBytes())

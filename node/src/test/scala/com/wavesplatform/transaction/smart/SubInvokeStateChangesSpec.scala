@@ -3,17 +3,17 @@ package com.wavesplatform.transaction.smart
 import com.wavesplatform.account.Address
 import com.wavesplatform.db.WithDomain
 import com.wavesplatform.db.WithState.AddrWithBalance
-import com.wavesplatform.lang.directives.values.StdLibVersion
+import com.wavesplatform.lang.directives.values.V5
 import com.wavesplatform.lang.script.Script
 import com.wavesplatform.lang.v1.compiler.TestCompiler
-import com.wavesplatform.test._
+import com.wavesplatform.test.*
 import com.wavesplatform.transaction.TxHelpers
 import com.wavesplatform.utils.JsonMatchers
 import play.api.libs.json.Json
 
 class SubInvokeStateChangesSpec extends FlatSpec with WithDomain with JsonMatchers {
   val ContractFunction            = "default"
-  val compileV5: String => Script = TestCompiler(StdLibVersion.V5).compileContract(_)
+  val compileV5: String => Script = TestCompiler(V5).compileContract(_)
 
   "Invoke state changes" should "include intermediate invokes" in {
     // Root DApp, calls addr2s and addr2f
@@ -44,7 +44,7 @@ class SubInvokeStateChangesSpec extends FlatSpec with WithDomain with JsonMatche
           TxHelpers.setScript(addr2s, script2alt),
           TxHelpers.setScript(addr3s, script3alt)
         )
-        d.appendBlock(setScripts: _*)
+        d.appendBlock(setScripts*)
       }
 
       // Actual test
@@ -70,8 +70,8 @@ class SubInvokeStateChangesSpec extends FlatSpec with WithDomain with JsonMatche
           |      "args" : [ ]
           |    },
           |    "payment" : [ {
-          |            "assetId" : null,
-          |            "amount" : 17
+          |      "assetId" : null,
+          |      "amount" : 17
           |    } ],
           |    "stateChanges" : {
           |      "data" : [ ],
@@ -112,8 +112,8 @@ class SubInvokeStateChangesSpec extends FlatSpec with WithDomain with JsonMatche
           |      "args" : [ ]
           |    },
           |    "payment" : [ {
-          |        "assetId" : null,
-          |        "amount" : 17
+          |      "assetId" : null,
+          |      "amount" : 17
           |    } ],
           |    "stateChanges" : {
           |      "data" : [ ],
@@ -131,8 +131,8 @@ class SubInvokeStateChangesSpec extends FlatSpec with WithDomain with JsonMatche
           |          "args" : [ ]
           |        },
           |        "payment" : [ {
-          |            "assetId" : null,
-          |            "amount" : 17
+          |          "assetId" : null,
+          |          "amount" : 17
           |        } ],
           |        "stateChanges" : {
           |          "data" : [ ],
@@ -154,14 +154,15 @@ class SubInvokeStateChangesSpec extends FlatSpec with WithDomain with JsonMatche
           |  } ],
           |  "error" : {
           |    "code" : 1,
-          |    "text" : "FailedTransactionError(code = 1, error = boom, log =\n\t@p = false\n)"
+          |    "text" : "boom"
           |  }
-          |}""".stripMargin
+          |}
+          |""".stripMargin
       )
 
       val allAddresses = Seq(dAppAddress, addr2s, addr3s, addr2f, addr3f).map(_.toAddress)
       for ((addr, i) <- allAddresses.zipWithIndex)
-        withClue(s"Addr #${i + 1}")(d.commonApi.addressTransactions(addr) should contain(invoke))
+        withClue(s"Addr #${i + 1}")(d.commonApi.addressTransactions(addr).map(_.transaction) should contain(invoke))
     }
   }
 
@@ -174,8 +175,8 @@ class SubInvokeStateChangesSpec extends FlatSpec with WithDomain with JsonMatche
        |@Callable(i)
        |func $ContractFunction() = {
        |  ${calls.zipWithIndex
-         .map { case (address, i) => s"""strict r$i = invoke(Address(base58'$address'), "$ContractFunction", [], [AttachedPayment(unit, 17)])""" }
-         .mkString("\n")}
+      .map { case (address, i) => s"""strict r$i = invoke(Address(base58'$address'), "$ContractFunction", [], [AttachedPayment(unit, 17)])""" }
+      .mkString("\n")}
        |  if ($fail && !(${(1 to 10).map(_ => "sigVerify(base58'', base58'', base58'')").mkString(" || ")})) then throw("boom") else []
        |}""".stripMargin
 }

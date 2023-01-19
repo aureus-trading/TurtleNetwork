@@ -17,6 +17,8 @@ class UtxSettingsSpecification extends FlatSpec {
         |    fast-lane-addresses = ["c"]
         |    allow-transactions-from-smart-accounts = false
         |    allow-skip-checks = false
+        |    force-validate-in-cleanup = false
+        |    always-unlimited-execution = true
         |  }
         |}""".stripMargin).resolve()
     val settings = config.as[UtxSettings]("TN.utx")
@@ -28,5 +30,7 @@ class UtxSettingsSpecification extends FlatSpec {
     settings.fastLaneAddresses shouldBe Set("c")
     settings.allowTransactionsFromSmartAccounts shouldBe false
     settings.allowSkipChecks shouldBe false
+    settings.forceValidateInCleanup shouldBe false
+    settings.alwaysUnlimitedExecution shouldBe true
   }
 }

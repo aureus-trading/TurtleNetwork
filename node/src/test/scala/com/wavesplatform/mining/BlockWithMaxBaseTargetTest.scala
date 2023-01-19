@@ -3,6 +3,9 @@ package com.wavesplatform.mining
 import java.security.Permission
 import java.util.concurrent.{Semaphore, TimeUnit}
 
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
 import com.typesafe.config.ConfigFactory
 import com.wavesplatform.WithDB
 import com.wavesplatform.account.KeyPair
@@ -28,87 +31,83 @@ import io.netty.util.concurrent.GlobalEventExecutor
 import monix.eval.Task
 import monix.execution.Scheduler
 import monix.execution.schedulers.SchedulerService
+import monix.reactive.Observable
 import org.scalacheck.{Arbitrary, Gen}
-
-import scala.concurrent.Await
-import scala.concurrent.duration._
 
 class BlockWithMaxBaseTargetTest extends FreeSpec with WithDB with DBCacheSettings {
 
   "base target limit" - {
     "node should stop if base target greater than maximum in block creation " in {
-      withEnv {
-        case Env(settings, pos, bcu, utxPoolStub, scheduler, account, lastBlock) =>
-          var stopReasonCode = 0
+      withEnv { case Env(settings, pos, bcu, utxPoolStub, scheduler, account, lastBlock) =>
+        var stopReasonCode = 0
 
-          val allChannels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE)
-          val wallet      = Wallet(WalletSettings(None, Some("123"), None))
-          val miner =
-            new MinerImpl(allChannels, bcu, settings, ntpTime, utxPoolStub, wallet, pos, scheduler, scheduler)
+        val allChannels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE)
+        val wallet      = Wallet(WalletSettings(None, Some("123"), None))
+        val miner =
+          new MinerImpl(allChannels, bcu, settings, ntpTime, utxPoolStub, wallet, pos, scheduler, scheduler, Observable.empty)
 
-          val signal = new Semaphore(1)
-          signal.acquire()
+        val signal = new Semaphore(1)
+        signal.acquire()
 
-          System.setSecurityManager(new SecurityManager {
-            override def checkPermission(perm: Permission): Unit = {}
+        System.setSecurityManager(new SecurityManager {
+          override def checkPermission(perm: Permission): Unit = {}
 
-            override def checkPermission(perm: Permission, context: Object): Unit = {}
+          override def checkPermission(perm: Permission, context: Object): Unit = {}
 
-            override def checkExit(status: Int): Unit = signal.synchronized {
-              super.checkExit(status)
-              stopReasonCode = status
-              if (status == BaseTargetReachedMaximum.code)
-                signal.release()
-              throw new SecurityException("System exit is not allowed")
-            }
-          })
-
-          try {
-            miner.forgeBlock(account)
-          } catch {
-            case _: SecurityException => // NOP
+          override def checkExit(status: Int): Unit = signal.synchronized {
+            super.checkExit(status)
+            stopReasonCode = status
+            if (status == BaseTargetReachedMaximum.code)
+              signal.release()
+            throw new SecurityException("System exit is not allowed")
           }
+        })
 
-          signal.tryAcquire(10, TimeUnit.SECONDS)
+        try {
+          miner.forgeBlock(account)
+        } catch {
+          case _: SecurityException => // NOP
+        }
 
-          stopReasonCode shouldBe BaseTargetReachedMaximum.code
+        signal.tryAcquire(10, TimeUnit.SECONDS)
 
-          System.setSecurityManager(null)
+        stopReasonCode shouldBe BaseTargetReachedMaximum.code
+
+        System.setSecurityManager(null)
       }
     }
 
     "node should stop if base target greater than maximum in block append" in {
-      withEnv {
-        case Env(settings, pos, bcu, utxPoolStub, scheduler, _, lastBlock) =>
-          var stopReasonCode = 0
+      withEnv { case Env(settings, pos, bcu, utxPoolStub, scheduler, _, lastBlock) =>
+        var stopReasonCode = 0
 
-          val signal = new Semaphore(1)
-          signal.acquire()
+        val signal = new Semaphore(1)
+        signal.acquire()
 
-          System.setSecurityManager(new SecurityManager {
-            override def checkPermission(perm: Permission): Unit = {}
+        System.setSecurityManager(new SecurityManager {
+          override def checkPermission(perm: Permission): Unit = {}
 
-            override def checkPermission(perm: Permission, context: Object): Unit = {}
+          override def checkPermission(perm: Permission, context: Object): Unit = {}
 
-            override def checkExit(status: Int): Unit = signal.synchronized {
-              super.checkExit(status)
-              stopReasonCode = status
-              if (status == BaseTargetReachedMaximum.code)
-                signal.release()
-              throw new SecurityException("System exit is not allowed")
-            }
-          })
-
-          val blockAppendTask = BlockAppender(bcu, ntpTime, utxPoolStub, pos, scheduler)(lastBlock).onErrorRecoverWith {
-            case _: SecurityException => Task.unit
+          override def checkExit(status: Int): Unit = signal.synchronized {
+            super.checkExit(status)
+            stopReasonCode = status
+            if (status == BaseTargetReachedMaximum.code)
+              signal.release()
+            throw new SecurityException("System exit is not allowed")
           }
-          Await.result(blockAppendTask.runToFuture(scheduler), Duration.Inf)
+        })
 
-          signal.tryAcquire(10, TimeUnit.SECONDS)
+        val blockAppendTask = BlockAppender(bcu, ntpTime, utxPoolStub, pos, scheduler)(lastBlock).onErrorRecoverWith[Any] { case _: SecurityException =>
+          Task.unit
+        }
+        Await.result(blockAppendTask.runToFuture(scheduler), Duration.Inf)
 
-          stopReasonCode shouldBe BaseTargetReachedMaximum.code
+        signal.tryAcquire(10, TimeUnit.SECONDS)
 
-          System.setSecurityManager(null)
+        stopReasonCode shouldBe BaseTargetReachedMaximum.code
+
+        System.setSecurityManager(null)
       }
     }
   }
@@ -119,10 +118,7 @@ class BlockWithMaxBaseTargetTest extends FreeSpec with WithDB with DBCacheSettin
     val settings0     = WavesSettings.fromRootConfig(loadConfig(ConfigFactory.load()))
     val minerSettings = settings0.minerSettings.copy(quorum = 0)
     val blockchainSettings0 = settings0.blockchainSettings.copy(
-      functionalitySettings = settings0.blockchainSettings.functionalitySettings.copy(
-        preActivatedFeatures = Map(BlockchainFeatures.FairPoS.id -> 1),
-        blockVersion3AfterHeight = 1
-      )
+      functionalitySettings = settings0.blockchainSettings.functionalitySettings.copy(preActivatedFeatures = Map(BlockchainFeatures.FairPoS.id -> 1))
     )
     val synchronizationSettings0 = settings0.synchronizationSettings.copy(maxBaseTarget = Some(1L))
     val settings = settings0.copy(
@@ -136,7 +132,7 @@ class BlockWithMaxBaseTargetTest extends FreeSpec with WithDB with DBCacheSettin
       new BlockchainUpdaterImpl(defaultWriter, ignoreSpendableBalanceChanged, settings, ntpTime, ignoreBlockchainUpdateTriggers, (_, _) => Seq.empty)
     val pos = PoSSelector(bcu, settings.synchronizationSettings.maxBaseTarget)
 
-    val utxPoolStub                        = new UtxPoolImpl(ntpTime, bcu, settings0.utxSettings)
+    val utxPoolStub = new UtxPoolImpl(ntpTime, bcu, settings0.utxSettings, settings.maxTxErrorLogSize, settings0.minerSettings.enable)
     val schedulerService: SchedulerService = Scheduler.singleThread("appender")
 
     try {

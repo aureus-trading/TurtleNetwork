@@ -5,30 +5,31 @@ import com.wavesplatform.common.state.ByteStr
 import com.wavesplatform.common.utils.EitherExt2
 import com.wavesplatform.db.WithState.AddrWithBalance
 import com.wavesplatform.db.{DBCacheSettings, WithDomain, WithState}
-import com.wavesplatform.lang.contract.DApp
+import com.wavesplatform.lang.contract
 import com.wavesplatform.lang.contract.DApp.{CallableAnnotation, CallableFunction}
 import com.wavesplatform.lang.directives.values.{StdLibVersion, V5}
 import com.wavesplatform.lang.script.ContractScript.ContractScriptImpl
 import com.wavesplatform.lang.script.Script
 import com.wavesplatform.lang.v1.FunctionHeader
 import com.wavesplatform.lang.v1.FunctionHeader.Native
-import com.wavesplatform.lang.v1.compiler.Terms._
+import com.wavesplatform.lang.v1.compiler.Terms.*
 import com.wavesplatform.lang.v1.compiler.TestCompiler
 import com.wavesplatform.lang.v1.evaluator.FunctionIds
 import com.wavesplatform.lang.v1.evaluator.FunctionIds.TO_BIGINT
 import com.wavesplatform.protobuf.dapp.DAppMeta
-import com.wavesplatform.test.{PropSpec, produce}
+import com.wavesplatform.test.*
 import com.wavesplatform.transaction.TxHelpers
 import org.scalatest.{EitherValues, Inside}
 
 class BigIntInvokeTest extends PropSpec with Inside with WithState with DBCacheSettings with WithDomain with EitherValues {
+
   private val bigIntValue = 12345
 
   property("BigInt is forbidden for DApp actions") {
     def dApp(action: EXPR => FUNCTION_CALL, version: StdLibVersion): Script = {
       ContractScriptImpl(
         version,
-        DApp(
+        contract.DApp(
           DAppMeta(),
           Nil,
           List(
@@ -144,7 +145,7 @@ class BigIntInvokeTest extends PropSpec with Inside with WithState with DBCacheS
           TxHelpers.setScript(dAppAcc2, dApp2(version))
         )
 
-        d.appendBlock(preparingTxs: _*)
+        d.appendBlock(preparingTxs*)
         d.appendBlock(invoke)
 
         d.liquidDiff.errorMessage(invoke.id()) shouldBe None

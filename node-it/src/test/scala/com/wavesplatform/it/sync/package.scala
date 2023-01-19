@@ -22,9 +22,10 @@ package object sync {
   val burnFee: Long                    = 0.02.waves
   val aliasFeeAmount: Long                  = 10.waves
   val invokeFee: Long                  = 1.waves
+  val invokeExpressionFee: Long        = 1.waves
   val sponsorFee: Long                 = 10.waves
   val sponsorReducedFee: Long          = 0.02.waves
-  val setAssetScriptFee: Long          = 1.waves + smartFee
+  val setAssetScriptFee: Long          = 1.waves
   val setScriptFee: Long               = 1.waves
   val transferAmount: Long             = 1100.waves
   val tokenTransferAmount: Long        = 10.waves
@@ -86,11 +87,11 @@ package object sync {
       Some(tx.sender.toString),
       tx.name.toStringUtf8,
       tx.description.toStringUtf8,
-      quantity,
-      decimals,
+      quantity.value,
+      decimals.value,
       reissuable,
       tx.script.map(_.bytes().base64),
-      fee,
+      fee.value,
       Some(timestamp),
       proofs.headOption,
       Some(proofs)

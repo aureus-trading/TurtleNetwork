@@ -91,7 +91,7 @@ class TransferNFTSuite extends BaseTransactionSuite with NTPTime {
 
     assertApiError(
       invokeTransfer(caller, "nftTransferToDapp", payment = nftPayment),
-      AssertiveApiError(ScriptExecutionError.Id, "Error while executing account-script: DApp self-transfer is forbidden since V4")
+      AssertiveApiError(ScriptExecutionError.Id, "Error while executing dApp: DApp self-transfer is forbidden since V4")
     )
 
     sender.transfer(caller, dAppAddress, 1, assetId = Some(nftAsset), waitForTx = true)
@@ -153,28 +153,32 @@ class TransferNFTSuite extends BaseTransactionSuite with NTPTime {
       sender.broadcastIssue(seller, assetName, assetDescription, 1, 0, reissuable = false, 0.1.waves, waitForTx = true, script = None).id
     val pair = AssetPair.createAssetPair(nftAsset, "TN")
     val ts   = ntpTime.correctedTime()
-    val buy = Order.buy(
-      Order.V2,
-      sender = buyer,
-      matcher = matcher.publicKey,
-      pair = pair.get,
-      amount = 1,
-      price = 1.waves,
-      timestamp = ts,
-      expiration = ts + Order.MaxLiveTime,
-      matcherFee = matcherFee
-    )
-    val sell = Order.sell(
-      Order.V2,
-      sender = seller,
-      matcher = matcher.publicKey,
-      pair = pair.get,
-      amount = 1,
-      price = 1.waves,
-      timestamp = ts,
-      expiration = ts + Order.MaxLiveTime,
-      matcherFee = matcherFee
-    )
+    val buy = Order
+      .buy(
+        Order.V2,
+        sender = buyer,
+        matcher = matcher.publicKey,
+        pair = pair.get,
+        amount = 1,
+        price = 1.waves,
+        timestamp = ts,
+        expiration = ts + Order.MaxLiveTime,
+        matcherFee = matcherFee
+      )
+      .explicitGet()
+    val sell = Order
+      .sell(
+        Order.V2,
+        sender = seller,
+        matcher = matcher.publicKey,
+        pair = pair.get,
+        amount = 1,
+        price = 1.waves,
+        timestamp = ts,
+        expiration = ts + Order.MaxLiveTime,
+        matcherFee = matcherFee
+      )
+      .explicitGet()
 
     val tx = ExchangeTransaction
       .signed(

@@ -2,16 +2,15 @@ package com.wavesplatform.state.diffs.smart.predef
 
 import com.wavesplatform.db.WithDomain
 import com.wavesplatform.db.WithState.AddrWithBalance
-import com.wavesplatform.features.BlockchainFeatures._
-import com.wavesplatform.lang.directives.values.V5
+import com.wavesplatform.lang.directives.values.V4
 import com.wavesplatform.lang.v1.compiler.TestCompiler
-import com.wavesplatform.settings.TestFunctionalitySettings
+import com.wavesplatform.test.DomainPresets.*
 import com.wavesplatform.test.PropSpec
-import com.wavesplatform.transaction.TxHelpers
+import com.wavesplatform.transaction.{TxHelpers, TxVersion}
 
 class PowNewPrecisionTest extends PropSpec with WithDomain {
 
-  private val contract = TestCompiler(V5).compileContract(
+  private val contract = TestCompiler(V4).compileContract(
     """
       | @Callable(i)
       | func default() = {
@@ -35,30 +34,32 @@ class PowNewPrecisionTest extends PropSpec with WithDomain {
   )
 
   private val scenario = {
-    val master = TxHelpers.signer(0)
+    val master  = TxHelpers.signer(0)
     val invoker = TxHelpers.signer(1)
 
     val balances = AddrWithBalance.enoughBalances(master, invoker)
 
     val setScript = TxHelpers.setScript(master, contract)
-    val invoke = () => TxHelpers.invoke(master.toAddress, invoker = invoker)
+    val invoke    = () => TxHelpers.invoke(master.toAddress, invoker = invoker, version = TxVersion.V3)
 
     (balances, setScript, invoke, master.toAddress)
   }
 
-  private val settings =
-    TestFunctionalitySettings
-      .withFeatures(BlockV5, SynchronousCalls)
-      .copy(syncDAppCheckPaymentsHeight = 4)
-
-  property("pow changes precision after syncDAppCheckPaymentsHeight") {
+  property("pow has bigger precision before SynchronousCalls") {
     val (balances, setScript, invoke, dApp) = scenario
-    withDomain(domainSettingsWithFS(settings), balances) { d =>
+    withDomain(DomainPresets.RideV4, balances) { d =>
       d.appendBlock(setScript)
 
       d.appendBlock(invoke())
       d.blockchain.accountData(dApp, "result1").get.value shouldBe 9049204201489L
       d.blockchain.accountData(dApp, "result2").get.value shouldBe 1
+    }
+  }
+
+  property("pow changes precision after SynchronousCalls") {
+    val (balances, setScript, invoke, dApp) = scenario
+    withDomain(DomainPresets.RideV5.configure(_.copy(enforceTransferValidationAfter = 0)), balances) { d =>
+      d.appendBlock(setScript)
 
       d.appendBlock(invoke())
       d.blockchain.accountData(dApp, "result1").get.value shouldBe 9049204201491L

@@ -1,14 +1,14 @@
 package com.wavesplatform.api.http
 
 import akka.http.scaladsl.model.{StatusCode, StatusCodes}
-import com.wavesplatform.account.{Address, AddressOrAlias, Alias}
+import com.wavesplatform.account.{Address, Alias}
 import com.wavesplatform.common.state.ByteStr
 import com.wavesplatform.lang.ValidationError
 import com.wavesplatform.state.diffs.TransactionDiffer.TransactionValidationError
-import com.wavesplatform.transaction.{Transaction, _}
-import com.wavesplatform.transaction.assets.exchange.Order
 import com.wavesplatform.transaction.Asset.IssuedAsset
-import play.api.libs.json._
+import com.wavesplatform.transaction.assets.exchange.Order
+import com.wavesplatform.transaction.{Transaction, *}
+import play.api.libs.json.*
 
 case class ApiErrorResponse(error: Int, message: String)
 
@@ -31,19 +31,21 @@ object ApiError {
       case TxValidationError.InvalidAddress(_)               => InvalidAddress
       case TxValidationError.NegativeAmount(x, of)           => NegativeAmount(s"$x of $of")
       case TxValidationError.NonPositiveAmount(x, of)        => NonPositiveAmount(s"$x of $of")
+      case TxValidationError.InvalidDecimals(decimals)       => InvalidDecimals(decimals.toString)
       case TxValidationError.NegativeMinFee(x, of)           => NegativeMinFee(s"$x per $of")
-      case TxValidationError.InsufficientFee(x)              => InsufficientFee(x)
+      case TxValidationError.InsufficientFee                 => InsufficientFee
       case TxValidationError.InvalidName                     => InvalidName
       case TxValidationError.InvalidSignature(_, _)          => InvalidSignature
       case TxValidationError.InvalidRequestSignature         => InvalidSignature
       case TxValidationError.TooBigArray                     => TooBigArrayAllocation
+      case TxValidationError.TooBigInBytes(err)              => TooBigInBytes(err)
       case TxValidationError.OverflowError                   => OverflowError
       case TxValidationError.ToSelf                          => ToSelfError
       case TxValidationError.MissingSenderPrivateKey         => MissingSenderPrivateKey
       case TxValidationError.GenericError(ge)                => CustomValidationError(ge)
       case TxValidationError.AlreadyInTheState(tx, txHeight) => AlreadyInState(tx, txHeight)
       case TxValidationError.AccountBalanceError(errs)       => AccountBalanceErrors(errs)
-      case TxValidationError.AliasDoesNotExist(tx)           => AliasDoesNotExist(tx)
+      case TxValidationError.AliasDoesNotExist(alias)        => AliasDoesNotExist(alias)
       case TxValidationError.OrderValidationError(o, m)      => OrderInvalid(o, m)
       case TxValidationError.UnsupportedTransactionType      => UnsupportedTransactionType
       case TxValidationError.Mistiming(err)                  => Mistiming(err)
@@ -56,9 +58,11 @@ object ApiError {
             if (e.isAssetScript) TransactionNotAllowedByAssetScript(tx)
             else TransactionNotAllowedByAccountScript(tx)
           case TxValidationError.Mistiming(errorMessage)                         => Mistiming(errorMessage)
-          case e: TxValidationError.ScriptExecutionError                         => ScriptExecutionError(tx, e.error, isTokenScript = e.isAssetScript)
-          case e: TxValidationError.FailedTransactionError if e.isExecutionError => ScriptExecutionError(tx, e.message, e.isAssetScript)
-          case e: TxValidationError.FailedTransactionError                       => TransactionNotAllowedByAssetScript(tx)
+          case e: TxValidationError.ScriptExecutionError                         => ScriptExecutionError(tx, e.message, e.isAssetScript)
+          case e: TxValidationError.FailedTransactionError if e.isAssetExecution => ScriptExecutionError(tx, e.message, isTokenScript = true)
+          case e: TxValidationError.FailedTransactionError if e.isDAppExecution  => InvokeExecutionError(tx, e.message)
+          case e: TxValidationError.InvokeRejectError                            => InvokeExecutionError(tx, e.message)
+          case _: TxValidationError.FailedTransactionError                       => TransactionNotAllowedByAssetScript(tx)
           case err                                                               => StateCheckFailed(tx, fromValidationError(err))
         }
       case error => CustomValidationError(error.toString)
@@ -90,7 +94,7 @@ object ApiError {
     val Message = "failed to parse json message"
   }
 
-  //API Auth
+  // API Auth
   case object ApiKeyNotValid extends ApiError {
     override val id              = 2
     override val code            = StatusCodes.Forbidden
@@ -109,7 +113,7 @@ object ApiError {
     override val code: StatusCode = StatusCodes.BadRequest
   }
 
-  //VALIDATION
+  // VALIDATION
   case object InvalidSignature extends ApiError {
     override val id      = 101
     override val code    = StatusCodes.BadRequest
@@ -120,6 +124,11 @@ object ApiError {
     override val id      = 102
     override val code    = StatusCodes.BadRequest
     override val message = "invalid address"
+  }
+
+  case class TooBigInBytes(message: String) extends ApiError {
+    override val id   = 107
+    override val code = StatusCodes.BadRequest
   }
 
   case object InvalidPublicKey extends ApiError {
@@ -144,7 +153,7 @@ object ApiError {
     override val id: Int          = StateCheckFailed.Id
     override val message: String  = StateCheckFailed.message(errorMsg)
     override val code: StatusCode = StateCheckFailed.Code
-    override lazy val json        = details.fold(JsObject.empty)(identity) ++ Json.obj("error" -> id, "message" -> message, "transaction" -> tx.json())
+    override lazy val json = details.fold(JsObject.empty)(identity) ++ Json.obj("error" -> id, "message" -> message, "transaction" -> tx.json())
   }
 
   case object StateCheckFailed {
@@ -204,15 +213,11 @@ object ApiError {
     override val message: String = "block does not exist"
   }
 
-  final case class AliasDoesNotExist(aoa: AddressOrAlias) extends ApiError {
+  final case class AliasDoesNotExist(alias: Alias) extends ApiError {
     override val id: Int = AliasDoesNotExist.Id
     override val code    = StatusCodes.NotFound
 
-    private[this] lazy val msgReason = (aoa: @unchecked) match {
-      case a: Address => s"for address '${a.stringRepr}'"
-      case a: Alias   => s"'${a.stringRepr}'"
-    }
-    override lazy val message: String = s"alias $msgReason doesn't exist"
+    override lazy val message: String = s"alias '$alias' doesn't exist"
   }
 
   case object AliasDoesNotExist {
@@ -253,6 +258,13 @@ object ApiError {
     override lazy val json: JsObject = ScriptErrorJson(id, tx, message)
   }
 
+  final case class InvokeExecutionError(tx: Transaction, error: String) extends ApiError {
+    override val id: Int             = ScriptExecutionError.Id
+    override val code: StatusCode    = StatusCodes.BadRequest
+    override val message: String     = s"Error while executing dApp: $error"
+    override lazy val json: JsObject = ScriptErrorJson(id, tx, message)
+  }
+
   case object ScriptExecutionError {
     val Id = 306
   }
@@ -281,7 +293,7 @@ object ApiError {
     val Code    = StatusCodes.BadRequest
   }
 
-  //TRANSACTIONS
+  // TRANSACTIONS
   case object TransactionDoesNotExist extends ApiError {
     override val id: Int          = 311
     override val message: String  = "transactions does not exist"
@@ -295,9 +307,16 @@ object ApiError {
   }
 
   case class AssetDoesNotExist(assetId: IssuedAsset) extends ApiError {
-    val id: Int = 313
-    val message: String = s"Asset does not exist: $assetId"
+    val id: Int          = 313
+    val message: String  = s"Asset does not exist: $assetId"
     val code: StatusCode = StatusCodes.NotFound
+  }
+
+  case class AssetsDoesNotExist(ids: Seq[IssuedAsset]) extends ApiError {
+    val id: Int                      = 314
+    val message: String              = s"Asset does not exist. ${ids.map(_.id.toString).mkString(", ")}"
+    val code: StatusCode             = StatusCodes.BadRequest
+    override lazy val json: JsObject = Json.obj("error" -> id, "message" -> message, "ids" -> ids)
   }
 
   final case class NegativeAmount(msg: String) extends ApiError {
@@ -310,13 +329,10 @@ object ApiError {
     val Id = 111
   }
 
-  final case class InsufficientFee(override val message: String = "insufficient fee") extends ApiError {
-    override val id: Int          = InsufficientFee.Id
+  case object InsufficientFee extends ApiError {
+    override val id: Int          = 112
+    override val message: String  = "insufficient fee"
     override val code: StatusCode = StatusCodes.BadRequest
-  }
-
-  case object InsufficientFee {
-    val Id = 112
   }
 
   final case class NegativeMinFee(msg: String) extends ApiError {
@@ -339,6 +355,16 @@ object ApiError {
     val Id = 115
   }
 
+  final case class InvalidDecimals(msg: String) extends ApiError {
+    override val id: Int          = InvalidDecimals.Id
+    override val message: String  = s"invalid decimals value: $msg, ${TxDecimals.errMsg}"
+    override val code: StatusCode = StatusCodes.BadRequest
+  }
+
+  case object InvalidDecimals {
+    val Id = 117
+  }
+
   case class AlreadyInState(transactionId: ByteStr, height: Int) extends ApiError {
     override val id: Int          = 400
     override val code: StatusCode = StatusCodes.BadRequest
@@ -353,13 +379,7 @@ object ApiError {
       Json.obj(
         "error"   -> id,
         "message" -> message,
-        "details" -> Json
-          .toJson(
-            errs
-              .map {
-                case (addr, err) => addr.stringRepr -> err
-              }
-          )
+        "details" -> Json.toJson(errs.map { case (addr, err) => addr.toString -> err })
       )
   }
 
@@ -408,6 +428,30 @@ object ApiError {
   case object InvalidAssetId extends ApiError {
     override val id      = 4007
     override val message = "Invalid asset id"
+    override val code    = StatusCodes.BadRequest
+  }
+
+  case object ServerRequestTimeout extends ApiError {
+    override val id: Int         = 5031
+    override val code            = StatusCodes.ServiceUnavailable
+    override val message: String = "The server was not able to produce a timely response to request"
+  }
+
+  case object DataKeysNotSpecified extends ApiError {
+    override val id      = 4008
+    override val message = "Key was not specified"
+    override val code    = StatusCodes.BadRequest
+  }
+
+  case object AssetIdNotSpecified extends ApiError {
+    override val id      = 4009
+    override val message = "Asset ID was not specified"
+    override val code    = StatusCodes.BadRequest
+  }
+
+  case object ConflictingRequestStructure extends ApiError {
+    override val id      = 198
+    override val message = "Conflicting request structure. Both expression and invocation structure were sent"
     override val code    = StatusCodes.BadRequest
   }
 }

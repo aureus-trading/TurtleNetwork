@@ -1,32 +1,18 @@
 package com.wavesplatform.state.diffs.smart.predef
 
 import com.wavesplatform.db.WithDomain
-import com.wavesplatform.db.WithState.AddrWithBalance
 import com.wavesplatform.features.BlockchainFeatures
+import com.wavesplatform.history.Domain
 import com.wavesplatform.lang.directives.DirectiveDictionary
-import com.wavesplatform.lang.directives.values._
+import com.wavesplatform.lang.directives.values.*
 import com.wavesplatform.lang.v1.compiler.TestCompiler
-import com.wavesplatform.settings.TestFunctionalitySettings
-import com.wavesplatform.test._
+import com.wavesplatform.test.*
 import com.wavesplatform.transaction.TxHelpers
+import com.wavesplatform.transaction.smart.InvokeScriptTransaction
 import org.scalatest.EitherValues
 
 class BrokenUnicodeTest extends PropSpec with WithDomain with EitherValues {
-
-  private val activationHeight = 4
-  private val fs = TestFunctionalitySettings.Enabled.copy(
-    preActivatedFeatures = Map(
-      BlockchainFeatures.SmartAccounts.id    -> 0,
-      BlockchainFeatures.SmartAssets.id      -> 0,
-      BlockchainFeatures.Ride4DApps.id       -> 0,
-      BlockchainFeatures.FeeSponsorship.id   -> 0,
-      BlockchainFeatures.DataTransaction.id  -> 0,
-      BlockchainFeatures.BlockReward.id      -> 0,
-      BlockchainFeatures.BlockV5.id          -> 0,
-      BlockchainFeatures.SynchronousCalls.id -> activationHeight
-    ),
-    estimatorPreCheckHeight = Int.MaxValue
-  )
+  import DomainPresets.*
 
   private val u1 = "\ud87e"
   private val u2 = "\udc1a"
@@ -173,61 +159,73 @@ class BrokenUnicodeTest extends PropSpec with WithDomain with EitherValues {
     allowIllFormedStrings = true
   )
 
-  private val allVersions              = DirectiveDictionary[StdLibVersion].all
-  private val versionsBeforeActivation = allVersions.filter(_ < V5)
-
-  private val allDAppVersions              = allVersions.filter(_ >= V3)
+  private val versionsBeforeActivation     = DirectiveDictionary[StdLibVersion].all.filter(_ < V5)
   private val dAppVersionsBeforeActivation = versionsBeforeActivation.filter(_ >= V3)
 
-  private val scenario = {
+  private def allVersions(lastVersion: StdLibVersion)     = DirectiveDictionary[StdLibVersion].all.filter(_ <= lastVersion)
+  private def allDAppVersions(lastVersion: StdLibVersion) = allVersions(lastVersion).filter(_ >= V3)
+
+  private def scenario(lastVersion: StdLibVersion) = {
     val recipient = TxHelpers.signer(0)
     val invoker = TxHelpers.signer(1)
-    val accWithFix = (1 to allVersions.size).map(idx => TxHelpers.signer(idx + 1)).zip(allVersions).toList
-    val accWithNoFix = (1 to versionsBeforeActivation.size).map(idx => TxHelpers.signer(idx + allVersions.size + 1)).zip(versionsBeforeActivation).toList
-    val dAppWithFix = (1 to allDAppVersions.size).map(idx => TxHelpers.signer(idx + allVersions.size + versionsBeforeActivation.size + 1)).zip(allDAppVersions).toList
-    val dAppWithNoFix = (1 to dAppVersionsBeforeActivation.size).map(idx => TxHelpers.signer(idx + allVersions.size + versionsBeforeActivation.size + allDAppVersions.size + 1)).zip(dAppVersionsBeforeActivation).toList
 
-    val balances = (accWithFix ::: accWithNoFix ::: dAppWithFix ::: dAppWithNoFix)
-      .map { case (acc, _) => AddrWithBalance(acc.toAddress) }
-    val invokerBalance = AddrWithBalance(invoker.toAddress)
+    val availableVersions     = allVersions(lastVersion)
+    val availableDAppVersions = allDAppVersions(lastVersion)
 
-    val setNoFix = accWithNoFix.map { case (acc, v) => TxHelpers.setScript(acc, checkNoFixScript(v)) }
-    val setFix = accWithFix.map { case (acc, v) => TxHelpers.setScript(acc, checkFixScript(v)) }
+    val accWithFix = (1 to availableVersions.size).map(idx => TxHelpers.signer(idx + 1)).zip(availableVersions).toList
+    val accWithNoFix = (1 to versionsBeforeActivation.size).map(idx => TxHelpers.signer(idx + availableVersions.size + 1)).zip(versionsBeforeActivation).toList
+    val dAppWithFix = (1 to availableDAppVersions.size).map(idx => TxHelpers.signer(idx + availableVersions.size + versionsBeforeActivation.size + 1)).zip(availableDAppVersions).toList
+    val dAppWithNoFix = (1 to dAppVersionsBeforeActivation.size).map(idx => TxHelpers.signer(idx + availableVersions.size + versionsBeforeActivation.size + availableDAppVersions.size + 1)).zip(dAppVersionsBeforeActivation).toList
+
+    val genesis = (accWithFix ::: accWithNoFix ::: dAppWithFix ::: dAppWithNoFix)
+      .map { case (acc, _) => TxHelpers.genesis(acc.toAddress) }
+    val invokerGenesis = TxHelpers.genesis(invoker.toAddress)
+
+    val setNoFixVerifier     = accWithNoFix.map { case (acc, v)  => TxHelpers.setScript(acc, checkNoFixScript(v)) }
+    val setFixVerifier       = accWithFix.map { case (acc, v)    => TxHelpers.setScript(acc, checkFixScript(v)) }
     val setNoFixDApp = dAppWithNoFix.map { case (acc, v) => TxHelpers.setScript(acc, checkNoFixDAppScript(v)) }
-    val setFixDApp = dAppWithFix.map { case (acc, v) => TxHelpers.setScript(acc, checkFixDAppScript(v)) }
+    val setFixDApp   = dAppWithFix.map { case (acc, v)   => TxHelpers.setScript(acc, checkFixDAppScript(v)) }
 
-    val checkFix = accWithFix.map { case (acc, _) => TxHelpers.transfer(acc, recipient.toAddress, 1) }
-    val checkNoFix = () => accWithNoFix.map { case (acc, _) => TxHelpers.transfer(acc, recipient.toAddress, 1) }
+    val checkFixVerifier       = accWithFix.map { case (acc, _) => TxHelpers.transfer(acc, recipient.toAddress, 1) }
+    val checkNoFixVerifier     = accWithNoFix.map { case (acc, _) => TxHelpers.transfer(acc, recipient.toAddress, 1) }
     val checkFixDApp = dAppWithFix.map { case (acc, _) => TxHelpers.invoke(acc.toAddress, func = None, invoker = invoker) }
-    val checkNoFixDApp = () => dAppWithNoFix.map { case (acc, _) => TxHelpers.invoke(acc.toAddress, func = None, invoker = invoker) }
+    val checkNoFixDApp = dAppWithNoFix.map { case (acc, _) => TxHelpers.invoke(acc.toAddress, func = None, invoker = invoker) }
 
-    (invokerBalance :: balances, setNoFix, setFix, checkFix, checkNoFix, setNoFixDApp, setFixDApp, checkFixDApp, checkNoFixDApp)
+    (
+      invokerGenesis :: genesis,
+      setNoFixVerifier ::: setNoFixDApp,
+      setFixVerifier ::: setFixDApp,
+      checkNoFixVerifier ::: checkNoFixDApp,
+      checkFixVerifier ::: checkFixDApp
+    )
+  }
+
+  private def assertNoFix(d: Domain): Unit = {
+    val (genesisTxs, setNoFix, _, checkNoFix, _) = scenario(V5)
+    d.appendBlock(genesisTxs*)
+    d.appendBlock(setNoFix*)
+    d.appendBlock(checkNoFix*)
+    checkNoFix.foreach(tx => d.blockchain.transactionSucceeded(tx.id.value()) shouldBe true)
+  }
+
+  private def assertFix(d: Domain, lastVersion: StdLibVersion): Unit = {
+    val (genesisTxs, setNoFix, setFix, checkNoFix, checkFix) = scenario(lastVersion)
+    d.appendBlock(genesisTxs*)
+    d.appendBlock(setFix*)
+    d.appendBlock(checkFix*)
+    checkFix.foreach(tx => d.blockchain.transactionSucceeded(tx.id.value()) shouldBe true)
+
+    d.appendBlock(setNoFix*)
+    checkNoFix.foreach { tx =>
+      val error = if (tx.isInstanceOf[InvokeScriptTransaction]) "no fix error" else "TransactionNotAllowedByScript"
+      (the[RuntimeException] thrownBy d.appendBlock(tx)).getMessage should include(error)
+    }
   }
 
   property(s"string functions return correct results for unicode input after ${BlockchainFeatures.SynchronousCalls} activation") {
-    val (balances, setNoFix, setFix, checkFix, checkNoFix, setNoFixDApp, setFixDApp, checkFixDApp, checkNoFixDApp) = scenario
-    withDomain(domainSettingsWithFS(fs), balances) { d =>
-      val checkNoFix1     = checkNoFix()
-      val checkNoFixDApp1 = checkNoFixDApp()
-      d.appendBlock(setNoFix ::: setNoFixDApp: _*)
-
-      val checkNoFixTxs = checkNoFix1 ::: checkNoFixDApp1
-      d.appendBlock(checkNoFixTxs: _*)
-      checkNoFixTxs.foreach(tx => d.blockchain.transactionSucceeded(tx.id.value()) shouldBe true)
-
-      d.appendBlock()
-      d.blockchain.height shouldBe activationHeight
-
-      val checkFixTxs = checkFix ::: checkFixDApp
-      d.appendBlock(setFix ::: setFixDApp: _*)
-      d.appendBlock(checkFixTxs: _*)
-      checkFixTxs.foreach(tx => d.blockchain.transactionSucceeded(tx.id.value()) shouldBe true)
-      checkNoFix().foreach { tx =>
-        d.appendBlockE(tx) should produce("TransactionNotAllowedByScript")
-      }
-      checkNoFixDApp().foreach { tx =>
-        d.appendBlockE(tx) should produce("ScriptExecutionError(error = DApp")
-      }
-    }
+    withDomain(RideV4)(assertNoFix)
+    DirectiveDictionary[StdLibVersion].all
+      .filter(_ >= V5)
+      .foreach(v => withDomain(settingsForRide(v).configure(_.copy(enforceTransferValidationAfter = 0)))(assertFix(_, v)))
   }
 }

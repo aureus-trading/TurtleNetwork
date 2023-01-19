@@ -1,30 +1,33 @@
 package com.wavesplatform.events
 
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
-
 import cats.Monoid
-import cats.syntax.monoid._
 import com.google.protobuf.ByteString
 import com.wavesplatform.account.{Address, AddressOrAlias, Alias, PublicKey}
 import com.wavesplatform.block.{Block, MicroBlock}
 import com.wavesplatform.common.state.ByteStr
-import com.wavesplatform.common.utils._
-import com.wavesplatform.events.StateUpdate.{AssetStateUpdate, BalanceUpdate, DataEntryUpdate, LeaseUpdate, LeasingBalanceUpdate}
+import com.wavesplatform.common.utils.*
 import com.wavesplatform.events.StateUpdate.LeaseUpdate.LeaseStatus
+import com.wavesplatform.events.StateUpdate.{AssetStateUpdate, BalanceUpdate, DataEntryUpdate, LeaseUpdate, LeasingBalanceUpdate}
 import com.wavesplatform.events.protobuf.TransactionMetadata
-import com.wavesplatform.protobuf._
-import com.wavesplatform.protobuf.transaction.{PBAmounts, PBTransactions}
-import com.wavesplatform.state.{AccountDataInfo, AssetDescription, AssetScriptInfo, Blockchain, DataEntry, Diff, DiffToStateApplier, EmptyDataEntry, Height, InvokeScriptResult, LeaseBalance}
+import com.wavesplatform.events.protobuf.TransactionMetadata.EthereumMetadata
+import com.wavesplatform.lang.v1.compiler.Terms
+import com.wavesplatform.protobuf.*
+import com.wavesplatform.protobuf.transaction.InvokeScriptResult.Call.Argument
+import com.wavesplatform.protobuf.transaction.{PBAmounts, PBTransactions, InvokeScriptResult as PBInvokeScriptResult}
+import com.wavesplatform.state.*
 import com.wavesplatform.state.DiffToStateApplier.PortfolioUpdates
 import com.wavesplatform.state.diffs.BlockDiffer.DetailedDiff
+import com.wavesplatform.state.diffs.invoke.InvokeScriptTransactionLike
 import com.wavesplatform.state.reader.CompositeBlockchain
-import com.wavesplatform.transaction.{Asset, GenesisTransaction, TxAmount}
 import com.wavesplatform.transaction.Asset.{IssuedAsset, Waves}
 import com.wavesplatform.transaction.assets.exchange.ExchangeTransaction
 import com.wavesplatform.transaction.lease.LeaseTransaction
 import com.wavesplatform.transaction.smart.InvokeScriptTransaction
 import com.wavesplatform.transaction.transfer.{MassTransferTransaction, TransferTransaction}
+import com.wavesplatform.transaction.{Asset, Authorized, EthereumTransaction}
+
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 final case class StateUpdate(
     balances: Seq[BalanceUpdate],
@@ -50,7 +53,7 @@ object StateUpdate {
   }
 
   object BalanceUpdate {
-    import com.wavesplatform.events.protobuf.StateUpdate.{BalanceUpdate => PBBalanceUpdate}
+    import com.wavesplatform.events.protobuf.StateUpdate.BalanceUpdate as PBBalanceUpdate
 
     def fromPB(v: PBBalanceUpdate): BalanceUpdate = {
       val (asset, after) = PBAmounts.toAssetAndAmount(v.getAmountAfter)
@@ -64,7 +67,7 @@ object StateUpdate {
     }
   }
 
-  case class DataEntryUpdate(address: Address, before: DataEntry[_], after: DataEntry[_]) {
+  case class DataEntryUpdate(address: Address, before: DataEntry[?], after: DataEntry[?]) {
     require(before.key == after.key)
 
     def key: String              = before.key
@@ -72,7 +75,7 @@ object StateUpdate {
   }
 
   object DataEntryUpdate {
-    import com.wavesplatform.events.protobuf.StateUpdate.{DataEntryUpdate => PBDataEntryUpdate}
+    import com.wavesplatform.events.protobuf.StateUpdate.DataEntryUpdate as PBDataEntryUpdate
 
     def fromPB(v: PBDataEntryUpdate): DataEntryUpdate = {
       DataEntryUpdate(
@@ -96,7 +99,7 @@ object StateUpdate {
   }
 
   object LeasingBalanceUpdate {
-    import com.wavesplatform.events.protobuf.StateUpdate.{LeasingUpdate => PBLeasingUpdate}
+    import com.wavesplatform.events.protobuf.StateUpdate.LeasingUpdate as PBLeasingUpdate
 
     def fromPB(v: PBLeasingUpdate): LeasingBalanceUpdate = {
       LeasingBalanceUpdate(
@@ -120,7 +123,7 @@ object StateUpdate {
   case class LeaseUpdate(
       leaseId: ByteStr,
       statusAfter: LeaseUpdate.LeaseStatus,
-      amount: TxAmount,
+      amount: Long,
       sender: PublicKey,
       recipient: Address,
       originTransactionId: ByteStr
@@ -139,8 +142,8 @@ object StateUpdate {
       case object Inactive extends LeaseStatus
     }
 
-    import com.wavesplatform.events.protobuf.StateUpdate.{LeaseUpdate => PBLeaseUpdate}
-    import com.wavesplatform.events.protobuf.StateUpdate.LeaseUpdate.{LeaseStatus => PBLeaseStatus}
+    import com.wavesplatform.events.protobuf.StateUpdate.LeaseUpdate as PBLeaseUpdate
+    import com.wavesplatform.events.protobuf.StateUpdate.LeaseUpdate.LeaseStatus as PBLeaseStatus
 
     def fromPB(v: PBLeaseUpdate): LeaseUpdate = {
       LeaseUpdate(
@@ -184,8 +187,8 @@ object StateUpdate {
   object AssetStateUpdate {
     final case class AssetDetails(assetId: ByteStr, desc: AssetDescription)
 
-    import com.wavesplatform.events.protobuf.StateUpdate.{AssetDetails => PBAssetDetails, AssetStateUpdate => PBAssetStateUpdate}
-    import com.wavesplatform.events.protobuf.StateUpdate.AssetDetails.{AssetScriptInfo => PBAssetScriptInfo}
+    import com.wavesplatform.events.protobuf.StateUpdate.AssetDetails.AssetScriptInfo as PBAssetScriptInfo
+    import com.wavesplatform.events.protobuf.StateUpdate.{AssetDetails as PBAssetDetails, AssetStateUpdate as PBAssetStateUpdate}
 
     def fromPB(self: PBAssetStateUpdate): AssetStateUpdate = {
 
@@ -253,7 +256,7 @@ object StateUpdate {
 
   final case class AssetInfo(id: ByteStr, decimals: Int, name: String)
   object AssetInfo {
-    import com.wavesplatform.events.protobuf.StateUpdate.{AssetInfo => PBAssetInfo}
+    import com.wavesplatform.events.protobuf.StateUpdate.AssetInfo as PBAssetInfo
 
     def toPB(ai: AssetInfo): PBAssetInfo = PBAssetInfo(
       ai.id.toByteString,
@@ -269,7 +272,7 @@ object StateUpdate {
       )
   }
 
-  import com.wavesplatform.events.protobuf.{StateUpdate => PBStateUpdate}
+  import com.wavesplatform.events.protobuf.StateUpdate as PBStateUpdate
 
   def fromPB(v: PBStateUpdate): StateUpdate = {
     StateUpdate(
@@ -297,32 +300,29 @@ object StateUpdate {
     override def combine(x: StateUpdate, y: StateUpdate): StateUpdate = {
       // merge balance updates, preserving order
       val balancesMap = mutable.LinkedHashMap.empty[(Address, Asset), BalanceUpdate]
-      (x.balances ++ y.balances).foreach {
-        case balance @ BalanceUpdate(addr, asset, _, _) =>
-          balancesMap(addr -> asset) = balancesMap.get(addr -> asset) match {
-            case Some(value) => balance.copy(before = value.before)
-            case None        => balance
-          }
+      (x.balances ++ y.balances).foreach { case balance @ BalanceUpdate(addr, asset, _, _) =>
+        balancesMap(addr -> asset) = balancesMap.get(addr -> asset) match {
+          case Some(value) => balance.copy(before = value.before)
+          case None        => balance
+        }
       }
       // merge leases, preserving order
       val addrLeasesMap = mutable.LinkedHashMap.empty[Address, LeasingBalanceUpdate]
-      (x.leasingForAddress ++ y.leasingForAddress).foreach {
-        case balance @ LeasingBalanceUpdate(addr, _, _) =>
-          addrLeasesMap(addr) = addrLeasesMap.get(addr) match {
-            case Some(prevLease) =>
-              balance.copy(before = prevLease.before)
-            case None =>
-              balance
-          }
+      (x.leasingForAddress ++ y.leasingForAddress).foreach { case balance @ LeasingBalanceUpdate(addr, _, _) =>
+        addrLeasesMap(addr) = addrLeasesMap.get(addr) match {
+          case Some(prevLease) =>
+            balance.copy(before = prevLease.before)
+          case None =>
+            balance
+        }
       }
       // merge data entries, preserving order
       val dataEntriesMap = mutable.LinkedHashMap.empty[(Address, String), DataEntryUpdate]
-      (x.dataEntries ++ y.dataEntries).foreach {
-        case entry @ DataEntryUpdate(addr, _, _) =>
-          dataEntriesMap(addr -> entry.key) = dataEntriesMap.get(addr -> entry.key) match {
-            case Some(value) => entry.copy(before = value.before)
-            case None        => entry
-          }
+      (x.dataEntries ++ y.dataEntries).foreach { case entry @ DataEntryUpdate(addr, _, _) =>
+        dataEntriesMap(addr -> entry.key) = dataEntriesMap.get(addr -> entry.key) match {
+          case Some(value) => entry.copy(before = value.before)
+          case None        => entry
+        }
       }
       // merge asset state updates, preserving order
       val assetsMap = mutable.LinkedHashMap.empty[ByteStr, AssetStateUpdate]
@@ -361,19 +361,16 @@ object StateUpdate {
     for ((address, assetMap) <- updatedBalances; (asset, balance) <- assetMap; before = blockchain.balance(address, asset))
       balances += BalanceUpdate(address, asset, before, balance)
 
-    val leaseBalanceUpdates = updatedLeaseBalances.map {
-      case (address, leaseBalance) =>
-        val before = blockchain.leaseBalance(address)
-        LeasingBalanceUpdate(address, before, leaseBalance)
+    val leaseBalanceUpdates = updatedLeaseBalances.map { case (address, leaseBalance) =>
+      val before = blockchain.leaseBalance(address)
+      LeasingBalanceUpdate(address, before, leaseBalance)
     }.toVector
 
-    val dataEntries = diff.accountData.toSeq.flatMap {
-      case (address, AccountDataInfo(data)) =>
-        data.toSeq.map {
-          case (_, entry) =>
-            val prev = blockchain.accountData(address, entry.key).getOrElse(EmptyDataEntry(entry.key))
-            DataEntryUpdate(address, prev, entry)
-        }
+    val dataEntries = diff.accountData.toSeq.flatMap { case (address, AccountDataInfo(data)) =>
+      data.toSeq.map { case (_, entry) =>
+        val prev = blockchain.accountData(address, entry.key).getOrElse(EmptyDataEntry(entry.key))
+        DataEntryUpdate(address, prev, entry)
+      }
     }
 
     val assets: Seq[AssetStateUpdate] = for {
@@ -382,31 +379,54 @@ object StateUpdate {
       assetAfter  = blockchainAfter.assetDescription(asset)
     } yield AssetStateUpdate(asset.id, assetBefore, assetAfter)
 
-    val updatedLeases = diff.leaseState.map {
-      case (leaseId, newState) =>
-        LeaseUpdate(
-          leaseId,
-          if (newState.isActive) LeaseStatus.Active else LeaseStatus.Inactive,
-          newState.amount,
-          newState.sender,
-          newState.recipient match {
-            case `WavesAlias` => WavesAddress
-            case other        => blockchainAfter.resolveAlias(other).explicitGet()
-          },
-          newState.sourceId
-        )
+    val updatedLeases = diff.leaseState.map { case (leaseId, newState) =>
+      LeaseUpdate(
+        leaseId,
+        if (newState.isActive) LeaseStatus.Active else LeaseStatus.Inactive,
+        newState.amount,
+        newState.sender,
+        newState.recipient match {
+          case `WavesAlias` => WavesAddress
+          case other        => blockchainAfter.resolveAlias(other).explicitGet()
+        },
+        newState.sourceId
+      )
     }.toVector
 
     StateUpdate(balances.toVector, leaseBalanceUpdates, dataEntries, assets, updatedLeases)
   }
 
   private[this] def transactionsMetadata(blockchain: Blockchain, diff: Diff): Seq[TransactionMetadata] = {
-    diff.transactions.values
-      .map[TransactionMetadata.Metadata] { tx =>
-        implicit class AddressResolver(addr: AddressOrAlias) {
-          def resolve: Address = blockchain.resolveAlias(addr).explicitGet()
-        }
+    implicit class AddressResolver(addr: AddressOrAlias) {
+      def resolve: Address = blockchain.resolveAlias(addr).explicitGet()
+    }
 
+    def invokeScriptLikeToMetadata(ist: InvokeScriptTransactionLike) = {
+
+      def argumentToPB(arg: Terms.EXPR): Argument.Value = arg match {
+        case Terms.CONST_LONG(t)     => Argument.Value.IntegerValue(t)
+        case bs: Terms.CONST_BYTESTR => Argument.Value.BinaryValue(bs.bs.toByteString)
+        case str: Terms.CONST_STRING => Argument.Value.StringValue(str.s)
+        case Terms.CONST_BOOLEAN(b)  => Argument.Value.BooleanValue(b)
+        case Terms.ARR(xs)           => Argument.Value.List(Argument.List(xs.map(x => Argument(argumentToPB(x)))))
+        case _                       => Argument.Value.Empty
+      }
+
+      TransactionMetadata.InvokeScriptMetadata(
+        ist.dApp.resolve.toByteString,
+        ist.funcCall.function.funcName,
+        ist.funcCall.args.map(x => PBInvokeScriptResult.Call.Argument(argumentToPB(x))),
+        ist.payments.map(p => Amount(PBAmounts.toPBAssetId(p.assetId), p.amount)),
+        diff.scriptResults.get(ist.id()).map(InvokeScriptResult.toPB(_, addressForTransfer = true))
+      )
+    }
+
+    diff.transactions.map { tx =>
+      TransactionMetadata(
+        tx.transaction match {
+          case a: Authorized => a.sender.toAddress.toByteString
+          case _             => ByteString.EMPTY
+        },
         tx.transaction match {
           case tt: TransferTransaction =>
             TransactionMetadata.Metadata.Transfer(TransactionMetadata.TransferMetadata(tt.recipient.resolve.toByteString))
@@ -415,29 +435,48 @@ object StateUpdate {
             TransactionMetadata.Metadata.MassTransfer(TransactionMetadata.MassTransferMetadata(mtt.transfers.map(_.address.resolve.toByteString)))
 
           case lt: LeaseTransaction =>
-            TransactionMetadata.Metadata.LeaseMeta(TransactionMetadata.LeaseMetadata(lt.recipient.resolve.toByteString))
+            TransactionMetadata.Metadata.Lease(TransactionMetadata.LeaseMetadata(lt.recipient.resolve.toByteString))
 
           case ext: ExchangeTransaction =>
-            TransactionMetadata.Metadata.Exchange(TransactionMetadata.ExchangeMetadata(Seq(ext.order1, ext.order2).map(_.id().toByteString)))
-
-          case ist: InvokeScriptTransaction =>
-            import com.wavesplatform.protobuf.transaction.InvokeScriptResult.Call.Argument
-            TransactionMetadata.Metadata.InvokeScript(
-              TransactionMetadata.InvokeScriptMetadata(
-                ist.dAppAddressOrAlias.resolve.toByteString,
-                ist.funcCall.function.funcName,
-                ist.funcCall.args.map(x => Argument(InvokeScriptResult.rideExprToPB(x))),
-                ist.payments.map(p => Amount(PBAmounts.toPBAssetId(p.assetId), p.amount)),
-                diff.scriptResults.get(ist.id()).map(InvokeScriptResult.toPB)
+            TransactionMetadata.Metadata.Exchange(
+              TransactionMetadata.ExchangeMetadata(
+                Seq(ext.order1, ext.order2).map(_.id().toByteString),
+                Seq(ext.order1, ext.order2).map(_.senderAddress.toByteString),
+                Seq(ext.order1, ext.order2).map(_.senderPublicKey.toByteString)
               )
             )
+
+          case ist: InvokeScriptTransaction =>
+            TransactionMetadata.Metadata.InvokeScript(invokeScriptLikeToMetadata(ist))
+
+          case et: EthereumTransaction =>
+            val metadataOpt: Option[EthereumMetadata.Action] = et.payload match {
+              case ett: EthereumTransaction.Transfer =>
+                ett.toTransferLike(et, blockchain).toOption.map { transferLike =>
+                  EthereumMetadata.Action.Transfer(
+                    TransactionMetadata.EthereumTransferMetadata(
+                      ett.recipient.toByteString,
+                      Some(Amount(transferLike.assetId.fold(ByteString.EMPTY)(_.id.toByteString), ett.amount))
+                    )
+                  )
+                }
+
+              case inv @ EthereumTransaction.Invocation(_, _) =>
+                for {
+                  invoke <- inv.toInvokeScriptLike(et, blockchain).toOption
+                } yield EthereumMetadata.Action.Invoke(invokeScriptLikeToMetadata(invoke))
+            }
+            metadataOpt
+              .map { a =>
+                TransactionMetadata.Metadata.Ethereum(EthereumMetadata(et.timestamp, et.fee, et.signerPublicKey().toByteString, a))
+              }
+              .getOrElse(TransactionMetadata.Metadata.Empty)
 
           case _ =>
             TransactionMetadata.Metadata.Empty
         }
-      }
-      .map(TransactionMetadata(_))
-      .toVector
+      )
+    }.toVector
   }
 
   def referencedAssets(blockchain: Blockchain, txsStateUpdates: Seq[StateUpdate]): Seq[AssetInfo] =
@@ -466,12 +505,11 @@ object StateUpdate {
     }
 
     val (txsStateUpdates, totalDiff) = txsDiffs.reverse
-      .foldLeft((Seq.empty[StateUpdate], parentDiff)) {
-        case ((updates, accDiff), txDiff) =>
-          (
-            updates :+ atomic(CompositeBlockchain(blockchainBeforeWithMinerReward, accDiff), txDiff),
-            accDiff.combine(txDiff)
-          )
+      .foldLeft((Seq.empty[StateUpdate], parentDiff)) { case ((updates, accDiff), txDiff) =>
+        (
+          updates :+ atomic(CompositeBlockchain(blockchainBeforeWithMinerReward, accDiff), txDiff),
+          accDiff.combineF(txDiff).explicitGet()
+        )
       }
     val blockchainAfter = CompositeBlockchain(blockchainBeforeWithMinerReward, totalDiff)
     val metadata        = transactionsMetadata(blockchainAfter, totalDiff)
@@ -519,21 +557,18 @@ final case class BlockAppended(
 }
 
 object BlockAppended {
-  def from(block: Block, diff: DetailedDiff, blockchainBeforeWithMinerReward: Blockchain): BlockAppended = {
+  def from(block: Block, diff: DetailedDiff, blockchainBeforeWithMinerReward: Blockchain, minerReward: Option[Long]): BlockAppended = {
+    val height = blockchainBeforeWithMinerReward.height
     val (blockStateUpdate, txsStateUpdates, txsMetadata, refAssets) =
       StateUpdate.container(blockchainBeforeWithMinerReward, diff, block.sender.toAddress)
 
     // updatedWavesAmount can change as a result of either genesis transactions or miner rewards
-    val updatedWavesAmount = blockchainBeforeWithMinerReward.height match {
-      // genesis case
-      case 0 => block.transactionData.collect { case GenesisTransaction(_, amount, _, _, _) => amount }.sum
-      // miner reward case
-      case height => blockchainBeforeWithMinerReward.wavesAmount(height).toLong
-    }
+    val wavesAmount        = blockchainBeforeWithMinerReward.wavesAmount(height).toLong
+    val updatedWavesAmount = wavesAmount + minerReward.filter(_ => height > 0).getOrElse(0L)
 
     BlockAppended(
       block.id(),
-      blockchainBeforeWithMinerReward.height + 1,
+      height + 1,
       block,
       updatedWavesAmount,
       blockStateUpdate,

@@ -5,41 +5,40 @@ import java.net.{InetAddress, InetSocketAddress, URL}
 import java.nio.file.{Files, Path, Paths}
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.{Properties, List => JList, Map => JMap}
-import java.util.Collections._
+import java.util.{Properties, List as JList, Map as JMap}
+import java.util.Collections.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
-
 import scala.annotation.tailrec
-import scala.concurrent.{blocking, Await, Future}
+import scala.concurrent.{Await, Future, blocking}
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
-import scala.jdk.CollectionConverters._
+import scala.concurrent.duration.*
+import scala.jdk.CollectionConverters.*
 import scala.util.{Random, Try}
 import scala.util.control.NonFatal
-
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.javaprop.JavaPropsMapper
-import com.google.common.primitives.Ints._
+import com.google.common.primitives.Ints.*
 import com.spotify.docker.client.{DefaultDockerClient, DockerClient}
-import com.spotify.docker.client.messages._
+import com.spotify.docker.client.messages.*
 import com.spotify.docker.client.messages.EndpointConfig.EndpointIpamConfig
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
-import com.typesafe.config.ConfigFactory._
+import com.typesafe.config.ConfigFactory.*
 import com.wavesplatform.account.AddressScheme
 import com.wavesplatform.block.Block
 import com.wavesplatform.common.utils.EitherExt2
-import com.wavesplatform.it.api.AsyncHttpApi._
-import com.wavesplatform.it.util.GlobalTimer.{instance => timer}
-import com.wavesplatform.settings._
+import com.wavesplatform.features.BlockchainFeatures
+import com.wavesplatform.it.api.AsyncHttpApi.*
+import com.wavesplatform.it.util.GlobalTimer.instance as timer
+import com.wavesplatform.settings.*
 import com.wavesplatform.utils.ScorexLogging
 import monix.eval.Coeval
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import net.ceedubs.ficus.Ficus.*
+import net.ceedubs.ficus.readers.ArbitraryTypeReader.*
 import org.apache.commons.compress.archivers.ArchiveStreamFactory
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry
 import org.apache.commons.io.IOUtils
-import org.asynchttpclient.Dsl._
+import org.asynchttpclient.Dsl.*
 
 class Docker(
     suiteConfig: Config = empty,
@@ -50,7 +49,7 @@ class Docker(
 ) extends AutoCloseable
     with ScorexLogging {
 
-  import Docker._
+  import Docker.*
 
   private val http = asyncHttpClient(
     config()
@@ -74,10 +73,8 @@ class Docker(
     close()
   }
 
-  private val genesisOverride = Docker.genesisOverride
-
   // a random network in 10.x.x.x range
-  val networkSeed = Random.nextInt(0x100000) << 4 | 0x0A000000
+  val networkSeed = Random.nextInt(0x100000) << 4 | 0x0a000000
   // 10.x.x.x/28 network will accommodate up to 13 nodes
   private val networkPrefix = s"${InetAddress.getByAddress(toByteArray(networkSeed)).getHostAddress}/28"
 
@@ -90,7 +87,9 @@ class Docker(
     r
   }
 
-  private def ipForNode(nodeId: Int) = InetAddress.getByAddress(toByteArray(nodeId & 0xF | networkSeed)).getHostAddress
+  private val genesisOverride = Docker.genesisOverride(Some(suiteConfig))
+
+  private def ipForNode(nodeId: Int) = InetAddress.getByAddress(toByteArray(nodeId & 0xf | networkSeed)).getHostAddress
 
   private lazy val wavesNetwork: Network = {
     val id          = Random.nextInt(Int.MaxValue)
@@ -127,7 +126,7 @@ class Docker(
                   Ipam
                     .builder()
                     .driver("default")
-                    .config(singletonList(IpamConfig.create(networkPrefix, networkPrefix, ipForNode(0xE))))
+                    .config(singletonList(IpamConfig.create(networkPrefix, networkPrefix, ipForNode(0xe))))
                     .build()
                 )
                 .checkDuplicate(true)
@@ -240,14 +239,13 @@ class Docker(
         // Debugger
         if (enableDebugger) config += s"-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:$internalDebuggerPort "
 
-        if (enableProfiling) {
-          // https://www.yourkit.com/docs/java/help/startup_options.jsp
-          config += s"-agentpath:/usr/local/YourKit-JavaProfiler-2021.3/bin/linux-x86-64/libyjpagent.so=port=$ProfilerPort,listen=all," +
-            s"sampling,monitors,sessionname=WavesNode,dir=$ContainerRoot/profiler,logdir=$ContainerRoot,onexit=snapshot "
-        }
-
         config
       }
+
+      val profilerConfigEnv = if (enableProfiling) {
+        // https://www.yourkit.com/docs/java/help/startup_options.jsp
+        s"YOURKIT_OPTS=port=$ProfilerPort,listen=all,sampling,monitors,sessionname=WavesNode,dir=$ContainerRoot/profiler,logdir=$ContainerRoot,onexit=snapshot"
+      } else ""
 
       val debuggerPort = if (enableDebugger) Docker.freeDebuggerPort() else 0
 
@@ -257,13 +255,18 @@ class Docker(
         .publishAllPorts(true)
         .build()
 
+      val envs = Seq(
+        s"JAVA_OPTS=$configOverrides",
+        profilerConfigEnv
+      ).filter(_.nonEmpty)
+
       val containerConfig = ContainerConfig
         .builder()
         .image(imageName)
         .exposedPorts(s"$internalDebuggerPort")
         .networkingConfig(ContainerConfig.NetworkingConfig.create(Map(wavesNetwork.name() -> endpointConfigFor(nodeName)).asJava))
         .hostConfig(hostConfig)
-        .env(s"JAVA_OPTS=$configOverrides")
+        .env(envs*)
         .build()
 
       val containerId = {
@@ -559,8 +562,8 @@ object Docker {
   private val propsMapper = new JavaPropsMapper
 
   val configTemplate: Config = parseResources("template.conf")
-  def genesisOverride: Config = {
-    val genesisTs = System.currentTimeMillis()
+  def genesisOverride(featuresConfig: Option[Config] = None): Config = {
+    val genesisTs: Long = System.currentTimeMillis()
 
     val timestampOverrides = parseString(s"""TN.blockchain.custom.genesis {
                                             |  timestamp = $genesisTs
@@ -568,9 +571,16 @@ object Docker {
                                             |  signature = null # To calculate it in Block.genesis
                                             |}""".stripMargin)
 
-    val genesisConfig    = timestampOverrides.withFallback(configTemplate)
-    val gs               = genesisConfig.as[GenesisSettings]("TN.blockchain.custom.genesis")
-    val genesisSignature = Block.genesis(gs).explicitGet().id()
+    val genesisConfig = timestampOverrides.withFallback(configTemplate)
+    val gs            = genesisConfig.as[GenesisSettings]("TN.blockchain.custom.genesis")
+    val isRideV6Activated = featuresConfig
+      .map(_.withFallback(configTemplate))
+      .getOrElse(configTemplate)
+      .resolve()
+      .getAs[Map[Short, Int]]("TN.blockchain.custom.functionality.pre-activated-features")
+      .exists(_.get(BlockchainFeatures.RideV6.id).contains(0))
+
+    val genesisSignature = Block.genesis(gs, rideV6Activated = isRideV6Activated).explicitGet().id()
 
     parseString(s"TN.blockchain.custom.genesis.signature = $genesisSignature").withFallback(timestampOverrides)
   }
@@ -579,7 +589,7 @@ object Docker {
     override val chainId: Byte = configTemplate.as[String]("TN.blockchain.custom.address-scheme-character").charAt(0).toByte
   }
 
-  def apply(owner: Class[_]): Docker = new Docker(tag = owner.getSimpleName)
+  def apply(owner: Class[?]): Docker = new Docker(tag = owner.getSimpleName)
 
   private def asProperties(config: Config): Properties = {
     val jsonConfig = config.resolve().root().render(ConfigRenderOptions.concise())

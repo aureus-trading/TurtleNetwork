@@ -1,13 +1,25 @@
-import CommonSettings.autoImport.network
-import com.typesafe.sbt.SbtNativePackager.Universal
-import sbtassembly.MergeStrategy
-
 name := "tn"
-maintainer := "turtlenetwork.eu"
 
-enablePlugins(RunApplicationSettings, JavaServerAppPackaging, UniversalDeployPlugin, JDebPackaging, SystemdPlugin, GitVersioning, VersionObject)
+enablePlugins(
+  RunApplicationSettings,
+  JavaServerAppPackaging,
+  UniversalDeployPlugin,
+  JDebPackaging,
+  SystemdPlugin,
+  GitVersioning,
+  VersionObject,
+  JavaAgent
+)
 
 libraryDependencies ++= Dependencies.node.value
+
+javaAgents ++= {
+  if (instrumentation.value) {
+    Dependencies.kanela
+  } else {
+    Seq.empty
+  }
+}
 
 inConfig(Compile)(
   Seq(
@@ -16,7 +28,7 @@ inConfig(Compile)(
     PB.generate / includeFilter := { (f: File) =>
       (** / "waves" / "*.proto").matches(f.toPath)
     },
-    PB.deleteTargetDirectory := false,
+    PB.deleteTargetDirectory     := false,
     packageDoc / publishArtifact := false,
     packageSrc / publishArtifact := false
   )
@@ -24,7 +36,7 @@ inConfig(Compile)(
 
 inTask(assembly)(
   Seq(
-    test := {},
+    test            := {},
     assemblyJarName := s"tn-all-${version.value}.jar",
     assemblyMergeStrategy := {
       case p
@@ -32,8 +44,15 @@ inTask(assembly)(
             p.endsWith("module-info.class") ||
             p.endsWith("io.netty.versions.properties") =>
         MergeStrategy.discard
-      case "scala-collection-compat.properties" => MergeStrategy.discard
-      case other                                => (assembly / assemblyMergeStrategy).value(other)
+
+      case "scala-collection-compat.properties" =>
+        MergeStrategy.discard
+      case p
+          if Set("scala/util/control/compat", "scala/collection/compat")
+            .exists(p.replace('\\', '/').contains) =>
+        MergeStrategy.last
+
+      case other => (assembly / assemblyMergeStrategy).value(other)
     }
   )
 )
@@ -93,11 +112,11 @@ inConfig(Universal)(
 
 inConfig(Linux)(
   Seq(
-    packageSummary := "tn node",
+    packageSummary     := "tn node",
     packageDescription := "tn node",
-    name := s"${name.value}${network.value.packageSuffix}",
-    normalizedName := name.value,
-    packageName := normalizedName.value
+    name               := s"${name.value}${network.value.packageSuffix}",
+    normalizedName     := name.value,
+    packageName        := normalizedName.value
   )
 )
 
@@ -133,7 +152,8 @@ linuxPackageSymlinks := linuxPackageSymlinks.value.map { lsl =>
 
 inConfig(Debian)(
   Seq(
-    packageSource := sourceDirectory.value / "package",
+    maintainer               := "com.wavesplatform",
+    packageSource            := sourceDirectory.value / "package",
     linuxStartScriptTemplate := (packageSource.value / "systemd.service").toURI.toURL,
     debianPackageDependencies += "java8-runtime-headless",
     maintainerScripts := maintainerScriptsFromDirectory(packageSource.value / "debian", Seq("postinst", "postrm", "prerm"))

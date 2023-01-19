@@ -2,12 +2,12 @@ package com.wavesplatform.state.diffs.ci
 
 import com.wavesplatform.db.WithDomain
 import com.wavesplatform.db.WithState.AddrWithBalance
-import com.wavesplatform.features.BlockchainFeatures._
+import com.wavesplatform.features.BlockchainFeatures.*
 import com.wavesplatform.lang.directives.values.V5
 import com.wavesplatform.lang.script.Script
 import com.wavesplatform.lang.v1.compiler.TestCompiler
 import com.wavesplatform.settings.TestFunctionalitySettings
-import com.wavesplatform.test._
+import com.wavesplatform.test.*
 import com.wavesplatform.transaction.TxHelpers
 
 class OverheadCallableCallTest extends PropSpec with WithDomain {
@@ -39,13 +39,13 @@ class OverheadCallableCallTest extends PropSpec with WithDomain {
 
   property("overhead callable call should be safe both before and after fix") {
     val invoker = TxHelpers.signer(0)
-    val dApp = TxHelpers.signer(1)
+    val dApp    = TxHelpers.signer(1)
 
     val balances = AddrWithBalance.enoughBalances(invoker, dApp)
 
     val setScript = TxHelpers.setScript(dApp, dAppScript)
-    val invoke1 = TxHelpers.invoke(dApp.toAddress, func = None, invoker = invoker)
-    val invoke2 = TxHelpers.invoke(dApp.toAddress, func = None, invoker = invoker)
+    val invoke1   = TxHelpers.invoke(dApp.toAddress, func = None, invoker = invoker)
+    val invoke2   = TxHelpers.invoke(dApp.toAddress, func = None, invoker = invoker)
 
     withDomain(domainSettingsWithFS(settings), balances) { d =>
       d.appendBlock(setScript)

@@ -5,46 +5,45 @@ import com.typesafe.config.ConfigFactory
 import com.wavesplatform.TestHelpers.enableNG
 import com.wavesplatform.account.{Address, KeyPair}
 import com.wavesplatform.block.Block
+import com.wavesplatform.block.Block.PlainBlockVersion
 import com.wavesplatform.common.utils.EitherExt2
+import com.wavesplatform.database.loadActiveLeases
 import com.wavesplatform.db.WithState.AddrWithBalance
 import com.wavesplatform.db.{DBCacheSettings, WithDomain}
 import com.wavesplatform.events.BlockchainUpdateTriggers
-import com.wavesplatform.features.BlockchainFeatures
 import com.wavesplatform.history.Domain.BlockchainUpdaterExt
-import com.wavesplatform.history.{chainBaseAndMicro, randomSig}
+import com.wavesplatform.history.{Domain, chainBaseAndMicro, randomSig}
 import com.wavesplatform.lagonaki.mocks.TestBlock
 import com.wavesplatform.lang.v1.estimator.v2.ScriptEstimatorV2
 import com.wavesplatform.settings.{WavesSettings, loadConfig}
 import com.wavesplatform.state.diffs.ENOUGH_AMT
-import com.wavesplatform.test.FreeSpec
+import com.wavesplatform.test.*
 import com.wavesplatform.transaction.Asset.Waves
+import com.wavesplatform.transaction.TxHelpers.*
+import com.wavesplatform.transaction.smart.SetScriptTransaction
 import com.wavesplatform.transaction.smart.script.ScriptCompiler
-import com.wavesplatform.transaction.smart.{InvokeScriptTransaction, SetScriptTransaction}
 import com.wavesplatform.transaction.transfer.TransferTransaction
-import com.wavesplatform.transaction.{Transaction, TxHelpers, TxVersion}
+import com.wavesplatform.transaction.utils.Signed
+import com.wavesplatform.transaction.{Asset, Transaction, TxHelpers, TxVersion}
 import com.wavesplatform.utils.Time
 import com.wavesplatform.{EitherMatchers, NTPTime}
+import monix.execution.Scheduler.Implicits.global
+import monix.reactive.subjects.PublishToOneSubject
 import org.scalamock.scalatest.MockFactory
 
+import scala.concurrent.Await
+import scala.concurrent.duration.DurationInt
 import scala.util.Random
 
-class BlockchainUpdaterImplSpec
-    extends FreeSpec
-    with EitherMatchers
-    with WithDomain
-    with NTPTime
-    with DBCacheSettings
-    with MockFactory {
+class BlockchainUpdaterImplSpec extends FreeSpec with EitherMatchers with WithDomain with NTPTime with DBCacheSettings with MockFactory {
+  import DomainPresets.*
 
   private val FEE_AMT = 1000000L
 
   // default settings, no NG
   private lazy val wavesSettings = WavesSettings.fromRootConfig(loadConfig(ConfigFactory.load()))
 
-  def baseTest(setup: Time => (KeyPair, Seq[Block]),
-               enableNg: Boolean = false,
-               triggers: BlockchainUpdateTriggers = BlockchainUpdateTriggers.noop
-  )(
+  def baseTest(setup: Time => (KeyPair, Seq[Block]), enableNg: Boolean = false, triggers: BlockchainUpdateTriggers = BlockchainUpdateTriggers.noop)(
       f: (BlockchainUpdaterImpl, KeyPair) => Unit
   ): Unit = withDomain(if (enableNg) enableNG(wavesSettings) else wavesSettings) { d =>
     d.triggers = d.triggers :+ triggers
@@ -62,10 +61,10 @@ class BlockchainUpdaterImplSpec
     TxHelpers.transfer(master, recipient, ENOUGH_AMT / 5, fee = 1000000, timestamp = ts, version = TxVersion.V1)
 
   def commonPreconditions(ts: Long): (KeyPair, List[Block]) = {
-    val master = TxHelpers.signer(1)
+    val master    = TxHelpers.signer(1)
     val recipient = TxHelpers.signer(2)
 
-    val genesis = TxHelpers.genesis(master.toAddress, timestamp = ts)
+    val genesis      = TxHelpers.genesis(master.toAddress, timestamp = ts)
     val genesisBlock = TestBlock.create(ts, Seq(genesis))
     val b1 = TestBlock
       .create(
@@ -110,14 +109,17 @@ class BlockchainUpdaterImplSpec
 
           (triggersMock.onProcessBlock _)
             .expects(where { (block, diff, _, bc) =>
+              val txDiff = diff.transactionDiffs.head
+              val tx     = txDiff.transactions.head.transaction.asInstanceOf[TransferTransaction]
+
               bc.height == 1 &&
               block.transactionData.length == 5 &&
               // miner reward, no NG — all txs fees
               diff.parentDiff.portfolios.size == 1 &&
               diff.parentDiff.portfolios.head._2.balance == FEE_AMT * 5 &&
               // first Tx updated balances
-              diff.transactionDiffs.head.portfolios.head._2.balance == (ENOUGH_AMT / 5) &&
-              diff.transactionDiffs.head.portfolios.last._2.balance == (-ENOUGH_AMT / 5 - FEE_AMT)
+              txDiff.portfolios(tx.recipient.asInstanceOf[Address]).balance == (ENOUGH_AMT / 5) &&
+              txDiff.portfolios(tx.sender.toAddress).balance == (-ENOUGH_AMT / 5 - FEE_AMT)
             })
             .once()
 
@@ -171,7 +173,7 @@ class BlockchainUpdaterImplSpec
 
       "block, then 2 microblocks, then block referencing previous microblock" in withDomain(enableNG(wavesSettings)) { d =>
         def preconditions(ts: Long): (Transaction, Seq[Transaction]) = {
-          val master = TxHelpers.signer(1)
+          val master    = TxHelpers.signer(1)
           val recipient = TxHelpers.signer(2)
 
           val genesis = TxHelpers.genesis(master.toAddress, timestamp = ts)
@@ -264,35 +266,66 @@ class BlockchainUpdaterImplSpec
       val sender = KeyPair(Longs.toByteArray(Random.nextLong()))
 
       withDomain(
-        settings = domainSettingsWithPreactivatedFeatures(
-          BlockchainFeatures.NG,
-          BlockchainFeatures.BlockV5,
-          BlockchainFeatures.Ride4DApps
-        ),
+        RideV4,
         balances = Seq(AddrWithBalance(dapp.toAddress, 10_00000000), AddrWithBalance(sender.toAddress, 10_00000000))
       ) { d =>
-
-        val script = ScriptCompiler.compile("""
-                                              |{-# STDLIB_VERSION 4 #-}
-                                              |{-# SCRIPT_TYPE ACCOUNT #-}
-                                              |{-# CONTENT_TYPE DAPP #-}
-                                              |
-                                              |@Callable(i)
-                                              |func default() = {
-                                              |  [
-                                              |    BinaryEntry("vrf", value(value(blockInfoByHeight(height)).vrf))
-                                              |  ]
-                                              |}
-                                              |""".stripMargin, ScriptEstimatorV2).explicitGet()._1
+        val script = ScriptCompiler
+          .compile(
+            """
+              |
+              |{-# STDLIB_VERSION 4 #-}
+              |{-# SCRIPT_TYPE ACCOUNT #-}
+              |{-# CONTENT_TYPE DAPP #-}
+              |
+              |@Callable(i)
+              |func default() = {
+              |  [
+              |    BinaryEntry("vrf", value(value(blockInfoByHeight(height)).vrf))
+              |  ]
+              |}
+              |""".stripMargin,
+            ScriptEstimatorV2
+          )
+          .explicitGet()
+          ._1
 
         d.appendBlock(
           SetScriptTransaction.selfSigned(2.toByte, dapp, Some(script), 600_0000L, ntpTime.getTimestamp()).explicitGet()
         )
 
         val invoke =
-          InvokeScriptTransaction.selfSigned(3.toByte, sender, dapp.toAddress, None, Seq.empty, 600_0000L, Waves, ntpTime.getTimestamp()).explicitGet()
+          Signed.invokeScript(3.toByte, sender, dapp.toAddress, None, Seq.empty, 600_0000L, Waves, ntpTime.getTimestamp())
 
         d.appendBlock(d.createBlock(5.toByte, Seq(invoke)))
+      }
+    }
+
+    "spendableBalanceChanged" in {
+      withLevelDBWriter(RideV6) { levelDb =>
+        val ps    = PublishToOneSubject[(Address, Asset)]()
+        val items = ps.toListL.runToFuture
+
+        val blockchain = new BlockchainUpdaterImpl(
+          levelDb,
+          ps,
+          RideV6,
+          ntpTime,
+          BlockchainUpdateTriggers.noop,
+          loadActiveLeases(db, _, _)
+        )
+
+        val d = Domain(db, blockchain, levelDb, RideV6)
+        blockchain.processBlock(d.createBlock(PlainBlockVersion, Seq(genesis(defaultAddress)), generator = TestBlock.defaultSigner))
+        blockchain.processBlock(d.createBlock(PlainBlockVersion, Seq(transfer()), generator = TestBlock.defaultSigner))
+
+        ps.onComplete()
+        Await.result(items, 2.seconds) shouldBe Seq(
+          (TestBlock.defaultSigner.toAddress, Waves),
+          (defaultAddress, Waves),
+          (TestBlock.defaultSigner.toAddress, Waves),
+          (defaultAddress, Waves),
+          (secondAddress, Waves)
+        )
       }
     }
   }

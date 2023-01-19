@@ -8,8 +8,8 @@ import com.wavesplatform.common.state.ByteStr
 import com.wavesplatform.consensus.PoSSelector
 import com.wavesplatform.lagonaki.mocks.TestBlock
 import com.wavesplatform.settings._
+import com.wavesplatform.state.{BalanceSnapshot, Blockchain, BlockMinerInfo, NG}
 import com.wavesplatform.state.diffs.ENOUGH_AMT
-import com.wavesplatform.state.{BalanceSnapshot, BlockMinerInfo, Blockchain, NG}
 import com.wavesplatform.test.FlatSpec
 import com.wavesplatform.transaction.BlockchainUpdater
 import com.wavesplatform.transaction.TxValidationError.BlockFromFuture
@@ -20,6 +20,7 @@ import io.netty.util.concurrent.GlobalEventExecutor
 import monix.eval.Task
 import monix.execution.Scheduler
 import monix.execution.Scheduler.Implicits.global
+import monix.reactive.Observable
 import org.scalamock.scalatest.PathMockFactory
 
 class MiningFailuresSuite extends FlatSpec with PathMockFactory with WithDB {
@@ -31,14 +32,16 @@ class MiningFailuresSuite extends FlatSpec with PathMockFactory with WithDB {
     val blockchainUpdater = stub[BlockchainUpdaterNG]
 
     val wavesSettings = {
-      val config = ConfigFactory.parseString("""
-          |TN.miner {
-          |  quorum = 0
-          |  interval-after-last-block-then-generation-is-allowed = 0
-          |}
-          |
-          |TN.features.supported=[2]
-          |""".stripMargin).withFallback(ConfigFactory.load())
+      val config = ConfigFactory
+        .parseString("""
+                       |TN.miner {
+                       |  quorum = 0
+                       |  interval-after-last-block-then-generation-is-allowed = 0
+                       |}
+                       |
+                       |TN.features.supported=[2]
+                       |""".stripMargin)
+        .withFallback(ConfigFactory.load())
 
       WavesSettings.fromRootConfig(loadConfig(config))
     }
@@ -53,8 +56,9 @@ class MiningFailuresSuite extends FlatSpec with PathMockFactory with WithDB {
       val scheduler   = Scheduler.singleThread("appender")
       val allChannels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE)
       val wallet      = Wallet(WalletSettings(None, Some("123"), None))
-      val utxPool     = new UtxPoolImpl(ntpTime, blockchainUpdater, wavesSettings.utxSettings)
-      val pos         = PoSSelector(blockchainUpdater, wavesSettings.synchronizationSettings.maxBaseTarget)
+      val utxPool =
+        new UtxPoolImpl(ntpTime, blockchainUpdater, wavesSettings.utxSettings, wavesSettings.maxTxErrorLogSize, wavesSettings.minerSettings.enable)
+      val pos = PoSSelector(blockchainUpdater, wavesSettings.synchronizationSettings.maxBaseTarget)
       new MinerImpl(
         allChannels,
         blockchainUpdater,
@@ -64,7 +68,8 @@ class MiningFailuresSuite extends FlatSpec with PathMockFactory with WithDB {
         wallet,
         pos,
         scheduler,
-        scheduler
+        scheduler,
+        Observable.empty
       )
     }
 

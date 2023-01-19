@@ -5,91 +5,44 @@ import com.wavesplatform.common.state.ByteStr
 import com.wavesplatform.common.utils.EitherExt2
 import com.wavesplatform.db.WithDomain
 import com.wavesplatform.db.WithState.AddrWithBalance
-import com.wavesplatform.features.BlockchainFeatures
 import com.wavesplatform.lagonaki.mocks.TestBlock
 import com.wavesplatform.lang.directives.values.V4
 import com.wavesplatform.lang.script.Script
 import com.wavesplatform.lang.v1.compiler.TestCompiler
-import com.wavesplatform.settings.TestFunctionalitySettings
+import com.wavesplatform.state.diffs.*
 import com.wavesplatform.state.diffs.FeeValidation.FeeConstants
 import com.wavesplatform.state.diffs.TransactionDiffer.TransactionValidationError
-import com.wavesplatform.state.diffs._
 import com.wavesplatform.state.{EmptyDataEntry, SponsorshipValue}
-import com.wavesplatform.test.{NumericExt, PropSpec}
+import com.wavesplatform.test.*
+import com.wavesplatform.test.DomainPresets.{RideV4, RideV6}
 import com.wavesplatform.transaction.Asset.IssuedAsset
 import com.wavesplatform.transaction.assets.IssueTransaction
 import com.wavesplatform.transaction.smart.script.trace.{AssetVerifierTrace, InvokeScriptTrace}
 import com.wavesplatform.transaction.smart.{InvokeScriptTransaction, SetScriptTransaction}
-import com.wavesplatform.transaction.{GenesisTransaction, TxHelpers}
+import com.wavesplatform.transaction.{GenesisTransaction, TransactionType, TxHelpers}
 import org.scalatest.EitherValues
 
 class CallableV4DiffTest extends PropSpec with WithDomain with EitherValues {
 
-  private val features = TestFunctionalitySettings.Enabled.copy(
-    preActivatedFeatures = Seq(
-      BlockchainFeatures.SmartAccounts,
-      BlockchainFeatures.SmartAssets,
-      BlockchainFeatures.Ride4DApps,
-      BlockchainFeatures.BlockV5
-    ).map(_.id -> 0).toMap
-  )
+  private val features = RideV6.blockchainSettings.functionalitySettings
 
   property("reissue and burn actions result state") {
-    val (genesis, setScript, invoke, issue, master, reissueAmount, burnAmount) = paymentPreconditions(0.06.waves)
+    val (genesis, setScript, invoke, issue, master, reissueAmount, burnAmount) = paymentPreconditions(0.06.waves, fail = false)
     assertDiffAndState(
       Seq(TestBlock.create(genesis :+ setScript :+ issue)),
       TestBlock.create(Seq(invoke)),
       features
-    ) {
-      case (_, blockchain) =>
-        val asset        = IssuedAsset(issue.id())
-        val resultAmount = issue.quantity + reissueAmount - burnAmount
+    ) { case (_, blockchain) =>
+      val asset        = IssuedAsset(issue.id())
+      val resultAmount = issue.quantity.value + reissueAmount - burnAmount
 
-        blockchain.assetDescription(asset).get.totalVolume shouldBe resultAmount
-        blockchain.balance(master.toAddress, asset) shouldBe resultAmount
+      blockchain.assetDescription(asset).get.totalVolume shouldBe resultAmount
+      blockchain.balance(master.toAddress, asset) shouldBe resultAmount
     }
   }
 
-  property("asset script can disallow reissue") {
-    val disallowReissueAsset: Script =
-      assetVerifier(
-        """
-          | match tx {
-          |   case _: ReissueTransaction => false
-          |   case _ => true
-          | }
-        """.stripMargin
-      )
-
-    val (genesis, setScript, invoke, issue, _, _, _) = paymentPreconditions(0.14.waves, Some(disallowReissueAsset))
-    assertDiffEi(
-      Seq(TestBlock.create(genesis :+ setScript :+ issue)),
-      TestBlock.create(Seq(invoke)),
-      features
-    )(_ should produce("Transaction is not allowed by script of the asset", requireFailed = true))
-  }
-
-  property("asset script can disallow burn") {
-    val disallowBurnAsset: Script =
-      assetVerifier(
-        """
-          | match tx {
-          |   case _: BurnTransaction => false
-          |   case _ => true
-          | }
-        """.stripMargin
-      )
-
-    val (genesis, setScript, invoke, issue, _, _, _) = paymentPreconditions(0.14.waves, Some(disallowBurnAsset))
-    assertDiffEi(
-      Seq(TestBlock.create(genesis :+ setScript :+ issue)),
-      TestBlock.create(Seq(invoke)),
-      features
-    )(_ should produce("Transaction is not allowed by script of the asset", requireFailed = true))
-  }
-
   property("asset script can allow burn and reissue") {
-    val allowBurnAndReissueAsset: Script =
+    val allowBurnAndReissueAsset =
       assetVerifier(
         """
           | match tx {
@@ -99,7 +52,7 @@ class CallableV4DiffTest extends PropSpec with WithDomain with EitherValues {
         """.stripMargin
       )
 
-    val (genesis, setScript, invoke, issue, _, _, _) = paymentPreconditions(0.14.waves, Some(allowBurnAndReissueAsset))
+    val (genesis, setScript, invoke, issue, _, _, _) = paymentPreconditions(0.14.waves, fail = false, Some(allowBurnAndReissueAsset))
     assertDiffEi(
       Seq(TestBlock.create(genesis :+ setScript :+ issue)),
       TestBlock.create(Seq(invoke)),
@@ -114,27 +67,25 @@ class CallableV4DiffTest extends PropSpec with WithDomain with EitherValues {
       Seq(TestBlock.create(genesis :+ setScript :+ issue)),
       TestBlock.create(Seq(invoke)),
       features
-    ) {
-      case (_, blockchain) =>
-        val asset                 = IssuedAsset(issue.id())
-        val totalResultAmount     = issue.quantity + (reissueAmount - burnAmount) * 2
-        val issuerResultAmount    = issue.quantity + (reissueAmount - burnAmount - transferAmount) * 2
-        val recipientResultAmount = transferAmount * 2
-
-        blockchain.assetDescription(asset).get.totalVolume shouldBe totalResultAmount //100vs 160
-        blockchain.balance(master.toAddress, asset) shouldBe issuerResultAmount //100vs130
-        blockchain.balance(invoker.toAddress, asset) shouldBe recipientResultAmount //0vs 30
+    ) { case (_, blockchain) =>
+      val asset                 = IssuedAsset(issue.id())
+      val totalResultAmount     = issue.quantity.value + (reissueAmount - burnAmount) * 2
+      val issuerResultAmount    = issue.quantity.value + (reissueAmount - burnAmount - transferAmount) * 2
+      val recipientResultAmount = transferAmount * 2
+      blockchain.assetDescription(asset).get.totalVolume shouldBe totalResultAmount
+      blockchain.balance(master.toAddress, asset) shouldBe issuerResultAmount
+      blockchain.balance(invoker.toAddress, asset) shouldBe recipientResultAmount
     }
   }
 
-  property("check fee") {
-    val minimalFee                                         = 6 * ScriptExtraFee + FeeConstants(InvokeScriptTransaction.typeId) * FeeValidation.FeeUnit
+  property("check fee before activation of SynchronousCalls") {
+    val minimalFee                                         = 6 * ScriptExtraFee + FeeConstants(TransactionType.InvokeScript) * FeeValidation.FeeUnit
     val (genesis, setScript, invoke, issue, _, _, _, _, _) = multiActionPreconditions(invokeFee = 0.06.waves, withScriptError = false)
     assertDiffEi(
       Seq(TestBlock.create(genesis :+ setScript :+ issue)),
       TestBlock.create(Seq(invoke)),
-      features
-    )(_ should produce(s" with 6 total scripts invoked does not exceed minimal value of $minimalFee TN"))
+      RideV4.blockchainSettings.functionalitySettings
+    )(_ should produceRejectOrFailedDiff(s" with 6 total scripts invoked does not exceed minimal value of $minimalFee TN"))
   }
 
   ignore("trace") {
@@ -178,18 +129,18 @@ class CallableV4DiffTest extends PropSpec with WithDomain with EitherValues {
       Seq(TestBlock.create(genesis :+ setScript)),
       TestBlock.create(Seq(invoke)),
       features
-    ) {
-      case (diff, _) =>
-        diff.accountData(master.toAddress).data shouldBe
-          Map(
-            "key1" -> EmptyDataEntry("key1"),
-            "key2" -> EmptyDataEntry("key2")
-          )
+    ) { case (diff, _) =>
+      diff.accountData(master.toAddress).data shouldBe
+        Map(
+          "key1" -> EmptyDataEntry("key1"),
+          "key2" -> EmptyDataEntry("key2")
+        )
     }
   }
 
   private def paymentPreconditions(
       invokeFee: Long,
+      fail: Boolean,
       assetScript: Option[Script] = None
   ): (List[GenesisTransaction], SetScriptTransaction, InvokeScriptTransaction, IssueTransaction, KeyPair, Long, Long) = {
     val master        = TxHelpers.signer(0)
@@ -202,7 +153,7 @@ class CallableV4DiffTest extends PropSpec with WithDomain with EitherValues {
       TxHelpers.genesis(invoker.toAddress)
     )
     val issue     = TxHelpers.issue(master, 100, script = assetScript)
-    val setScript = TxHelpers.setScript(master, reissueAndBurnDApp(issue.id(), reissueAmount, burnAmount))
+    val setScript = TxHelpers.setScript(master, reissueAndBurnDApp(issue.id(), reissueAmount, burnAmount, fail))
     val invoke    = TxHelpers.invoke(master.toAddress, func = None, invoker = invoker, fee = invokeFee)
     (genesis, setScript, invoke, issue, master, reissueAmount, burnAmount)
   }
@@ -321,7 +272,12 @@ class CallableV4DiffTest extends PropSpec with WithDomain with EitherValues {
       TxHelpers.genesis(invoker.toAddress)
     )
     val issue =
-      TxHelpers.issue(master, startAmount, script = Some(checkStateAsset(startAmount, reissueAmount, burnAmount, assetCheckTransferAmount, invoker.toAddress)))
+      TxHelpers.issue(
+        master,
+        startAmount,
+        script = Some(checkStateAsset(startAmount, reissueAmount, burnAmount, assetCheckTransferAmount, invoker.toAddress)),
+        fee = 1.004 waves
+      )
     val setScript = TxHelpers.setScript(master, multiActionDApp(issue.id(), invoker.publicKey.toAddress, reissueAmount, burnAmount, transferAmount))
     val invoke    = TxHelpers.invoke(master.toAddress, func = None, invoker = invoker, fee = invokeFee)
 
@@ -340,14 +296,15 @@ class CallableV4DiffTest extends PropSpec with WithDomain with EitherValues {
        """.stripMargin
     )
 
-  private def reissueAndBurnDApp(assetId: ByteStr, reissueAmount: Long, burnAmount: Long): Script =
+  private def reissueAndBurnDApp(assetId: ByteStr, reissueAmount: Long, burnAmount: Long, fail: Boolean): Script =
     dApp(
       s"""
          | [
          |   Reissue(base58'$assetId', $reissueAmount, true),
          |   Burn(base58'$assetId', $burnAmount)
          | ]
-       """.stripMargin
+       """.stripMargin,
+      fail
     )
 
   private def sponsorFeeDApp(minSponsoredAssetFee: Option[Long]): Script =
@@ -361,17 +318,16 @@ class CallableV4DiffTest extends PropSpec with WithDomain with EitherValues {
        """.stripMargin
     )
 
-  private def dApp(body: String): Script =
-    TestCompiler(V4).compileContract(s"""
-                                        | {-# STDLIB_VERSION 4       #-}
-                                        | {-# CONTENT_TYPE   DAPP    #-}
-                                        | {-# SCRIPT_TYPE    ACCOUNT #-}
-                                        |
-                                        | @Callable(i)
-                                        | func default() = {
-                                        |   $body
-                                        | }
-       """.stripMargin)
+  private def dApp(body: String, fail: Boolean = false): Script =
+    TestCompiler(V4).compileContract(
+      s"""
+         | @Callable(i)
+         | func default() = {
+         |   strict c = ${if (fail) (1 to 5).map(_ => "sigVerify(base58'', base58'', base58'')").mkString(" || ") else "true"}
+         |   $body
+         | }
+       """.stripMargin
+    )
 
   private def issuePreconditions(
       invokeFee: Long
@@ -406,9 +362,9 @@ class CallableV4DiffTest extends PropSpec with WithDomain with EitherValues {
     val (setScript, invoke, master, invoker, amount) = issuePreconditions(1000.06.waves)
     withDomain(balances = AddrWithBalance.enoughBalances(invoker, master)) { d =>
       val tb1 = TestBlock.create(System.currentTimeMillis(), d.blockchain.lastBlockId.get, Seq(setScript))
-      d.blockchainUpdater.processBlock(tb1, ByteStr(new Array[Byte](32)), false).explicitGet()
+      d.blockchainUpdater.processBlock(tb1, ByteStr(new Array[Byte](32)), verify = false).explicitGet()
       val tb2 = TestBlock.create(System.currentTimeMillis(), tb1.signature, Seq(invoke))
-      d.blockchainUpdater.processBlock(tb2, ByteStr(new Array[Byte](32)), false).explicitGet()
+      d.blockchainUpdater.processBlock(tb2, ByteStr(new Array[Byte](32)), verify = false).explicitGet()
 
       d.portfolio(master.toAddress).map(_._2) shouldEqual Seq(amount)
       d.portfolio(invoker.toAddress) shouldEqual Seq()
@@ -430,11 +386,10 @@ class CallableV4DiffTest extends PropSpec with WithDomain with EitherValues {
       Seq(TestBlock.create(genesis :+ setScript)),
       TestBlock.create(Seq(invoke)),
       features
-    ) {
-      case (diff, blockchain) =>
-        val asset = diff.issuedAssets.head._1
-        diff.sponsorship shouldBe Map(asset -> SponsorshipValue(minSponsoredAssetFee))
-        blockchain.assetDescription(asset).map(_.sponsorship) shouldBe Some(minSponsoredAssetFee)
+    ) { case (diff, blockchain) =>
+      val asset = diff.issuedAssets.head._1
+      diff.sponsorship shouldBe Map(asset -> SponsorshipValue(minSponsoredAssetFee))
+      blockchain.assetDescription(asset).map(_.sponsorship) shouldBe Some(minSponsoredAssetFee)
     }
   }
 }

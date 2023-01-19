@@ -1,24 +1,17 @@
 package com.wavesplatform.state.diffs
 
-import java.util.concurrent.ThreadLocalRandom
 import com.wavesplatform.account.KeyPair
 import com.wavesplatform.block.Block
-import com.wavesplatform.crypto._
 import com.wavesplatform.db.WithState
 import com.wavesplatform.lagonaki.mocks.TestBlock
 import com.wavesplatform.settings.FunctionalitySettings
 import com.wavesplatform.state.{Blockchain, Diff}
+import com.wavesplatform.test.node.*
 import com.wavesplatform.transaction.{TxHelpers, TxVersion}
 import com.wavesplatform.test.FreeSpec
 
 class BlockDifferTest extends FreeSpec with WithState {
   private val TransactionFee = 10
-
-  def randomKeyPair(): KeyPair = {
-    val seed = Array.ofDim[Byte](KeyLength)
-    ThreadLocalRandom.current().nextBytes(seed)
-    KeyPair(seed)
-  }
 
   private val signerA, signerB = randomKeyPair()
 
@@ -107,12 +100,7 @@ class BlockDifferTest extends FreeSpec with WithState {
   }
 
   private def assertDiff(blocks: Seq[Block], ngAtHeight: Int)(assertion: (Diff, Blockchain) => Unit): Unit = {
-    val fs = FunctionalitySettings(
-      featureCheckBlocksPeriod = ngAtHeight / 2,
-      blocksForFeatureActivation = 1,
-      preActivatedFeatures = Map[Short, Int]((2, ngAtHeight)),
-      doubleFeaturesPeriodsAfterHeight = Int.MaxValue
-    )
+    val fs = FunctionalitySettings(featureCheckBlocksPeriod = ngAtHeight / 2, blocksForFeatureActivation = 1, preActivatedFeatures = Map[Short, Int]((2, ngAtHeight)), doubleFeaturesPeriodsAfterHeight = Int.MaxValue)
     assertNgDiffState(blocks.init, blocks.last, fs)(assertion)
   }
 

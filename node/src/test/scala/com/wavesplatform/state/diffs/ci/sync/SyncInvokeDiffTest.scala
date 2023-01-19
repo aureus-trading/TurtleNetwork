@@ -11,7 +11,7 @@ import com.wavesplatform.lang.directives.values.V5
 import com.wavesplatform.lang.script.Script
 import com.wavesplatform.lang.v1.compiler.TestCompiler
 import com.wavesplatform.lang.v1.estimator.v3.ScriptEstimatorV3
-import com.wavesplatform.state.diffs.produce
+import com.wavesplatform.state.diffs.produceRejectOrFailedDiff
 import com.wavesplatform.state.{IntegerDataEntry, StringDataEntry}
 import com.wavesplatform.test.PropSpec
 import com.wavesplatform.transaction.Asset.{IssuedAsset, Waves}
@@ -644,7 +644,7 @@ class SyncInvokeDiffTest extends PropSpec with WithDomain with DBCacheSettings w
     val invoke   = TxHelpers.invoke(dAppAddress, Some("foo"), payments = payments)
 
     assertDiffEi(Seq(TestBlock.create(Seq(gTx1, gTx2, ssTx))), TestBlock.create(Seq(invoke), Block.ProtoBlockVersion), fsWithV5) { ei =>
-      ei should produce(s"DApp calls limit = 100 is exceeded")
+      ei should produceRejectOrFailedDiff(s"DApp calls limit = 100 is exceeded")
     }
   }
 
@@ -655,7 +655,7 @@ class SyncInvokeDiffTest extends PropSpec with WithDomain with DBCacheSettings w
                      |{-# CONTENT_TYPE EXPRESSION #-}
                      |
                      |true""".stripMargin
-      ScriptCompiler.compile(script, ScriptEstimatorV3(fixOverflow = true)).explicitGet()
+      ScriptCompiler.compile(script, ScriptEstimatorV3(fixOverflow = true, overhead = true)).explicitGet()
     }
 
     def contract(asset: ByteStr): Script = TestCompiler(V5).compileContract(
@@ -732,7 +732,7 @@ class SyncInvokeDiffTest extends PropSpec with WithDomain with DBCacheSettings w
                      |{-# CONTENT_TYPE EXPRESSION #-}
                      |
                      |false""".stripMargin
-      ScriptCompiler.compile(script, ScriptEstimatorV3(fixOverflow = true)).explicitGet()
+      ScriptCompiler.compile(script, ScriptEstimatorV3(fixOverflow = true, overhead = true)).explicitGet()
     }
 
     def script(asset: ByteStr) = TestCompiler(V5).compileContract(
@@ -798,7 +798,7 @@ class SyncInvokeDiffTest extends PropSpec with WithDomain with DBCacheSettings w
     val genesisTxs = Seq(gTx1, gTx2, gTx3, ssTx1, ssTx, iTx)
 
     assertDiffEi(Seq(TestBlock.create(genesisTxs)), TestBlock.create(Seq(invoke), Block.ProtoBlockVersion), fsWithV5) { ei =>
-      ei should produce(s"Transaction is not allowed by script of the asset ${iTx.id()}")
+      ei should produceRejectOrFailedDiff(s"Transaction is not allowed by script of the asset ${iTx.id()}")
     }
   }
 
@@ -809,7 +809,7 @@ class SyncInvokeDiffTest extends PropSpec with WithDomain with DBCacheSettings w
                      |{-# CONTENT_TYPE EXPRESSION #-}
                      |
                      |false""".stripMargin
-      ScriptCompiler.compile(script, ScriptEstimatorV3(fixOverflow = true)).explicitGet()
+      ScriptCompiler.compile(script, ScriptEstimatorV3(fixOverflow = true, overhead = true)).explicitGet()
     }
 
     val contract = TestCompiler(V5).compileContract(
@@ -878,7 +878,7 @@ class SyncInvokeDiffTest extends PropSpec with WithDomain with DBCacheSettings w
     val genesisTxs = Seq(gTx1, gTx2, gTx3, ssTx1, ssTx, iTx)
 
     assertDiffEi(Seq(TestBlock.create(genesisTxs)), TestBlock.create(Seq(invoke), Block.ProtoBlockVersion), fsWithV5) { ei =>
-      ei should produce(s"Transaction is not allowed by script of the asset ${iTx.id()}")
+      ei should produceRejectOrFailedDiff(s"Transaction is not allowed by script of the asset ${iTx.id()}")
     }
   }
 
@@ -949,7 +949,7 @@ class SyncInvokeDiffTest extends PropSpec with WithDomain with DBCacheSettings w
     val genesisTxs = Seq(gTx1, gTx2, gTx3, ssTx1, ssTx, iTx)
 
     assertDiffEi(Seq(TestBlock.create(genesisTxs)), TestBlock.create(Seq(invoke), Block.ProtoBlockVersion), fsWithV5) { ei =>
-      ei should produce(
+      ei should produceRejectOrFailedDiff(
         s"Attempt to transfer unavailable funds: " +
           s"Transaction application leads to negative asset '${iTx.id()}' balance to (at least) temporary negative state, current balance is 0"
       )
@@ -972,7 +972,7 @@ class SyncInvokeDiffTest extends PropSpec with WithDomain with DBCacheSettings w
                       | {-# CONTENT_TYPE EXPRESSION #-}
                       | assetBalance(this.issuer, this.id) == $startBalance
                     """.stripMargin
-      ScriptCompiler.compile(script, ScriptEstimatorV3(fixOverflow = true)).explicitGet()._1
+      ScriptCompiler.compile(script, ScriptEstimatorV3(fixOverflow = true, overhead = true)).explicitGet()._1
     }
 
     val transferScript = {
@@ -984,7 +984,7 @@ class SyncInvokeDiffTest extends PropSpec with WithDomain with DBCacheSettings w
                       | let paymentAsset = this.issuer.getBinaryValue("paymentAsset")
                       | let startWavesBalance = this.issuer.getIntegerValue("startWavesBalance")
                       | let startInvokerBalance = this.issuer.getIntegerValue("startInvokerBalance")
-                      | let resultInvokerBalance = wavesBalance(Address(base58'${invokerAddress.stringRepr}')).regular
+                      | let resultInvokerBalance = wavesBalance(Address(base58'${invokerAddress.toString}')).regular
                       | let issuerBalance = wavesBalance(this.issuer)
                       |
                       | assetBalance(this.issuer, this.id) == $startBalance                                     &&
@@ -992,14 +992,14 @@ class SyncInvokeDiffTest extends PropSpec with WithDomain with DBCacheSettings w
                       | issuerBalance.regular == startWavesBalance                                              &&
                       | resultInvokerBalance == startInvokerBalance - $fee
                     """.stripMargin
-      ScriptCompiler.compile(script, ScriptEstimatorV3(fixOverflow = true)).explicitGet()._1
+      ScriptCompiler.compile(script, ScriptEstimatorV3(fixOverflow = true, overhead = true)).explicitGet()._1
     }
 
     val serviceDApp = TestCompiler(V5).compileContract(
       s"""
              | @Callable(i)
              | func bar(startInvokerBalance: Int, startWavesBalance: Int, startPaymentAssetBalance: Int, paymentAsset: ByteVector) = {
-             |   let resultInvokerBalance = wavesBalance(Address(base58'${invokerAddress.stringRepr}')).regular
+             |   let resultInvokerBalance = wavesBalance(Address(base58'${invokerAddress.toString}')).regular
              |   let paymentAssetBalance = assetBalance(i.caller, paymentAsset)
              |
              |   if (
@@ -1020,7 +1020,7 @@ class SyncInvokeDiffTest extends PropSpec with WithDomain with DBCacheSettings w
         s"""
              | @Callable(i)
              | func foo() = {
-             |  strict startInvokerBalance = wavesBalance(Address(base58'${invokerAddress.stringRepr}')).regular
+             |  strict startInvokerBalance = wavesBalance(Address(base58'${invokerAddress.toString}')).regular
              |  strict startWavesBalance = wavesBalance(this).regular
              |  strict startPaymentAssetBalance = assetBalance(this, base58'$paymentAsset')
              |

@@ -3,16 +3,16 @@ package com.wavesplatform.state.diffs.smart.predef
 import com.wavesplatform.account.{Address, Alias}
 import com.wavesplatform.common.state.ByteStr
 import com.wavesplatform.common.utils.EitherExt2
-import com.wavesplatform.lang.Testing._
+import com.wavesplatform.lang.Testing.*
 import com.wavesplatform.lang.v1.compiler.Terms.CONST_BYTESTR
-import com.wavesplatform.lang.v1.evaluator.ctx.impl._
+import com.wavesplatform.lang.v1.evaluator.ctx.impl.*
+import com.wavesplatform.test.*
 import com.wavesplatform.state.IntegerDataEntry
-import com.wavesplatform.state.diffs._
 import com.wavesplatform.test.{NumericExt, PropSpec}
 import com.wavesplatform.transaction.Asset.{IssuedAsset, Waves}
 import com.wavesplatform.transaction.transfer.MassTransferTransaction
 import com.wavesplatform.transaction.transfer.MassTransferTransaction.ParsedTransfer
-import com.wavesplatform.transaction.{TxHelpers, TxVersion}
+import com.wavesplatform.transaction.{TxHelpers, TxNonNegativeAmount, TxVersion}
 import org.scalatest.Assertions
 import shapeless.Coproduct
 
@@ -82,7 +82,7 @@ class CommonFunctionsTest extends PropSpec {
         |""".stripMargin,
       Coproduct(massTransfer)
     )
-    resultAmount shouldBe evaluated(massTransfer.transfers(0).amount)
+    resultAmount shouldBe evaluated(massTransfer.transfers(0).amount.value)
     val resultAddress = runScript(
       """
                                                   |match tx {
@@ -142,7 +142,7 @@ class CommonFunctionsTest extends PropSpec {
       TxHelpers.issue(version = TxVersion.V1),
       createMassTransfer()
     ).foreach { tx =>
-      Try[Either[String, _]] {
+      Try[Either[String, ?]] {
         runScript(
           s"""
              |let t = 100
@@ -218,14 +218,14 @@ class CommonFunctionsTest extends PropSpec {
   }
 
   property("data constructors") {
-    val sender = TxHelpers.signer(1)
+    val sender    = TxHelpers.signer(1)
     val recipient = TxHelpers.signer(2)
 
     val transfer = TxHelpers.transfer(from = sender, to = recipient.toAddress)
-    val entry = IntegerDataEntry("key", 123L)
+    val entry    = IntegerDataEntry("key", 123L)
 
     val compareClause = (transfer.recipient: @unchecked) match {
-      case addr: Address => s"tx.recipient == Address(base58'${addr.stringRepr}')"
+      case addr: Address => s"tx.recipient == Address(base58'${addr.toString}')"
       case alias: Alias  => s"""tx.recipient == Alias("${alias.name}")"""
     }
     val transferResult = runScript(
@@ -276,7 +276,7 @@ class CommonFunctionsTest extends PropSpec {
       (s"Addr(base58'$realAddr')", "Can't find a function 'Addr'")
     )
     for ((clause, err) <- cases) {
-      Try[Either[String, _]] {
+      Try[Either[String, ?]] {
         runScript(
           s"""
              |match tx {
@@ -295,11 +295,11 @@ class CommonFunctionsTest extends PropSpec {
   }
 
   private def createMassTransfer(): MassTransferTransaction = {
-    val sender = TxHelpers.signer(1)
+    val sender     = TxHelpers.signer(1)
     val recipients = (1 to 10).map(idx => TxHelpers.address(idx + 1))
     TxHelpers.massTransfer(
       from = sender,
-      to = recipients.map(addr => ParsedTransfer(addr, 1.waves)),
+      to = recipients.map(addr => ParsedTransfer(addr, TxNonNegativeAmount.unsafeFrom(1.waves))),
       version = TxVersion.V1
     )
   }

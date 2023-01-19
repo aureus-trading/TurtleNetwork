@@ -7,14 +7,14 @@ import com.wavesplatform.lang.directives.values.V5
 import com.wavesplatform.lang.script.Script
 import com.wavesplatform.lang.v1.compiler.TestCompiler
 import com.wavesplatform.state.diffs.ENOUGH_AMT
-import com.wavesplatform.test._
-import com.wavesplatform.transaction.Asset.IssuedAsset
+import com.wavesplatform.test.*
 import com.wavesplatform.transaction.TxHelpers
+import com.wavesplatform.transaction.Asset.IssuedAsset
 import com.wavesplatform.transaction.smart.InvokeScriptTransaction.Payment
 import org.scalatest.{EitherValues, Inside}
 
 class InvokePaymentsAvailabilityTest extends PropSpec with Inside with DBCacheSettings with WithDomain with EitherValues {
-  import DomainPresets._
+  import DomainPresets.*
 
   private def proxyDAppScript(callingDApp: Address): Script =
     TestCompiler(V5).compileContract(
@@ -68,14 +68,14 @@ class InvokePaymentsAvailabilityTest extends PropSpec with Inside with DBCacheSe
     val asset       = IssuedAsset(issue.id.value())
     val payments    = Seq(Payment(paymentAmount, asset))
     val dApp        = if (syncCall) proxyDApp.toAddress else callingDApp.toAddress
-    val invokeTx    = TxHelpers.invoke(dApp, payments = payments)
+    val invokeTx    = TxHelpers.invoke(dApp, payments = payments, invoker = invoker)
     (balances, Seq(ssTx, ssTx2, issue), invokeTx, callingDApp.toAddress, proxyDApp.toAddress, asset)
   }
 
   property("payments availability in usual call") {
     val (balances, preparingTxs, invoke, callingDApp, _, asset) = scenario(syncCall = false)
     withDomain(RideV5, balances) { d =>
-      d.appendBlock(preparingTxs: _*)
+      d.appendBlock(preparingTxs*)
       d.appendBlock(invoke)
 
       d.blockchain.transactionSucceeded(invoke.id.value()) shouldBe true
@@ -94,20 +94,20 @@ class InvokePaymentsAvailabilityTest extends PropSpec with Inside with DBCacheSe
   property("payments availability in sync call") {
     val (balances, preparingTxs, invoke, callingDApp, proxyDApp, asset) = scenario(syncCall = true)
     withDomain(RideV5, balances) { d =>
-      d.appendBlock(preparingTxs: _*)
+      d.appendBlock(preparingTxs*)
       d.appendBlock(invoke)
 
       d.blockchain.transactionSucceeded(invoke.id.value()) shouldBe true
       d.blockchain.balance(invoke.senderAddress, asset) shouldBe ENOUGH_AMT - paymentAmount
 
       val expectingProxyDAppBalance = 0
-      List(
+      List[Any](
         d.blockchain.balance(proxyDApp, asset),
         d.blockchain.accountData(proxyDApp, "balance_self").get.value
       ).foreach(_ shouldBe expectingProxyDAppBalance)
 
       val expectingCallingDAppBalance = paymentAmount
-      List(
+      List[Any](
         d.blockchain.balance(callingDApp, asset),
         d.blockchain.accountData(proxyDApp, "balance_calling_dApp").get.value
       ).foreach(_ shouldBe expectingCallingDAppBalance)

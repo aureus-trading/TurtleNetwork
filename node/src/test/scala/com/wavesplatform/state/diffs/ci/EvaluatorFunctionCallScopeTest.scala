@@ -1,13 +1,13 @@
 package com.wavesplatform.state.diffs.ci
 
 import com.wavesplatform.db.WithDomain
+import com.wavesplatform.features.BlockchainFeatures.*
 import com.wavesplatform.db.WithState.AddrWithBalance
-import com.wavesplatform.features.BlockchainFeatures._
 import com.wavesplatform.lang.directives.values.V5
 import com.wavesplatform.lang.script.Script
 import com.wavesplatform.lang.v1.compiler.TestCompiler
 import com.wavesplatform.settings.TestFunctionalitySettings
-import com.wavesplatform.test._
+import com.wavesplatform.test.*
 import com.wavesplatform.transaction.TxHelpers
 
 class EvaluatorFunctionCallScopeTest extends PropSpec with WithDomain {
@@ -34,12 +34,12 @@ class EvaluatorFunctionCallScopeTest extends PropSpec with WithDomain {
       .copy(estimatorSumOverflowFixHeight = 4)
 
   property("arg of the first function should NOT overlap var accessed from body of the second function AFTER fix") {
-    val invoker = TxHelpers.signer(0)
-    val dApp    = TxHelpers.signer(1)
+    val invoker  = TxHelpers.signer(0)
+    val dApp     = TxHelpers.signer(1)
     val balances = AddrWithBalance.enoughBalances(invoker, dApp)
 
     val setScript = TxHelpers.setScript(dApp, dAppScript)
-    val invoke = () => TxHelpers.invoke(dApp.toAddress, func = None, invoker = invoker)
+    val invoke    = () => TxHelpers.invoke(dApp.toAddress, func = None, invoker = invoker)
 
     withDomain(domainSettingsWithFS(settings), balances) { d =>
       d.appendBlock(setScript)

@@ -3,12 +3,12 @@ package com.wavesplatform.state.diffs.ci.sync
 import com.wavesplatform.account.Address
 import com.wavesplatform.db.WithDomain
 import com.wavesplatform.db.WithState.AddrWithBalance
-import com.wavesplatform.features.BlockchainFeatures._
+import com.wavesplatform.features.BlockchainFeatures.*
 import com.wavesplatform.lang.directives.values.V5
 import com.wavesplatform.lang.script.Script
 import com.wavesplatform.lang.v1.compiler.TestCompiler
 import com.wavesplatform.settings.TestFunctionalitySettings
-import com.wavesplatform.test._
+import com.wavesplatform.test.*
 import com.wavesplatform.transaction.TxHelpers
 
 class SyncDAppNegativeIssueTest extends PropSpec with WithDomain {
@@ -44,7 +44,6 @@ class SyncDAppNegativeIssueTest extends PropSpec with WithDomain {
   private val settings =
     TestFunctionalitySettings
       .withFeatures(BlockV5, SynchronousCalls)
-      .copy(syncDAppCheckTransfersHeight = 100)
 
   property("negative issue amount") {
     for {
@@ -65,7 +64,7 @@ class SyncDAppNegativeIssueTest extends PropSpec with WithDomain {
       val invoke = TxHelpers.invoke(dApp1.toAddress, func = None, invoker = invoker)
 
       withDomain(domainSettingsWithFS(settings), balances) { d =>
-        d.appendBlock(preparingTxs: _*)
+        d.appendBlock(preparingTxs*)
         if (bigComplexityDApp1 || bigComplexityDApp2) {
           d.appendBlock(invoke)
           d.liquidDiff.errorMessage(invoke.txId).get.text should include("Invalid decimals")

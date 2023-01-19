@@ -1,5 +1,8 @@
 package com.wavesplatform.mining
 
+import scala.concurrent.duration._
+import scala.util.Random
+
 import com.wavesplatform.TestValues
 import com.wavesplatform.block.Block
 import com.wavesplatform.common.utils._
@@ -13,10 +16,8 @@ import com.wavesplatform.transaction.{CreateAliasTransaction, TxVersion}
 import com.wavesplatform.utils.Schedulers
 import com.wavesplatform.utx.UtxPoolImpl
 import monix.execution.Scheduler
+import monix.reactive.Observable
 import org.scalamock.scalatest.PathMockFactory
-
-import scala.concurrent.duration._
-import scala.util.Random
 
 class MicroBlockMinerSpec extends FlatSpec with PathMockFactory with WithDomain {
   "Micro block miner" should "generate microblocks in flat interval" in {
@@ -24,7 +25,7 @@ class MicroBlockMinerSpec extends FlatSpec with PathMockFactory with WithDomain 
     val acc       = TestValues.keyPair
     val settings  = domainSettingsWithFS(TestFunctionalitySettings.withFeatures(BlockchainFeatures.NG))
     withDomain(settings, Seq(AddrWithBalance(acc.toAddress, TestValues.bigMoney))) { d =>
-      val utxPool = new UtxPoolImpl(ntpTime, d.blockchainUpdater, settings.utxSettings)
+      val utxPool = new UtxPoolImpl(ntpTime, d.blockchainUpdater, settings.utxSettings, settings.maxTxErrorLogSize, settings.minerSettings.enable)
       val microBlockMiner = new MicroBlockMinerImpl(
         _ => (),
         null,
@@ -33,6 +34,7 @@ class MicroBlockMinerSpec extends FlatSpec with PathMockFactory with WithDomain 
         settings.minerSettings,
         scheduler,
         scheduler,
+        Observable.empty,
         identity
       )
 

@@ -1,24 +1,19 @@
 package com.wavesplatform.state
-
-import com.wavesplatform.account.AddressScheme
-
-import scala.util.{Left, Right}
+import cats.syntax.either.*
 import com.wavesplatform.block.Block
 import com.wavesplatform.block.Block.BlockId
 import com.wavesplatform.common.state.ByteStr
 import com.wavesplatform.consensus.PoSSelector
 import com.wavesplatform.lang.ValidationError
-import com.wavesplatform.metrics._
-import com.wavesplatform.network._
-import com.wavesplatform.transaction._
+import com.wavesplatform.metrics.*
+import com.wavesplatform.mining.Miner
+import com.wavesplatform.transaction.*
 import com.wavesplatform.transaction.TxValidationError.{BlockAppendError, BlockFromFuture, GenericError}
-import com.wavesplatform.utils.{ScorexLogging, Time}
+import com.wavesplatform.utils.Time
 import com.wavesplatform.utx.UtxPoolImpl
-import io.netty.channel.Channel
 import kamon.Kamon
-import monix.eval.Task
 
-package object appender extends ScorexLogging {
+package object appender {
   val MaxTimeDrift: Long = 100 // millis
   private val scheme = AddressScheme.current
   val wrongBLocksUntil = 950000
@@ -28,27 +23,8 @@ package object appender extends ScorexLogging {
   private val exceptions = List(
   )
 
-  private[appender] def processAndBlacklistOnFailure[A, B](
-      ch: Channel,
-      peerDatabase: PeerDatabase,
-      start: => String,
-      success: => String,
-      errorPrefix: String
-  )(f: => Task[Either[B, Option[BigInt]]]): Task[Either[B, Option[BigInt]]] = {
-    log.debug(start)
-    f map {
-      case Right(maybeNewScore) =>
-        log.debug(success)
-        Right(maybeNewScore)
-      case Left(ve) =>
-        log.warn(s"$errorPrefix: $ve")
-        peerDatabase.blacklistAndClose(ch, s"$errorPrefix: $ve")
-        Left(ve)
-    }
-  }
-
   private[appender] def appendKeyBlock(
-      blockchainUpdater: BlockchainUpdater with Blockchain,
+      blockchainUpdater: BlockchainUpdater & Blockchain,
       utx: UtxPoolImpl,
       pos: PoSSelector,
       time: Time,
@@ -62,14 +38,14 @@ package object appender extends ScorexLogging {
           .map { discardedDiffs =>
             utx.removeAll(block.transactionData)
             utx.setPriorityDiffs(discardedDiffs)
-            utx.runCleanup()
+            utx.scheduleCleanup()
             Some(blockchainUpdater.height)
           }
       }
     } yield newHeight
 
   private[appender] def appendExtensionBlock(
-      blockchainUpdater: BlockchainUpdater with Blockchain,
+      blockchainUpdater: BlockchainUpdater & Blockchain,
       pos: PoSSelector,
       time: Time,
       verify: Boolean
@@ -81,11 +57,7 @@ package object appender extends ScorexLogging {
 
   private def validateBlock(blockchainUpdater: Blockchain, pos: PoSSelector, time: Time)(block: Block) =
     for {
-      _ <- Either.cond(
-        !blockchainUpdater.hasAccountScript(block.sender.toAddress),
-        (),
-        BlockAppendError(s"Account(${block.sender.toAddress}) is scripted are therefore not allowed to forge blocks", block)
-      )
+      _ <- Miner.isAllowedForMining(block.sender.toAddress, blockchainUpdater).leftMap(BlockAppendError(_, block))
       hitSource <- blockConsensusValidation(blockchainUpdater, pos, time.correctedTime(), block) { (height, parent) =>
         val balance = blockchainUpdater.generatingBalance(block.sender.toAddress, Some(parent))
         Either.cond(

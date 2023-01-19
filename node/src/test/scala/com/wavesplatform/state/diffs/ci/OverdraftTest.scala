@@ -2,90 +2,78 @@ package com.wavesplatform.state.diffs.ci
 
 import com.wavesplatform.common.state.ByteStr
 import com.wavesplatform.common.utils.EitherExt2
-import com.wavesplatform.db.WithState
+import com.wavesplatform.db.WithDomain
 import com.wavesplatform.features.BlockchainFeatures
 import com.wavesplatform.lagonaki.mocks.TestBlock
 import com.wavesplatform.lang.directives.DirectiveDictionary
-import com.wavesplatform.lang.directives.values.{StdLibVersion, V3, V4, V5}
+import com.wavesplatform.lang.directives.values.{StdLibVersion, V3, V4}
 import com.wavesplatform.lang.script.Script
 import com.wavesplatform.lang.v1.ContractLimits
 import com.wavesplatform.lang.v1.compiler.TestCompiler
-import com.wavesplatform.settings.{FunctionalitySettings, TestFunctionalitySettings}
+import com.wavesplatform.settings.FunctionalitySettings
+import com.wavesplatform.state.diffs.FeeValidation
 import com.wavesplatform.state.diffs.FeeValidation.FeeConstants
-import com.wavesplatform.state.diffs.{FeeValidation, produce}
-import com.wavesplatform.test.PropSpec
+import com.wavesplatform.test.*
+import com.wavesplatform.transaction.{GenesisTransaction, TransactionType, TxHelpers, TxVersion}
 import com.wavesplatform.transaction.Asset.IssuedAsset
-import com.wavesplatform.transaction.{GenesisTransaction, TxHelpers, TxVersion}
 import com.wavesplatform.transaction.assets.IssueTransaction
-import com.wavesplatform.transaction.smart.InvokeScriptTransaction.Payment
 import com.wavesplatform.transaction.smart.{InvokeScriptTransaction, SetScriptTransaction}
+import com.wavesplatform.transaction.smart.InvokeScriptTransaction.Payment
 
-class OverdraftTest extends PropSpec with WithState {
-  private val InvokeFee    = FeeConstants(InvokeScriptTransaction.typeId) * FeeValidation.FeeUnit
-  private val IssueFee     = FeeConstants(IssueTransaction.typeId) * FeeValidation.FeeUnit
+class OverdraftTest extends PropSpec with WithDomain {
+  import DomainPresets.*
+
+  private val InvokeFee = FeeConstants(TransactionType.InvokeScript) * FeeValidation.FeeUnit
+  private val SetScriptFee = FeeConstants(TransactionType.SetScript) * FeeValidation.FeeUnit
+  private val IssueFee  = FeeConstants(TransactionType.Issue) * FeeValidation.FeeUnit
 
   private val dAppVersions: List[StdLibVersion] =
     DirectiveDictionary[StdLibVersion].all
       .filter(_ >= V3)
       .toList
 
-  private val dAppVersionWithSettings: Seq[(StdLibVersion, FunctionalitySettings)] = {
-    for {
-      version    <- dAppVersions
-      activateV4 <- Seq(true, version >= V4)
-      activateV5 <- Seq(true, version >= V5)
-    } yield (version, features(activateV4, activateV5))
-  }
+  private val dAppVersionWithSettings: Seq[(StdLibVersion, FunctionalitySettings)] =
+    dAppVersions.map { version =>
+      (version, settingsForRide(version).blockchainSettings.functionalitySettings)
+    }
 
-  private val allActivatedSettings = features(activateV4 = true, activateV5 = true)
-
-  private def features(activateV4: Boolean, activateV5: Boolean) = {
-    val v4ForkO = if (activateV4) Seq(BlockchainFeatures.BlockV5) else Seq()
-    val v5ForkO = if (activateV5) Seq(BlockchainFeatures.SynchronousCalls) else Seq()
-    val parameters =
-      Seq(
-        BlockchainFeatures.SmartAccounts,
-        BlockchainFeatures.SmartAssets,
-        BlockchainFeatures.Ride4DApps
-      ) ++ v4ForkO ++ v5ForkO
-    TestFunctionalitySettings.Enabled.copy(preActivatedFeatures = parameters.map(_.id -> 0).toMap)
-  }
+  private val allActivatedSettings =
+    settingsForRide(DirectiveDictionary[StdLibVersion].all.last).blockchainSettings.functionalitySettings
 
   property("insufficient fee") {
-    dAppVersionWithSettings.foreach { case (version, settings) =>
-      val (genesis, setDApp, ci, _) = paymentPreconditions(withEnoughFee = false, withPayment = false, emptyResultDApp(version))
+    dAppVersionWithSettings.foreach {
+      case (version, settings) =>
+        val (genesis, setDApp, ci, _) = paymentPreconditions(withEnoughFee = false, withPayment = false, emptyResultDApp(version))
 
-      assertDiffEi(Seq(TestBlock.create(genesis :+ setDApp)), TestBlock.create(Seq(ci)), settings) { r =>
-        if (settings.preActivatedFeatures.contains(BlockchainFeatures.BlockV5.id))
-          r should produce("AccountBalanceError")
-        else
-          r should produce(
-            s"Fee in TN for InvokeScriptTransaction (1 in TN) does not exceed minimal value of $InvokeFee TN"
+        assertDiffEi(Seq(TestBlock.create(genesis :+ setDApp)), TestBlock.create(Seq(ci)), settings) { r =>
+            r should produce(
+            s"Fee for InvokeScriptTransaction (1 in TN) does not exceed minimal value of $InvokeFee TN"
           )
       }
     }
   }
 
   property("overdraft") {
-    dAppVersionWithSettings.foreach { case (version, settings) =>
-      val (genesis, setDApp, ci, _) = paymentPreconditions(withEnoughFee = true, withPayment = false, payingDApp(version))
+    dAppVersionWithSettings.foreach {
+      case (version, settings) =>
+        val (genesis, setDApp, ci, _) = paymentPreconditions(withEnoughFee = true, withPayment = false, payingDApp(version))
 
-      assertDiffEi(Seq(TestBlock.create(genesis :+ setDApp)), TestBlock.create(Seq(ci)), settings) { r =>
-        if (settings.preActivatedFeatures.contains(BlockchainFeatures.BlockV5.id))
-          r should produce("AccountBalanceError")
-        else
-          r.explicitGet()
-      }
+        assertDiffEi(Seq(TestBlock.create(genesis :+ setDApp)), TestBlock.create(Seq(ci)), settings) { r =>
+          if (settings.preActivatedFeatures.contains(BlockchainFeatures.BlockV5.id))
+            r should produce("AccountBalanceError")
+          else
+            r.explicitGet()
+        }
     }
   }
 
   property("overdraft with payment V3") {
-    dAppVersionWithSettings.foreach { case (_, settings) =>
-      val (genesis, setDApp, ci, issue) = paymentPreconditions(withEnoughFee = true, withPayment = true, payingDApp(V3))
-
-      assertDiffEi(Seq(TestBlock.create(genesis ++ List(setDApp, issue))), TestBlock.create(Seq(ci)), settings) {
-        _ should produce("leads to negative TN balance to (at least) temporary negative state")
-      }
+    dAppVersionWithSettings.foreach {
+      case (_, settings) =>
+        val (genesis, setDApp, ci, issue) = paymentPreconditions(withEnoughFee = true, withPayment = true, payingDApp(V3))
+        assertDiffEi(Seq(TestBlock.create(genesis ++ List(setDApp, issue))), TestBlock.create(Seq(ci)), settings) {
+          _ should produce("leads to negative TN balance to (at least) temporary negative state")
+        }
     }
   }
 
@@ -101,19 +89,19 @@ class OverdraftTest extends PropSpec with WithState {
 
   property("attach unexisting tokens using multiple payment") {
     dAppVersions.foreach { version =>
-      val master = TxHelpers.signer(0)
+      val master  = TxHelpers.signer(0)
       val invoker = TxHelpers.signer(1)
 
       val genesis = Seq(
         TxHelpers.genesis(master.toAddress),
         TxHelpers.genesis(invoker.toAddress)
       )
-      val issue = TxHelpers.issue(invoker)
+      val issue   = TxHelpers.issue(invoker)
       val setDApp = TxHelpers.setScript(master, payingAssetDApp(version, issue.assetId))
 
       val count    = ContractLimits.MaxAttachedPaymentAmount
-      val payments = (1 to count).map(_ => Payment(issue.quantity / count + 1, IssuedAsset(issue.id())))
-      val invoke = TxHelpers.invoke(master.toAddress, func = None, invoker = invoker, payments = payments)
+      val payments = (1 to count).map(_ => Payment(issue.quantity.value / count + 1, IssuedAsset(issue.id())))
+      val invoke   = TxHelpers.invoke(master.toAddress, func = None, invoker = invoker, payments = payments)
 
       assertDiffEi(Seq(TestBlock.create(genesis ++ List(setDApp, issue))), TestBlock.create(Seq(invoke)), allActivatedSettings) {
         _ should produce("Attempt to transfer unavailable funds: Transaction application leads to negative asset")
@@ -121,24 +109,26 @@ class OverdraftTest extends PropSpec with WithState {
     }
   }
 
-  private def paymentPreconditions(withEnoughFee: Boolean,
-                                   withPayment: Boolean,
-                                   dApp: Script): (Seq[GenesisTransaction], SetScriptTransaction, InvokeScriptTransaction, IssueTransaction) = {
-    val master = TxHelpers.signer(0)
+  private def paymentPreconditions(
+      withEnoughFee: Boolean,
+      withPayment: Boolean,
+      dApp: Script
+  ): (Seq[GenesisTransaction], SetScriptTransaction, InvokeScriptTransaction, IssueTransaction) = {
+    val master  = TxHelpers.signer(0)
     val invoker = TxHelpers.signer(1)
 
     val genesis = Seq(
       TxHelpers.genesis(master.toAddress),
       TxHelpers.genesis(invoker.toAddress, if (withPayment) IssueFee else 0)
     )
-    val setDApp = TxHelpers.setScript(master, dApp)
-    val issue = TxHelpers.issue(invoker, fee = IssueFee)
+    val setDApp = TxHelpers.setScript(master, dApp, fee = SetScriptFee)
+    val issue   = TxHelpers.issue(invoker, fee = IssueFee)
 
     val invoke = TxHelpers.invoke(
       dApp = master.toAddress,
       func = None,
       invoker = invoker,
-      payments = if (withPayment) List(Payment(issue.quantity, IssuedAsset(issue.id()))) else Nil,
+      payments = if (withPayment) List(Payment(issue.quantity.value, IssuedAsset(issue.id()))) else Nil,
       fee = if (withEnoughFee) InvokeFee else 1,
       version = TxVersion.V1
     )

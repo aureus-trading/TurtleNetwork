@@ -1,6 +1,5 @@
 package com.wavesplatform.features
 
-import com.wavesplatform.TestTime
 import com.wavesplatform.block.Block
 import com.wavesplatform.common.utils.EitherExt2
 import com.wavesplatform.db.WithDomain
@@ -11,6 +10,7 @@ import com.wavesplatform.lang.v1.compiler.TestCompiler
 import com.wavesplatform.mining.MiningConstraints.MaxScriptsComplexityInBlock
 import com.wavesplatform.mining._
 import com.wavesplatform.state.diffs.BlockDiffer
+import com.wavesplatform.test.DomainPresets.SettingsFromDefaultConfig
 import com.wavesplatform.test._
 import com.wavesplatform.transaction.TxHelpers
 import org.scalamock.scalatest.PathMockFactory

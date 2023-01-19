@@ -5,15 +5,11 @@ libraryDependencies ++= Dependencies.it
 
 inTask(docker)(
   Seq(
-    imageNames := Seq(ImageName("turtlenetwork/node-it")),
-    dockerfile := NativeDockerfile(baseDirectory.value.getParentFile / "docker" / "Dockerfile"),
-    buildOptions := BuildOptions(),
-    dockerBuildArguments := Map(
-      "ENABLE_GRPC" -> "true",
-      "WAVES_NETWORK" -> "custom"
-    )
+    imageNames   := Seq(ImageName("turtlenetwork/node-it")),
+    dockerfile   := NativeDockerfile(baseDirectory.value.getParentFile / "docker" / "Dockerfile"),
+    buildOptions := BuildOptions()
   )
 )
 
 val packageAll = taskKey[Unit]("build all packages")
-docker := docker.dependsOn(LocalProject("root") / packageAll).value
+docker := docker.dependsOn(LocalProject("waves-node") / packageAll).value

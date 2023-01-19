@@ -5,14 +5,14 @@ import com.wavesplatform.db.WithDomain
 import com.wavesplatform.db.WithState.AddrWithBalance
 import com.wavesplatform.lang.directives.values.{StdLibVersion, V4, V5}
 import com.wavesplatform.lang.v1.compiler.TestCompiler
-import com.wavesplatform.test._
+import com.wavesplatform.test.*
 import com.wavesplatform.transaction.TxHelpers
 import org.scalatest.EitherValues
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 class CallableV5LimitTest extends PropSpec with ScalaCheckPropertyChecks with WithDomain with EitherValues {
 
-  import DomainPresets._
+  import DomainPresets.*
 
   private def contract(grothCount: Int, version: StdLibVersion) = TestCompiler(version).compileContract(
     s"""

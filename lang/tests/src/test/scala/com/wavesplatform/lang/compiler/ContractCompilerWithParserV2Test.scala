@@ -1,9 +1,9 @@
 package com.wavesplatform.lang.compiler
 
+import cats.implicits.toBifunctorOps
 import com.wavesplatform.lang.contract.DApp
-import com.wavesplatform.lang.directives.values.Imports
 import com.wavesplatform.lang.directives.{Directive, DirectiveParser}
-import com.wavesplatform.lang.utils.lazyContexts
+import com.wavesplatform.lang.utils
 import com.wavesplatform.lang.v1.compiler.{CompilationError, ContractCompiler}
 import com.wavesplatform.lang.v1.parser.Expressions
 import com.wavesplatform.test.PropSpec
@@ -15,8 +15,8 @@ class ContractCompilerWithParserV2Test extends PropSpec {
     val result = for {
       directives <- DirectiveParser(script)
       ds         <- Directive.extractDirectives(directives)
-      ctx = lazyContexts(ds.copy(imports = Imports()))().compilerContext
-      compResult <- ContractCompiler.compileWithParseResult(script, ctx, ds.stdLibVersion, saveExprContext)
+      ctx = utils.compilerContext(ds)
+      compResult <- ContractCompiler.compileWithParseResult(script, 0, ctx, ds.stdLibVersion, saveExprContext).leftMap(_._1)
     } yield compResult
 
     result

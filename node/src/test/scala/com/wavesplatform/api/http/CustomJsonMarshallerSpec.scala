@@ -5,8 +5,7 @@ import akka.http.scaladsl.model.MediaTypes.`application/json`
 import akka.http.scaladsl.model.headers.Accept
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import com.wavesplatform.api.common.CommonTransactionsApi.TransactionMeta
-import com.wavesplatform.api.common.{CommonAccountsApi, CommonAssetsApi, CommonTransactionsApi}
+import com.wavesplatform.api.common.{CommonAccountsApi, CommonAssetsApi, CommonTransactionsApi, TransactionMeta}
 import com.wavesplatform.api.http.assets.AssetsApiRoute
 import com.wavesplatform.common.state.ByteStr
 import com.wavesplatform.features.BlockchainFeatures
@@ -18,12 +17,14 @@ import com.wavesplatform.state.{Blockchain, Height}
 import com.wavesplatform.test.PropSpec
 import com.wavesplatform.transaction.Asset
 import com.wavesplatform.transaction.Asset.IssuedAsset
+import com.wavesplatform.utils.Schedulers
 import com.wavesplatform.utx.UtxPool
 import com.wavesplatform.{NTPTime, TestWallet}
 import org.scalactic.source.Position
 import org.scalamock.scalatest.PathMockFactory
-import play.api.libs.json._
+import play.api.libs.json.*
 
+import scala.concurrent.duration.DurationInt
 import scala.reflect.ClassTag
 
 class CustomJsonMarshallerSpec
@@ -33,7 +34,8 @@ class CustomJsonMarshallerSpec
     with TestWallet
     with NTPTime
     with ScalatestRouteTest
-    with ApiErrorMatchers {
+    with ApiErrorMatchers
+    with ApiMarshallers {
   private val blockchain      = mock[Blockchain]
   private val utx             = mock[UtxPool]
   private val publisher       = mock[TransactionPublisher]
@@ -51,16 +53,25 @@ class CustomJsonMarshallerSpec
 
   private def checkRoute(req: HttpRequest, route: Route, fields: String*)(implicit pos: Position): Unit = {
     req ~> route ~> check {
-      ensureFieldsAre[JsNumber](responseAs[JsObject], fields: _*)
+      ensureFieldsAre[JsNumber](responseAs[JsObject], fields*)
     }
 
     req ~> numberFormat ~> route ~> check {
-      ensureFieldsAre[JsString](responseAs[JsObject], fields: _*)
+      ensureFieldsAre[JsString](responseAs[JsObject], fields*)
     }
   }
 
   private val transactionsRoute =
-    TransactionsApiRoute(restAPISettings, transactionsApi, testWallet, blockchain, () => utx.size, publisher, ntpTime).route
+    TransactionsApiRoute(
+      restAPISettings,
+      transactionsApi,
+      testWallet,
+      blockchain,
+      () => utx.size,
+      publisher,
+      ntpTime,
+      new RouteTimeout(60.seconds)(Schedulers.fixedPool(1, "heavy-request-scheduler"))
+    ).route
 
   property("/transactions/info/{id}") {
     forAll(leaseGen) { lt =>
@@ -68,7 +79,7 @@ class CustomJsonMarshallerSpec
       (transactionsApi.transactionById _).expects(lt.id()).returning(Some(TransactionMeta.Default(height, lt, succeeded = true, 0L))).twice()
       (blockchain.leaseDetails _)
         .expects(lt.id())
-        .returning(Some(LeaseDetails(lt.sender, lt.recipient, lt.amount, LeaseDetails.Status.Active, lt.id(), 1)))
+        .returning(Some(LeaseDetails(lt.sender, lt.recipient, lt.amount.value, LeaseDetails.Status.Active, lt.id(), 1)))
         .twice()
       checkRoute(Get(s"/transactions/info/${lt.id()}"), transactionsRoute, "amount")
     }
@@ -99,17 +110,26 @@ class CustomJsonMarshallerSpec
     pending // todo: fix when distributions/portfolio become testable
   }
 
-  private val assetsRoute = AssetsApiRoute(restAPISettings, testWallet, publisher, blockchain, ntpTime, accountsApi, assetsApi, 1000).route
+  private val assetsRoute = AssetsApiRoute(
+    restAPISettings,
+    testWallet,
+    publisher,
+    blockchain,
+    ntpTime,
+    accountsApi,
+    assetsApi,
+    1000,
+    new RouteTimeout(60.seconds)(Schedulers.fixedPool(1, "heavy-request-scheduler"))
+  ).route
 
   property("/assets/{assetId}/distribution/{height}/limit/{limit}") {
     pending // todo: fix when distributions/portfolio become testable
   }
 
   property("/assets/balance/{address}/{assetId}") {
-    forAll(accountGen, bytes32gen.map(b => IssuedAsset(ByteStr(b)))) {
-      case (keyPair, assetId) =>
-        (blockchain.balance _).expects(keyPair.toAddress, assetId).returning(1000L).twice()
-        checkRoute(Get(s"/assets/balance/${keyPair.publicKey.toAddress}/${assetId.id}"), assetsRoute, "balance")
+    forAll(accountGen, bytes32gen.map(b => IssuedAsset(ByteStr(b)))) { case (keyPair, assetId) =>
+      (blockchain.balance _).expects(keyPair.toAddress, assetId).returning(1000L).twice()
+      checkRoute(Get(s"/assets/balance/${keyPair.publicKey.toAddress}/${assetId.id}"), assetsRoute, "balance")
     }
   }
 }

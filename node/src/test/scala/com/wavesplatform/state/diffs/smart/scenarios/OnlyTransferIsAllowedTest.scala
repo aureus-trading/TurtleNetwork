@@ -3,15 +3,15 @@ package com.wavesplatform.state.diffs.smart.scenarios
 import com.wavesplatform.common.utils.EitherExt2
 import com.wavesplatform.db.WithState
 import com.wavesplatform.lagonaki.mocks.TestBlock
-import com.wavesplatform.lang.directives.values._
+import com.wavesplatform.lang.directives.values.*
 import com.wavesplatform.lang.script.v1.ExprScript
-import com.wavesplatform.lang.utils._
+import com.wavesplatform.lang.utils.*
 import com.wavesplatform.lang.v1.compiler.ExpressionCompiler
 import com.wavesplatform.lang.v1.compiler.Terms.EXPR
 import com.wavesplatform.lang.v1.parser.Parser
-import com.wavesplatform.state.diffs._
-import com.wavesplatform.state.diffs.smart._
-import com.wavesplatform.test.PropSpec
+import com.wavesplatform.state.diffs.ENOUGH_AMT
+import com.wavesplatform.state.diffs.smart.*
+import com.wavesplatform.test.*
 import com.wavesplatform.transaction.{GenesisTransaction, TxHelpers}
 import com.wavesplatform.transaction.lease.LeaseTransaction
 import com.wavesplatform.transaction.smart.SetScriptTransaction
@@ -42,13 +42,13 @@ class OnlyTransferIsAllowedTest extends PropSpec with WithState {
   }
 
   private def preconditions(typed: EXPR): (GenesisTransaction, SetScriptTransaction, LeaseTransaction, TransferTransaction) = {
-    val master = TxHelpers.signer(1)
+    val master    = TxHelpers.signer(1)
     val recipient = TxHelpers.signer(2)
 
-    val genesis = TxHelpers.genesis(master.toAddress)
+    val genesis   = TxHelpers.genesis(master.toAddress)
     val setScript = TxHelpers.setScript(master, ExprScript(typed).explicitGet())
-    val transfer = TxHelpers.transfer(master, recipient.toAddress, ENOUGH_AMT / 2)
-    val lease = TxHelpers.lease(master, recipient.toAddress, ENOUGH_AMT / 2)
+    val transfer  = TxHelpers.transfer(master, recipient.toAddress, ENOUGH_AMT / 2)
+    val lease     = TxHelpers.lease(master, recipient.toAddress, ENOUGH_AMT / 2)
 
     (genesis, setScript, lease, transfer)
   }

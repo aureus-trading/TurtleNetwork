@@ -10,25 +10,18 @@ import com.wavesplatform.lang.v1.compiler.TestCompiler
 import com.wavesplatform.lang.v1.estimator.v3.ScriptEstimatorV3
 import com.wavesplatform.settings.TestFunctionalitySettings
 import com.wavesplatform.state.diffs.ENOUGH_AMT
+import com.wavesplatform.test.*
 import com.wavesplatform.transaction.Asset.IssuedAsset
 import com.wavesplatform.transaction.TxHelpers
 import com.wavesplatform.transaction.smart.InvokeScriptTransaction.Payment
 import com.wavesplatform.transaction.smart.script.ScriptCompiler
-import com.wavesplatform.test.PropSpec
 import org.scalatest.{EitherValues, Inside}
 
-class DiffComplexityCountTest
-    extends PropSpec
-    with Inside
-    with WithState
-    with DBCacheSettings
-    with WithDomain
-    with EitherValues {
+class DiffComplexityCountTest extends PropSpec with Inside with WithState with DBCacheSettings with WithDomain with EitherValues {
 
   private val activationHeight = 4
 
-  private val fsWithV5 = TestFunctionalitySettings.Enabled.copy(
-    preActivatedFeatures = Map(
+  private val fsWithV5 = TestFunctionalitySettings.Enabled.copy(preActivatedFeatures = Map(
       BlockchainFeatures.SmartAccounts.id    -> 0,
       BlockchainFeatures.SmartAssets.id      -> 0,
       BlockchainFeatures.Ride4DApps.id       -> 0,
@@ -37,9 +30,7 @@ class DiffComplexityCountTest
       BlockchainFeatures.BlockReward.id      -> 0,
       BlockchainFeatures.BlockV5.id          -> 0,
       BlockchainFeatures.SynchronousCalls.id -> activationHeight
-    ),
-    estimatorPreCheckHeight = Int.MaxValue
-  )
+    ), estimatorPreCheckHeight = Int.MaxValue)
 
   // ~1900 complexity
   val groth: String =
@@ -61,11 +52,11 @@ class DiffComplexityCountTest
                     |   else ($groth)
                     |
                   """.stripMargin
-    ScriptCompiler.compile(script, ScriptEstimatorV3(fixOverflow = true)).explicitGet()._1
+    ScriptCompiler.compile(script, ScriptEstimatorV3(fixOverflow = true, overhead = true)).explicitGet()._1
   }
 
   private def dApp(asset: IssuedAsset): Script = TestCompiler(V4).compileContract(
-      s"""
+    s"""
          | {-# STDLIB_VERSION 4       #-}
          | {-# CONTENT_TYPE   DAPP    #-}
          | {-# SCRIPT_TYPE    ACCOUNT #-}
@@ -92,13 +83,13 @@ class DiffComplexityCountTest
 
     val balances = AddrWithBalance.enoughBalances(account1, account2)
 
-    val issue = TxHelpers.issue(account1, ENOUGH_AMT, script = Some(verifier))
-    val asset = IssuedAsset(issue.id())
-    val transfer1 = TxHelpers.transfer(account1, account2.toAddress, amount = Int.MaxValue, asset = asset)
+    val issue       = TxHelpers.issue(account1, ENOUGH_AMT, script = Some(verifier))
+    val asset       = IssuedAsset(issue.id())
+    val transfer1   = TxHelpers.transfer(account1, account2.toAddress, amount = Int.MaxValue, asset = asset)
     val setVerifier = TxHelpers.setScript(account2, verifier)
-    val setDApp = TxHelpers.setScript(account1, dApp(asset))
+    val setDApp     = TxHelpers.setScript(account1, dApp(asset))
 
-    val payments = Seq(Payment(1, asset), Payment(1, asset))
+    val payments           = Seq(Payment(1, asset), Payment(1, asset))
     val invokeFromScripted = () => TxHelpers.invoke(account1.toAddress, invoker = account2, payments = payments, fee = TxHelpers.ciFee(6))
 
     (balances, Seq(issue, transfer1, setVerifier, setDApp), invokeFromScripted)
@@ -107,12 +98,12 @@ class DiffComplexityCountTest
   property(s"evaluated complexity is used for diff instead of estimated one after activation ${BlockchainFeatures.SynchronousCalls}") {
     val (balances, preparingTxs, invoke) = paymentPreconditions
     withDomain(domainSettingsWithFS(fsWithV5), balances) { d =>
-      d.appendBlock(preparingTxs: _*)
+      d.appendBlock(preparingTxs*)
 
       val invoke1 = invoke()
       d.appendBlock(invoke1)
       d.blockchain.bestLiquidDiff.get.errorMessage(invoke1.id()) shouldBe empty
-      d.blockchain.bestLiquidDiff.get.scriptsComplexity shouldBe 13382  // dApp + 3 actions + 2 payments + verifier = 7 * 1900 = 13300
+      d.blockchain.bestLiquidDiff.get.scriptsComplexity shouldBe 13382 // dApp + 3 actions + 2 payments + verifier = 7 * 1900 = 13300
 
       d.appendBlock()
       d.blockchainUpdater.height shouldBe activationHeight

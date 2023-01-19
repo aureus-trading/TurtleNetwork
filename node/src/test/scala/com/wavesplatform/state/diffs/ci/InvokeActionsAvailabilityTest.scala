@@ -4,14 +4,14 @@ import com.wavesplatform.account.Address
 import com.wavesplatform.common.state.ByteStr
 import com.wavesplatform.db.WithState.AddrWithBalance
 import com.wavesplatform.db.{DBCacheSettings, WithDomain}
-import com.wavesplatform.lang.directives.values._
+import com.wavesplatform.lang.directives.values.*
 import com.wavesplatform.lang.script.Script
 import com.wavesplatform.lang.v1.compiler.TestCompiler
 import com.wavesplatform.state.diffs.ENOUGH_AMT
-import com.wavesplatform.test._
+import com.wavesplatform.test.*
 import com.wavesplatform.transaction.Asset.IssuedAsset
-import com.wavesplatform.transaction.TxHelpers
 import com.wavesplatform.transaction.smart.InvokeScriptTransaction.Payment
+import com.wavesplatform.transaction.TxHelpers
 import org.scalatest.{EitherValues, Inside}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
@@ -22,7 +22,7 @@ class InvokeActionsAvailabilityTest
     with DBCacheSettings
     with WithDomain
     with EitherValues {
-  import DomainPresets._
+  import DomainPresets.*
 
   private val transferAmount       = 100
   private val issueAmount          = 200
@@ -116,7 +116,7 @@ class InvokeActionsAvailabilityTest
     val invoke               = TxHelpers.invoke(proxyDApp.toAddress, func = None, invoker = invoker, payments = payments, fee = 5000.1.waves)
 
     withDomain(RideV5, balances) { d =>
-      d.appendBlock(preparingTxs: _*)
+      d.appendBlock(preparingTxs*)
 
       val startProxyDAppBalance   = d.blockchain.balance(proxyDApp.toAddress)
       val startCallingDAppBalance = d.blockchain.balance(callingDApp.toAddress)

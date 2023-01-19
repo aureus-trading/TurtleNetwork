@@ -3,14 +3,13 @@ package com.wavesplatform.state.diffs.smart.predef
 import com.wavesplatform.account.Address
 import com.wavesplatform.common.state.ByteStr
 import com.wavesplatform.common.utils.EitherExt2
-import com.wavesplatform.lang.Testing._
+import com.wavesplatform.lang.Testing.*
 import com.wavesplatform.lang.directives.DirectiveDictionary
 import com.wavesplatform.lang.directives.values.{StdLibVersion, V4}
 import com.wavesplatform.lang.v1.compiler.Terms.{CONST_BYTESTR, CaseObj}
 import com.wavesplatform.lang.v1.evaluator.ctx.impl.unit
-import com.wavesplatform.state.diffs._
 import com.wavesplatform.state.diffs.smart.predef
-import com.wavesplatform.test.PropSpec
+import com.wavesplatform.test.*
 import com.wavesplatform.transaction.TxHelpers
 import com.wavesplatform.transaction.TxValidationError.InvalidAddress
 
@@ -32,7 +31,7 @@ class AddressTest extends PropSpec {
 
     DirectiveDictionary[StdLibVersion].all.foreach { version =>
       val extractFunction = if (version >= V4) "value" else "extract"
-      val address = Address.fromPublicKey(account.publicKey, predef.chainId)
+      val address         = Address.fromPublicKey(account.publicKey, predef.chainId)
       val script =
         s"""
            | let addressString = "$address"
@@ -49,7 +48,7 @@ class AddressTest extends PropSpec {
 
     DirectiveDictionary[StdLibVersion].all.foreach { version =>
       val extractFunction = if (version >= V4) "value" else "extract"
-      val address = Address.fromPublicKey(account.publicKey, predef.chainId)
+      val address         = Address.fromPublicKey(account.publicKey, predef.chainId)
       val script =
         s"""
            | let addressString = "$address"

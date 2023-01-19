@@ -8,15 +8,15 @@ import com.wavesplatform.lang.directives.values.V4
 import com.wavesplatform.lang.script.Script
 import com.wavesplatform.lang.v1.compiler.TestCompiler
 import com.wavesplatform.state.diffs.FeeValidation.{FeeConstants, FeeUnit}
-import com.wavesplatform.test.PropSpec
+import com.wavesplatform.test.*
 import com.wavesplatform.transaction.Asset.IssuedAsset
-import com.wavesplatform.transaction.smart.InvokeScriptTransaction
 import com.wavesplatform.transaction.smart.InvokeScriptTransaction.Payment
-import com.wavesplatform.transaction.{Transaction, TxHelpers}
+import com.wavesplatform.transaction.smart.InvokeScriptTransaction
+import com.wavesplatform.transaction.{Transaction, TransactionType, TxHelpers}
 import org.scalatest.{EitherValues, Inside}
 
 class InvokeActionsFeeTest extends PropSpec with Inside with WithState with DBCacheSettings with WithDomain with EitherValues {
-  import DomainPresets._
+  import DomainPresets.*
 
   private val activationHeight = 4
   private val fsWithV5 =
@@ -26,7 +26,10 @@ class InvokeActionsFeeTest extends PropSpec with Inside with WithState with DBCa
 
   private val verifier: Script =
     TestCompiler(V4).compileExpression(
-      s"""
+      s""" {-# STDLIB_VERSION 4        #-}
+         | {-# SCRIPT_TYPE ASSET       #-}
+         | {-# CONTENT_TYPE EXPRESSION #-}
+         |
          | !(sigVerify_32Kb(base58'', base58'', base58'') ||
          |   sigVerify_32Kb(base58'', base58'', base58'') ||
          |   sigVerify_32Kb(base58'', base58'', base58''))
@@ -34,8 +37,7 @@ class InvokeActionsFeeTest extends PropSpec with Inside with WithState with DBCa
     )
 
   private def dApp(asset: IssuedAsset): Script =
-    TestCompiler(V4).compileContract(
-      s"""
+    TestCompiler(V4).compileContract(s"""
          | @Callable(i)
          | func default() =
          |  [
@@ -65,34 +67,35 @@ class InvokeActionsFeeTest extends PropSpec with Inside with WithState with DBCa
   property(s"fee for asset scripts is not required after activation ${BlockchainFeatures.SynchronousCalls}") {
     val (balances, preparingTxs, invokeFromScripted, invokeFromNonScripted) = paymentPreconditions
     withDomain(fsWithV5, balances) { d =>
-      d.appendBlock(preparingTxs: _*)
+      d.appendBlock(preparingTxs*)
 
       val invokeFromScripted1    = invokeFromScripted()
       val invokeFromNonScripted1 = invokeFromNonScripted()
-      d.appendBlock(invokeFromScripted1, invokeFromNonScripted1)
-      d.blockchain.bestLiquidDiff.get.errorMessage(invokeFromScripted1.id()).get.text should include(
-        s"Fee in TN for InvokeScriptTransaction (${invokeFromScripted1.fee} in TN) " +
-          s"with 6 total scripts invoked " +
-          s"does not exceed minimal value of ${FeeConstants(InvokeScriptTransaction.typeId) * FeeUnit + 6 * ScriptExtraFee} TN"
+      d.appendBlockE(invokeFromScripted1) should produce(
+        s"Transaction sent from smart account. Requires $ScriptExtraFee extra fee. " +
+          s"Transaction involves 2 scripted assets. Requires ${2 * ScriptExtraFee} extra fee. " +
+          s"Fee for InvokeScriptTransaction (${invokeFromScripted1.fee} in TN) " +
+          s"does not exceed minimal value of ${FeeConstants(TransactionType.InvokeScript) * FeeUnit + 3 * ScriptExtraFee} TN"
       )
-      d.blockchain.bestLiquidDiff.get.errorMessage(invokeFromNonScripted1.id()).get.text should include(
-        s"Fee in TN for InvokeScriptTransaction (${invokeFromNonScripted1.fee} in TN) " +
-          s"with 5 total scripts invoked " +
-          s"does not exceed minimal value of ${FeeConstants(InvokeScriptTransaction.typeId) * FeeUnit + 5 * ScriptExtraFee} TN"
+      d.appendBlockE(invokeFromNonScripted1) should produce(
+        s"Transaction involves 2 scripted assets. Requires ${2 * ScriptExtraFee} extra fee. " +
+            s"Fee for InvokeScriptTransaction (${invokeFromScripted1.fee} in TN) " +
+          s"does not exceed minimal value of ${FeeConstants(TransactionType.InvokeScript) * FeeUnit + 3 * ScriptExtraFee} TN"
       )
 
+      d.appendBlock()
       d.appendBlock()
       d.blockchainUpdater.height shouldBe activationHeight
 
       val invokeFromScripted2    = invokeFromScripted()
       val invokeFromNonScripted2 = invokeFromNonScripted()
-      d.appendBlock(invokeFromScripted2, invokeFromNonScripted2)
-      d.blockchain.bestLiquidDiff.get.errorMessage(invokeFromScripted2.id()).get.text should include(
-        s"Fee in TN for InvokeScriptTransaction (${invokeFromScripted2.fee} in TN) " +
-          s"with 1 total scripts invoked " +
-          s"does not exceed minimal value of ${FeeConstants(InvokeScriptTransaction.typeId) * FeeUnit + ScriptExtraFee} TN"
+
+      d.appendBlock(invokeFromNonScripted2)
+      d.appendBlockE(invokeFromScripted2) should produce(
+        s"Transaction sent from smart account. Requires $ScriptExtraFee extra fee. " +
+          s"Fee for InvokeScriptTransaction (${invokeFromScripted1.fee} in TN) " +
+          s"does not exceed minimal value of ${FeeConstants(TransactionType.InvokeScript) * FeeUnit + ScriptExtraFee} TN"
       )
-      d.blockchain.bestLiquidDiff.get.errorMessage(invokeFromNonScripted2.id()) shouldBe None
     }
   }
 }

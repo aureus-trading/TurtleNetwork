@@ -4,11 +4,10 @@ import com.wavesplatform.account.{Address, KeyPair}
 import com.wavesplatform.common.state.ByteStr
 import com.wavesplatform.common.utils.EitherExt2
 import com.wavesplatform.lang.v1.estimator.ScriptEstimatorV1
+import com.wavesplatform.state.{AssetDescription, Height}
 import com.wavesplatform.state.diffs.FeeValidation.{FeeConstants, FeeUnit, ScriptExtraFee}
 import com.wavesplatform.transaction.Asset.IssuedAsset
-import com.wavesplatform.transaction.TxHelpers
-import com.wavesplatform.transaction.assets.IssueTransaction
-import com.wavesplatform.transaction.smart.InvokeScriptTransaction
+import com.wavesplatform.transaction.{TransactionType, TxHelpers}
 import com.wavesplatform.transaction.smart.script.ScriptCompiler
 
 object TestValues {
@@ -21,10 +20,10 @@ object TestValues {
   val feeMiddle: Long    = 4e6.toLong
   val feeSmall: Long     = 2e6.toLong
 
-  val invokeFee: Long = FeeUnit * FeeConstants(InvokeScriptTransaction.typeId)
+  val invokeFee: Long = FeeUnit * FeeConstants(TransactionType.InvokeScript)
 
   def invokeFee(scripts: Int = 0, issues: Int = 0): Long =
-    invokeFee + scripts * ScriptExtraFee + issues * FeeConstants(IssueTransaction.typeId) * FeeUnit
+    invokeFee + scripts * ScriptExtraFee + issues * FeeConstants(TransactionType.Issue) * FeeUnit
 
   val (script, scriptComplexity) = ScriptCompiler
     .compile(
@@ -61,4 +60,18 @@ object TestValues {
       ScriptEstimatorV1
     )
     .explicitGet()
+
+  val assetDescription: AssetDescription = AssetDescription(
+    asset.id,
+    TxHelpers.defaultSigner.publicKey,
+    null,
+    null,
+    0,
+    reissuable = true,
+    BigInt(1),
+    Height(1),
+    None,
+    0,
+    nft = false
+  )
 }

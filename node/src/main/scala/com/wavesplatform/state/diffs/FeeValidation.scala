@@ -1,20 +1,20 @@
 package com.wavesplatform.state.diffs
 
 import cats.data.Chain
-import cats.syntax.foldable._
+import cats.syntax.foldable.*
 import com.wavesplatform.features.BlockchainFeatures
 import com.wavesplatform.lang.ValidationError
-import com.wavesplatform.settings.Constants
-import com.wavesplatform.state._
-import com.wavesplatform.transaction._
+import com.wavesplatform.state.*
+import com.wavesplatform.transaction.*
 import com.wavesplatform.transaction.Asset.{IssuedAsset, Waves}
-import com.wavesplatform.transaction.TxValidationError._
-import com.wavesplatform.transaction.assets._
-import com.wavesplatform.transaction.assets.exchange._
-import com.wavesplatform.transaction.lease._
-import com.wavesplatform.transaction.smart._
-import com.wavesplatform.transaction.transfer._
-import com.wavesplatform.account.AddressScheme
+import com.wavesplatform.transaction.EthereumTransaction.Transfer
+import com.wavesplatform.transaction.TxValidationError.*
+import com.wavesplatform.transaction.assets.*
+import com.wavesplatform.transaction.assets.exchange.*
+import com.wavesplatform.transaction.smart.*
+import com.wavesplatform.transaction.smart.script.trace.TracedResult.Attribute
+import com.wavesplatform.transaction.transfer.*
+import com.wavesplatform.transaction.validation.impl.DataTxValidator
 
 object FeeValidation {
 
@@ -28,24 +28,26 @@ object FeeValidation {
   val wrongNetworkChainId = 76
   val scheme = AddressScheme.current
 
-  val FeeConstants: Map[Byte, Long] = Map(
-    GenesisTransaction.typeId            -> 0,
-    PaymentTransaction.typeId            -> 1 ,
-    IssueTransaction.typeId              -> 50000 ,
-    ReissueTransaction.typeId            -> 50000 ,
-    BurnTransaction.typeId               -> 1 ,
-    TransferTransaction.typeId           -> 1 ,
-    MassTransferTransaction.typeId       -> 1 ,
-    LeaseTransaction.typeId              -> 1 ,
-    LeaseCancelTransaction.typeId        -> 1 ,
-    ExchangeTransaction.typeId           -> 2 ,
-    CreateAliasTransaction.typeId        -> 500 ,
-    DataTransaction.typeId               -> 1 ,
-    SetScriptTransaction.typeId          -> 50 ,
-    SponsorFeeTransaction.typeId         -> 500 ,
-    SetAssetScriptTransaction.typeId     -> 50 ,
-    InvokeScriptTransaction.typeId       -> 3,
-    UpdateAssetInfoTransaction.typeId -> 50000
+  val FeeConstants: Map[TransactionType.TransactionType, Long] = Map(
+    TransactionType.Genesis          -> 0,
+    TransactionType.Payment          -> 1,
+    TransactionType.Issue            -> 50000,
+    TransactionType.Reissue          -> 50000,
+    TransactionType.Burn             -> 1,
+    TransactionType.Transfer         -> 1,
+    TransactionType.MassTransfer     -> 1,
+    TransactionType.Lease            -> 1,
+    TransactionType.LeaseCancel      -> 1,
+    TransactionType.Exchange         -> 2,
+    TransactionType.CreateAlias      -> 500,
+    TransactionType.Data             -> 1,
+    TransactionType.SetScript        -> 50,
+    TransactionType.SponsorFee       -> 500,
+    TransactionType.SetAssetScript   -> 50,
+    TransactionType.InvokeScript     -> 3,
+    TransactionType.UpdateAssetInfo  -> 50000,
+    TransactionType.Ethereum         -> 50,
+    TransactionType.InvokeExpression -> 50
   )
 
   def apply(blockchain: Blockchain, tx: Transaction): Either[ValidationError, Unit] = {
@@ -53,57 +55,42 @@ object FeeValidation {
       for {
         feeDetails <- getMinFee(blockchain, tx)
         _ <- Either.cond(
-          feeDetails.minFeeInAsset <= tx.assetFee._2|| (blockchain.height<wrongBLocksUntil && scheme.chainId == wrongNetworkChainId),
+          feeDetails.minFeeInAsset <= tx.fee|| (blockchain.height<wrongBLocksUntil && scheme.chainId == wrongNetworkChainId),
           (),
-          notEnoughFeeError(tx.typeId, feeDetails, tx.assetFee._2)
+          notEnoughFeeError(tx.tpe, feeDetails, tx.fee)
         )
       } yield ()
     } else {
-      Either.cond(tx.assetFee._2 > 0 || !tx.isInstanceOf[Authorized], (), GenericError(s"Fee must be positive."))
+      Either.cond(tx.fee > 0 || !tx.isInstanceOf[Authorized], (), GenericError(s"Fee must be positive."))
     }
   }
 
-  def calculateAssetFee(blockchain: Blockchain, feeAssetId: Asset, wavesFee: Long): FeeDetails = {
-    val assetFee = feeAssetId match {
-      case asset: Asset.IssuedAsset =>
-        val sponsorship = blockchain
-          .assetDescription(asset)
-          .map(_.sponsorship)
-          .getOrElse(0L)
-        Sponsorship.fromWaves(wavesFee, sponsorship)
-
-      case Asset.Waves => wavesFee
-    }
-
-    FeeDetails(feeAssetId, Chain.empty, assetFee, wavesFee)
-  }
-
-  private def notEnoughFeeError(txType: Byte, feeDetails: FeeDetails, feeAmount: Long): ValidationError = {
-    val txName      = Constants.TransactionNames(txType)
+  private def notEnoughFeeError(txType: TransactionType.TransactionType, feeDetails: FeeDetails, feeAmount: Long): ValidationError = {
     val actualFee   = s"$feeAmount in ${feeDetails.asset.fold("TN")(_.id.toString)}"
     val requiredFee = s"${feeDetails.minFeeInWaves} TN${feeDetails.asset.fold("")(id => s" or ${feeDetails.minFeeInAsset} ${id.id.toString}")}"
 
-    val errorMessage = s"Fee for $txName ($actualFee) does not exceed minimal value of $requiredFee."
+    val errorMessage = s"Fee for ${txType.transactionName} ($actualFee) does not exceed minimal value of $requiredFee."
 
-    GenericError((feeDetails.requirements mkString_ " ") ++ ". " ++ errorMessage)
+    GenericError((if (feeDetails.requirements.nonEmpty) (feeDetails.requirements mkString_ ". ") ++ ". " else "") ++ errorMessage)
   }
 
   private case class FeeInfo(assetInfo: Option[(IssuedAsset, AssetDescription)], requirements: Chain[String], wavesFee: Long)
 
   private def feeInUnits(blockchain: Blockchain, tx: Transaction): Either[ValidationError, Long] = {
     FeeConstants
-      .get(tx.typeId)
+      .get(tx.tpe)
       .map { baseFee =>
         tx match {
           case tx: MassTransferTransaction =>
             baseFee + (tx.transfers.size + 1) / 2
           case tx: DataTransaction =>
-            val payload =
-              if (tx.isProtobufVersion) tx.protoDataPayload
-              else if (blockchain.isFeatureActivated(BlockchainFeatures.SmartAccounts)) tx.bodyBytes()
-              else tx.bytes()
+            val payloadLength =
+              if (blockchain.isFeatureActivated(BlockchainFeatures.RideV6)) DataTxValidator.realUserPayloadSize(tx.data)
+              else if (tx.isProtobufVersion) tx.protoDataPayload.length
+              else if (blockchain.isFeatureActivated(BlockchainFeatures.SmartAccounts)) tx.bodyBytes().length
+              else tx.bytes().length
 
-            baseFee + (payload.length - 1) / 1024
+            baseFee + (payloadLength - 1) / 1024
           case itx: IssueTransaction =>
             val multiplier = if (blockchain.isNFT(itx)) NFTMultiplier else 1
             (baseFee * multiplier).toLong
@@ -113,6 +100,19 @@ object FeeValidation {
           case _: SponsorFeeTransaction =>
             val multiplier = if (blockchain.isFeatureActivated(BlockchainFeatures.BlockV5)) BlockV5Multiplier * 2 else 1
             (baseFee * multiplier).toLong
+          case et: EthereumTransaction =>
+            et.payload match {
+              case _: EthereumTransaction.Transfer   => 1
+              case _: EthereumTransaction.Invocation => 5
+            }
+
+          case ss: SetScriptTransaction if blockchain.isFeatureActivated(BlockchainFeatures.RideV6) =>
+            ss.script.fold(1) { script =>
+              val scriptSize = script.bytes().size
+              val kbs        = scriptSize / 1024
+              if (scriptSize > 0 && scriptSize % 1024 == 0) kbs else kbs + 1
+            }
+
           case _ => baseFee
         }
       }
@@ -154,9 +154,16 @@ object FeeValidation {
         .exists(_.script.isDefined)
 
     val assetsCount = tx match {
-      case _: InvokeScriptTransaction if blockchain.isFeatureActivated(BlockchainFeatures.SynchronousCalls) => 0
-      case tx: ExchangeTransaction                                                                          => tx.checkedAssets.count(blockchain.hasAssetScript) /* *3 if we decide to check orders and transaction */
-      case _                                                                                                => tx.checkedAssets.count(blockchain.hasAssetScript)
+      case _: InvokeScriptTransaction =>
+        if (blockchain.isFeatureActivated(BlockchainFeatures.SynchronousCalls)) 0 else tx.smartAssets(blockchain).size
+      case tx: ExchangeTransaction =>
+        tx.smartAssets(blockchain).size /* *3 if we decide to check orders and transaction */
+      case EthereumTransaction(t: Transfer, _, _, _) =>
+        t.tryResolveAsset(blockchain)
+          .collectFirst { case i: IssuedAsset => blockchain.hasAssetScript(i) }
+          .fold(0)(hasAsset => if (hasAsset) 1 else 0)
+      case _ =>
+        tx.smartAssets(blockchain).size
     }
 
     val finalAssetsCount =
@@ -175,13 +182,14 @@ object FeeValidation {
 
   private def feeAfterSmartAccounts(blockchain: Blockchain, tx: Transaction)(inputFee: FeeInfo): FeeInfo = {
     val smartAccountScriptsCount: Int = tx match {
+      case _: EthereumTransaction          => 0
       case tx: Transaction with Authorized => if (blockchain.hasPaidVerifier(tx.sender.toAddress)) 1 else 0
       case _                               => 0
     }
 
     val extraFee = smartAccountScriptsCount * ScriptExtraFee
     val extraRequirements =
-      if (smartAccountScriptsCount > 0) Chain(s"Transaction sent from smart account. Requires $extraFee extra fee.")
+      if (smartAccountScriptsCount > 0) Chain(s"Transaction sent from smart account. Requires $extraFee extra fee")
       else Chain.empty
 
     val FeeInfo(feeAssetInfo, reqs, feeAmount) = inputFee
@@ -190,7 +198,7 @@ object FeeValidation {
   }
 
   def getMinFee(blockchain: Blockchain, tx: Transaction): Either[ValidationError, FeeDetails] = {
-    feeAfterSponsorship(tx.assetFee._1, blockchain, tx)
+    feeAfterSponsorship(tx.feeAssetId, blockchain, tx)
       .map(feeAfterSmartTokens(blockchain, tx))
       .map(feeAfterSmartAccounts(blockchain, tx))
       .map {
@@ -199,5 +207,27 @@ object FeeValidation {
         case FeeInfo(None, reqs, amountInWaves) =>
           FeeDetails(Waves, reqs, amountInWaves, amountInWaves)
       }
+  }
+
+  def calculateInvokeFee(blockchain: Blockchain, tx: InvokeTransaction): Option[FeeDetails] = {
+    val differ = TransactionDiffer(blockchain.lastBlockTimestamp, tx.timestamp, verify = false)(blockchain, _)
+    differ(tx)
+      .attributeOpt[Long](Attribute.MinFee)
+      .map(calculateAssetFee(blockchain, tx.feeAssetId, _))
+  }
+
+  private def calculateAssetFee(blockchain: Blockchain, feeAssetId: Asset, wavesFee: Long): FeeDetails = {
+    val assetFee = feeAssetId match {
+      case asset: Asset.IssuedAsset =>
+        val sponsorship = blockchain
+          .assetDescription(asset)
+          .map(_.sponsorship)
+          .getOrElse(0L)
+        Sponsorship.fromWaves(wavesFee, sponsorship)
+
+      case Asset.Waves => wavesFee
+    }
+
+    FeeDetails(feeAssetId, Chain.empty, assetFee, wavesFee)
   }
 }

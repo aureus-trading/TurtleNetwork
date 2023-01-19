@@ -2,20 +2,20 @@ package com.wavesplatform.http
 
 import java.net.{InetAddress, InetSocketAddress}
 import java.util.concurrent.ConcurrentHashMap
-
 import com.wavesplatform.api.http.ApiError.ApiKeyNotValid
-import com.wavesplatform.api.http.ApiMarshallers._
 import com.wavesplatform.api.http.PeersApiRoute
 import com.wavesplatform.network.{PeerDatabase, PeerInfo}
 import io.netty.channel.Channel
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalamock.scalatest.MockFactory
-import org.scalatestplus.scalacheck.{ScalaCheckPropertyChecks => PropertyChecks}
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks as PropertyChecks
 import play.api.libs.json.{Format, JsObject, JsValue, Json}
+
+import scala.concurrent.duration.{Duration, DurationInt}
 
 class PeersRouteSpec extends RouteSpec("/peers") with RestAPISettingsHelper with PropertyChecks with MockFactory {
 
-  import PeersRouteSpec._
+  import PeersRouteSpec.*
 
   private val peerDatabase   = mock[PeerDatabase]
   private val connectToPeer  = mockFunction[InetSocketAddress, Unit]
@@ -30,6 +30,8 @@ class PeersRouteSpec extends RouteSpec("/peers") with RestAPISettingsHelper with
     minor <- Gen.chooseNum(0, 3)
     patch <- Gen.chooseNum(0, 3)
   } yield (major, minor, patch)
+
+  private implicit val timeout: Duration = 2.seconds
 
   private def genListOf[A](maxLength: Int, src: Gen[A]) = Gen.chooseNum(0, maxLength).flatMap(n => Gen.listOfN(n, src))
 
@@ -114,12 +116,14 @@ object PeersRouteSpec {
 
   implicit val connectRespFormat: Format[ConnectResp] = Json.format
 
-  case class ConnectedPeer(address: String,
-                           declaredAddress: String,
-                           peerName: String,
-                           peerNonce: Long,
-                           applicationName: String,
-                           applicationVersion: String)
+  case class ConnectedPeer(
+      address: String,
+      declaredAddress: String,
+      peerName: String,
+      peerNonce: Long,
+      applicationName: String,
+      applicationVersion: String
+  )
 
   implicit val connectedPeerFormat: Format[ConnectedPeer] = Json.format
 

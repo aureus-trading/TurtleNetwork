@@ -2,7 +2,7 @@ package com.wavesplatform.transaction.validation
 
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
-import cats.syntax.validated._
+import cats.syntax.validated.*
 import com.google.protobuf.ByteString
 import com.wavesplatform.account.AddressOrAlias
 import com.wavesplatform.common.state.ByteStr
@@ -26,24 +26,25 @@ object TxConstraints {
   }
 
   def cond(cond: => Boolean, err: => ValidationError): ValidatedNV =
-    if (cond) Valid(()) else Invalid(err).toValidatedNel
+    if (cond) Valid(())
+    else Invalid(err).toValidatedNel
 
   def byVersionSet[T <: VersionedTransaction](tx: T)(f: (Set[TxVersion], () => ValidatedV[Any])*): ValidatedV[T] = {
     seq(tx)(f.collect {
       case (v, func) if v.contains(tx.version) =>
         func()
-    }: _*)
+    }*)
   }
 
   def byVersion[T <: VersionedTransaction](tx: T)(f: (TxVersion, () => ValidatedV[Any])*): ValidatedV[T] =
-    byVersionSet(tx)(f.map { case (v, f) => (Set(v), f) }: _*)
+    byVersionSet(tx)(f.map { case (v, f) => (Set(v), f) }*)
 
   def fee(fee: Long): ValidatedV[Long] = {
     Validated
       .condNel(
         fee > 0,
         fee,
-        TxValidationError.InsufficientFee()
+        TxValidationError.InsufficientFee
       )
   }
 
@@ -90,7 +91,12 @@ object TxConstraints {
   // Transaction specific
   def transferAttachment(attachment: ByteStr): ValidatedV[ByteStr] = {
     this.seq(attachment)(
-      cond(attachment.size <= TransferTransaction.MaxAttachmentSize, TxValidationError.TooBigArray)
+      cond(
+        attachment.size <= TransferTransaction.MaxAttachmentSize,
+        TxValidationError.TooBigInBytes(
+          s"Invalid attachment. Length ${attachment.size} bytes exceeds maximum of ${TransferTransaction.MaxAttachmentSize} bytes."
+        )
+      )
     )
   }
 

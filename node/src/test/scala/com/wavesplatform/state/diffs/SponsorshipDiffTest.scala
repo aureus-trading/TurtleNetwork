@@ -4,24 +4,20 @@ import com.wavesplatform.common.state.ByteStr
 import com.wavesplatform.db.WithState
 import com.wavesplatform.features.BlockchainFeatures
 import com.wavesplatform.features.BlockchainFeatures.BlockV5
-import com.wavesplatform.lagonaki.mocks.TestBlock.{create => block}
+import com.wavesplatform.lagonaki.mocks.TestBlock.create as block
 import com.wavesplatform.settings.{Constants, FunctionalitySettings, TestFunctionalitySettings}
-import com.wavesplatform.state._
-import com.wavesplatform.test.PropSpec
+import com.wavesplatform.state.*
+import com.wavesplatform.test.*
 import com.wavesplatform.transaction.Asset.IssuedAsset
 import com.wavesplatform.transaction.{TxHelpers, TxVersion}
 
 class SponsorshipDiffTest extends PropSpec with WithState {
 
   def settings(sponsorshipActivationHeight: Int): FunctionalitySettings =
-    TestFunctionalitySettings.Enabled.copy(
-      preActivatedFeatures = Map(
+    TestFunctionalitySettings.Enabled.copy(featureCheckBlocksPeriod = 1, blocksForFeatureActivation = 1, preActivatedFeatures = Map(
         BlockchainFeatures.FeeSponsorship.id -> sponsorshipActivationHeight,
         BlockchainFeatures.BlockV5.id        -> 0
-      ),
-      featureCheckBlocksPeriod = 1,
-      blocksForFeatureActivation = 1
-    )
+      ))
 
   property("work") {
     val s = settings(0)
@@ -30,26 +26,26 @@ class SponsorshipDiffTest extends PropSpec with WithState {
 
       val sponsorTxFee = (0.02 * Constants.UnitsInWave).toLong
 
-      val genesis = TxHelpers.genesis(master.toAddress)
-      val issue = TxHelpers.issue(master, version = TxVersion.V1)
+      val genesis  = TxHelpers.genesis(master.toAddress)
+      val issue    = TxHelpers.issue(master, version = TxVersion.V1)
       val sponsor1 = TxHelpers.sponsor(issue.asset, Some(400000), master, fee = sponsorTxFee)
       val sponsor2 = TxHelpers.sponsor(issue.asset, Some(400001), master, fee = sponsorTxFee)
-      val cancel = TxHelpers.sponsor(issue.asset, None, master, fee = sponsorTxFee)
+      val cancel   = TxHelpers.sponsor(issue.asset, None, master, fee = sponsorTxFee)
 
       (genesis, issue, sponsor1, sponsor2, cancel)
     }
 
     val (genesis, issue, sponsor, sponsor1, cancel) = setup
-    val setupBlocks = Seq(block(Seq(genesis, issue)))
+    val setupBlocks                                 = Seq(block(Seq(genesis, issue)))
     assertDiffAndState(setupBlocks, block(Seq(sponsor)), s) {
       case (diff, state) =>
-        diff.sponsorship shouldBe Map(sponsor.asset -> SponsorshipValue(sponsor.minSponsoredAssetFee.get))
-        state.assetDescription(sponsor.asset).map(_.sponsorship) shouldBe sponsor.minSponsoredAssetFee
+        diff.sponsorship shouldBe Map(sponsor.asset -> SponsorshipValue(sponsor.minSponsoredAssetFee.get.value))
+        state.assetDescription(sponsor.asset).map(_.sponsorship) shouldBe sponsor.minSponsoredAssetFee.map(_.value)
     }
     assertDiffAndState(setupBlocks, block(Seq(sponsor, sponsor1)), s) {
       case (diff, state) =>
-        diff.sponsorship shouldBe Map(sponsor.asset -> SponsorshipValue(sponsor1.minSponsoredAssetFee.get))
-        state.assetDescription(sponsor.asset).map(_.sponsorship) shouldBe sponsor1.minSponsoredAssetFee
+        diff.sponsorship shouldBe Map(sponsor.asset -> SponsorshipValue(sponsor1.minSponsoredAssetFee.get.value))
+        state.assetDescription(sponsor.asset).map(_.sponsorship) shouldBe sponsor1.minSponsoredAssetFee.map(_.value)
     }
     assertDiffAndState(setupBlocks, block(Seq(sponsor, sponsor1, cancel)), s) {
       case (diff, state) =>
@@ -63,18 +59,18 @@ class SponsorshipDiffTest extends PropSpec with WithState {
     val setup = {
       val master = TxHelpers.signer(1)
 
-      val asset = IssuedAsset(ByteStr.fill(32)(1))
+      val asset        = IssuedAsset(ByteStr.fill(32)(1))
       val sponsorTxFee = (0.02 * Constants.UnitsInWave).toLong
 
       val genesis = TxHelpers.genesis(master.toAddress)
       val sponsor = TxHelpers.sponsor(asset, Some(400000), master, fee = sponsorTxFee)
-      val cancel = TxHelpers.sponsor(asset, None, master, fee = sponsorTxFee)
+      val cancel  = TxHelpers.sponsor(asset, None, master, fee = sponsorTxFee)
 
       (genesis, sponsor, cancel)
     }
 
     val (genesis, sponsor, cancel) = setup
-    val setupBlocks = Seq(block(Seq(genesis)))
+    val setupBlocks                = Seq(block(Seq(genesis)))
     assertDiffEi(setupBlocks, block(Seq(sponsor)), s) { blockDiffEi =>
       blockDiffEi should produce("Referenced assetId not found")
     }
@@ -91,14 +87,14 @@ class SponsorshipDiffTest extends PropSpec with WithState {
       val sponsorTxFee = (0.02 * Constants.UnitsInWave).toLong
 
       val genesis = TxHelpers.genesis(master.toAddress)
-      val issue = TxHelpers.issue(master, version = TxVersion.V1)
+      val issue   = TxHelpers.issue(master, version = TxVersion.V1)
       val sponsor = TxHelpers.sponsor(issue.asset, Some(400000), master, fee = sponsorTxFee)
 
       (genesis, issue, sponsor)
     }
 
     val (genesis, issue, sponsor) = setup
-    val setupBlocks = Seq(block(Seq(genesis, issue)))
+    val setupBlocks               = Seq(block(Seq(genesis, issue)))
     assertDiffEi(setupBlocks, block(Seq(sponsor)), s) { blockDiffEi =>
       blockDiffEi should produce("Fee Sponsorship feature has not been activated yet")
     }
@@ -107,33 +103,41 @@ class SponsorshipDiffTest extends PropSpec with WithState {
   property("not enough fee") {
     val s = settings(0)
     val setup = {
-      val master = TxHelpers.signer(1)
+      val master    = TxHelpers.signer(1)
       val recipient = TxHelpers.signer(2)
 
       val sponsorTxFee = (0.02 * Constants.UnitsInWave).toLong
 
       val genesis = TxHelpers.genesis(master.toAddress, 106002000000L)
-      val issue = TxHelpers.issue(master, version = TxVersion.V1)
+      val issue   = TxHelpers.issue(master, version = TxVersion.V1)
       val sponsor = TxHelpers.sponsor(issue.asset, Some(400000), master, fee = sponsorTxFee)
-      val assetOverspend = TxHelpers.transfer(master, recipient.toAddress, 1000000, feeAsset = issue.asset, fee = issue.quantity + 1, version = TxVersion.V1)
-      val insufficientFee = TxHelpers.transfer(master, recipient.toAddress, 1000000, feeAsset = issue.asset, fee = sponsor.minSponsoredAssetFee.get - 1, version = TxVersion.V1)
+      val assetOverspend =
+        TxHelpers.transfer(master, recipient.toAddress, 1000000, feeAsset = issue.asset, fee = issue.quantity.value + 1, version = TxVersion.V1)
+      val insufficientFee = TxHelpers.transfer(
+        master,
+        recipient.toAddress,
+        1000000,
+        feeAsset = issue.asset,
+        fee = sponsor.minSponsoredAssetFee.get.value - 1,
+        version = TxVersion.V1
+      )
 
-      val fee = 3000 * sponsor.minSponsoredAssetFee.get
+      val fee            = 3000 * sponsor.minSponsoredAssetFee.get.value
       val wavesOverspend = TxHelpers.transfer(master, recipient.toAddress, 1000000, feeAsset = issue.asset, fee = fee, version = TxVersion.V1)
 
       (genesis, issue, sponsor, assetOverspend, insufficientFee, wavesOverspend)
     }
 
     val (genesis, issue, sponsor, assetOverspend, insufficientFee, wavesOverspend) = setup
-    val setupBlocks = Seq(block(Seq(genesis, issue, sponsor)))
+    val setupBlocks                                                                = Seq(block(Seq(genesis, issue, sponsor)))
     assertDiffEi(setupBlocks, block(Seq(assetOverspend)), s) { blockDiffEi =>
       blockDiffEi should produce("unavailable funds")
     }
     assertDiffEi(setupBlocks, block(Seq(insufficientFee)), s) { blockDiffEi =>
       val minFee = Sponsorship
         .fromWaves(
-          FeeValidation.FeeConstants(insufficientFee.typeId) * FeeValidation.FeeUnit,
-          sponsor.minSponsoredAssetFee.get
+          FeeValidation.FeeConstants(insufficientFee.tpe) * FeeValidation.FeeUnit,
+          sponsor.minSponsoredAssetFee.get.value
         )
 
       val expectedError =
@@ -143,7 +147,7 @@ class SponsorshipDiffTest extends PropSpec with WithState {
       blockDiffEi should produce(expectedError)
     }
     assertDiffEi(setupBlocks, block(Seq(wavesOverspend)), s) { blockDiffEi =>
-      if (wavesOverspend.fee > issue.quantity)
+      if (wavesOverspend.fee.value > issue.quantity.value)
         blockDiffEi should produce("unavailable funds")
       else
         blockDiffEi should produce("negative TN balance")
@@ -154,26 +158,34 @@ class SponsorshipDiffTest extends PropSpec with WithState {
     val s = settings(0)
     val setup = {
       val master = TxHelpers.signer(1)
-      val alice = TxHelpers.signer(2)
-      val bob = TxHelpers.signer(3)
+      val alice  = TxHelpers.signer(2)
+      val bob    = TxHelpers.signer(3)
 
-      val fee = 2000000
-      val amount = ENOUGH_AMT / 2
+      val fee          = 2000000
+      val amount       = ENOUGH_AMT / 2
       val sponsorTxFee = (0.02 * Constants.UnitsInWave).toLong
 
-      val genesis = Seq(master, bob).map(acc => TxHelpers.genesis(acc.toAddress, amount))
-      val issue = TxHelpers.issue(master, version = TxVersion.V1)
-      val sponsor = TxHelpers.sponsor(issue.asset, Some(1), master, fee = sponsorTxFee)
-      val transferAsset = TxHelpers.transfer(master, alice.toAddress, issue.quantity, issue.asset, fee = fee, version = TxVersion.V1)
-      val leasing = TxHelpers.lease(master, bob.toAddress, amount - issue.fee - sponsor.fee - 2 * fee, fee = fee, version = TxVersion.V1)
+      val genesis         = Seq(master, bob).map(acc => TxHelpers.genesis(acc.toAddress, amount))
+      val issue           = TxHelpers.issue(master, version = TxVersion.V1)
+      val sponsor         = TxHelpers.sponsor(issue.asset, Some(1), master, fee = sponsorTxFee)
+      val transferAsset   = TxHelpers.transfer(master, alice.toAddress, issue.quantity.value, issue.asset, fee = fee, version = TxVersion.V1)
+      val leasing         = TxHelpers.lease(master, bob.toAddress, amount - issue.fee.value - sponsor.fee.value - 2 * fee, fee = fee, version = TxVersion.V1)
       val leasingToMaster = TxHelpers.lease(bob, master.toAddress, amount / 2, fee = fee, version = TxVersion.V1)
-      val insufficientFee = TxHelpers.transfer(alice, bob.toAddress, issue.quantity / 12, issue.asset, feeAsset = issue.asset, fee = sponsor.minSponsoredAssetFee.get, version = TxVersion.V1)
+      val insufficientFee = TxHelpers.transfer(
+        alice,
+        bob.toAddress,
+        issue.quantity.value / 12,
+        issue.asset,
+        feeAsset = issue.asset,
+        fee = sponsor.minSponsoredAssetFee.get.value,
+        version = TxVersion.V1
+      )
 
       (genesis, issue, sponsor, transferAsset, leasing, insufficientFee, leasingToMaster)
     }
 
     val (genesis, issueTx, sponsorTx, transferAssetTx, leasingTx, insufficientFee, leasingToMaster) = setup
-    val setupBlocks = Seq(block(genesis :+ issueTx :+ sponsorTx), block(Seq(transferAssetTx, leasingTx)))
+    val setupBlocks                                                                                 = Seq(block(genesis :+ issueTx :+ sponsorTx), block(Seq(transferAssetTx, leasingTx)))
     assertDiffEi(setupBlocks, block(Seq(insufficientFee)), s) { blockDiffEi =>
       blockDiffEi should produce("negative effective balance")
     }
@@ -185,23 +197,31 @@ class SponsorshipDiffTest extends PropSpec with WithState {
   property("cannot cancel sponsorship") {
     val s = settings(0)
     val setup = {
-      val master = TxHelpers.signer(1)
+      val master     = TxHelpers.signer(1)
       val notSponsor = TxHelpers.signer(2)
 
       val sponsorTxFee = (0.02 * Constants.UnitsInWave).toLong
 
+<<<<<<< HEAD
       val genesis = Seq(master, notSponsor).map(acc => TxHelpers.genesis(acc.toAddress, 400000000000L))
       val issue = TxHelpers.issue(master, version = TxVersion.V1)
       val sponsor = TxHelpers.sponsor(issue.asset, Some(1), master, fee = sponsorTxFee)
       val senderNotIssuer = TxHelpers.sponsor(issue.asset, None, notSponsor, fee = 1 * Constants.UnitsInWave)
       val insufficientFee = TxHelpers.sponsor(issue.asset, None, notSponsor, fee = 1 * Constants.UnitsInWave - 1)
+=======
+      val genesis                = Seq(master, notSponsor).map(acc => TxHelpers.genesis(acc.toAddress, 400000000))
+      val issue                  = TxHelpers.issue(master, version = TxVersion.V1)
+      val sponsor                = TxHelpers.sponsor(issue.asset, Some(1), master, fee = sponsorTxFee)
+      val senderNotIssuer        = TxHelpers.sponsor(issue.asset, None, notSponsor, fee = 1 * Constants.UnitsInWave)
+      val insufficientFee        = TxHelpers.sponsor(issue.asset, None, notSponsor, fee = 1 * Constants.UnitsInWave - 1)
+>>>>>>> b05b3d7e16bb8c573b48a010c22b09a1f5d6aab5
       val insufficientReducedFee = TxHelpers.sponsor(issue.asset, None, notSponsor, fee = (0.001 * Constants.UnitsInWave).toLong - 1)
 
       (genesis :+ issue :+ sponsor, senderNotIssuer, insufficientFee, insufficientReducedFee)
     }
 
     val (preconditions, senderNotIssuer, _, insufficientReducedFee) = setup
-    val setupBlocks = Seq(block(preconditions), block(Seq()))
+    val setupBlocks                                                 = Seq(block(preconditions), block(Seq()))
     assertDiffEi(setupBlocks, block(Seq(senderNotIssuer)), s) { blockDiffEi =>
       blockDiffEi should produce("Asset was issued by other address")
     }
@@ -213,15 +233,24 @@ class SponsorshipDiffTest extends PropSpec with WithState {
   property("cannot change sponsorship fee") {
     val s = settings(0)
     val setup = {
-      val master = TxHelpers.signer(1)
+      val master     = TxHelpers.signer(1)
       val notSponsor = TxHelpers.signer(2)
 
+<<<<<<< HEAD
       val sponsorTxFee = (0.02 * Constants.UnitsInWave).toLong
       val sponsorFee = 400000L
 
       val genesis = Seq(master, notSponsor).map(acc => TxHelpers.genesis(acc.toAddress, 400000000000L))
       val issue = TxHelpers.issue(master, version = TxVersion.V1)
       val sponsor = TxHelpers.sponsor(issue.asset, Some(1), master, fee = sponsorTxFee)
+=======
+      val sponsorTxFee = (0.001 * Constants.UnitsInWave).toLong
+      val sponsorFee   = 400000L
+
+      val genesis         = Seq(master, notSponsor).map(acc => TxHelpers.genesis(acc.toAddress, 400000000))
+      val issue           = TxHelpers.issue(master, version = TxVersion.V1)
+      val sponsor         = TxHelpers.sponsor(issue.asset, Some(1), master, fee = sponsorTxFee)
+>>>>>>> b05b3d7e16bb8c573b48a010c22b09a1f5d6aab5
       val senderNotIssuer = TxHelpers.sponsor(issue.asset, Some(sponsorFee), notSponsor, fee = 1 * Constants.UnitsInWave)
       val insufficientFee = TxHelpers.sponsor(issue.asset, Some(sponsorFee), master, fee = (0.001 * Constants.UnitsInWave).toLong - 1)
 
@@ -229,7 +258,7 @@ class SponsorshipDiffTest extends PropSpec with WithState {
     }
 
     val (preconditions, senderNotIssuer, insufficientFee) = setup
-    val setupBlocks = Seq(block(preconditions))
+    val setupBlocks                                       = Seq(block(preconditions))
     assertDiffEi(setupBlocks, block(Seq(senderNotIssuer)), s) { blockDiffEi =>
       blockDiffEi should produce("Asset was issued by other address")
     }
@@ -241,14 +270,22 @@ class SponsorshipDiffTest extends PropSpec with WithState {
   property(s"sponsor has no TN but receives them just in time before $BlockV5 activation") {
     val s = settings(0)
     val setup = {
-      val master = TxHelpers.signer(1)
+      val master    = TxHelpers.signer(1)
       val recipient = TxHelpers.signer(2)
 
+<<<<<<< HEAD
       val genesis = TxHelpers.genesis(master.toAddress, 200105700000L)
       val issue = TxHelpers.issue(master, amount = 100, decimals = 2, reissuable = false, fee = 100000000000L, version = TxVersion.V1)
       val sponsor = TxHelpers.sponsor(issue.asset, Some(100), master, fee = 100000000000L)
       val assetTransfer = TxHelpers.transfer(master, recipient.toAddress, issue.quantity, issue.asset, fee = 2000000, version = TxVersion.V1)
       val wavesTransfer = TxHelpers.transfer(master, recipient.toAddress, 99800000, fee = 2000000, version = TxVersion.V1)
+=======
+      val genesis           = TxHelpers.genesis(master.toAddress, 300000000)
+      val issue             = TxHelpers.issue(master, amount = 100, decimals = 2, reissuable = false, fee = 100000000, version = TxVersion.V1)
+      val sponsor           = TxHelpers.sponsor(issue.asset, Some(100), master, fee = 100000000)
+      val assetTransfer     = TxHelpers.transfer(master, recipient.toAddress, issue.quantity.value, issue.asset, fee = 100000, version = TxVersion.V1)
+      val wavesTransfer     = TxHelpers.transfer(master, recipient.toAddress, 99800000, fee = 100000, version = TxVersion.V1)
+>>>>>>> b05b3d7e16bb8c573b48a010c22b09a1f5d6aab5
       val backWavesTransfer = TxHelpers.transfer(recipient, master.toAddress, 100000, feeAsset = issue.asset, fee = 100, version = TxVersion.V1)
 
       (genesis, issue, sponsor, assetTransfer, wavesTransfer, backWavesTransfer)
@@ -262,7 +299,7 @@ class SponsorshipDiffTest extends PropSpec with WithState {
     ) {
       case (_, state) =>
         state.balance(genesis.recipient) shouldBe 0
-        state.balance(genesis.recipient, IssuedAsset(issue.id())) shouldBe issue.quantity
+        state.balance(genesis.recipient, IssuedAsset(issue.id())) shouldBe issue.quantity.value
     }
 
     assertDiffEi(

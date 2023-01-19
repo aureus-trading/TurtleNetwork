@@ -17,7 +17,9 @@ import io.netty.handler.codec.{ByteToMessageCodec, DecoderException}
 import scala.concurrent.duration.FiniteDuration
 import scala.util.control.NonFatal
 
-class LegacyFrameCodec(peerDatabase: PeerDatabase, receivedTxsCacheTimeout: FiniteDuration) extends ByteToMessageCodec[Any] with ScorexLogging {
+class LegacyFrameCodec(peerDatabase: PeerDatabase, receivedTxsCacheTimeout: FiniteDuration)
+    extends ByteToMessageCodec[Any]
+    with ScorexLogging {
 
   import BasicMessagesRepo.specsByCodes
   import LegacyFrameCodec._

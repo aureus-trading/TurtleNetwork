@@ -3,6 +3,10 @@ package com.wavesplatform
 import java.io._
 import java.net.{MalformedURLException, URL}
 
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration._
+import scala.util.{Failure, Success, Try}
+
 import akka.actor.ActorSystem
 import com.google.common.io.ByteStreams
 import com.google.common.primitives.Ints
@@ -12,7 +16,7 @@ import com.wavesplatform.api.common.{CommonAccountsApi, CommonAssetsApi, CommonB
 import com.wavesplatform.block.{Block, BlockHeader}
 import com.wavesplatform.common.state.ByteStr
 import com.wavesplatform.consensus.PoSSelector
-import com.wavesplatform.database.{DBExt, KeyTags, openDB}
+import com.wavesplatform.database.{openDB, DBExt, KeyTags}
 import com.wavesplatform.events.{BlockchainUpdateTriggers, UtxEvent}
 import com.wavesplatform.extensions.{Context, Extension}
 import com.wavesplatform.features.BlockchainFeatures
@@ -21,11 +25,11 @@ import com.wavesplatform.lang.ValidationError
 import com.wavesplatform.mining.Miner
 import com.wavesplatform.protobuf.block.PBBlocks
 import com.wavesplatform.settings.WavesSettings
-import com.wavesplatform.state.appender.BlockAppender
 import com.wavesplatform.state.{Blockchain, BlockchainUpdaterImpl, Diff, Height}
+import com.wavesplatform.state.appender.BlockAppender
+import com.wavesplatform.transaction.{Asset, DiscardedBlocks, Transaction}
 import com.wavesplatform.transaction.TxValidationError.GenericError
 import com.wavesplatform.transaction.smart.script.trace.TracedResult
-import com.wavesplatform.transaction.{Asset, DiscardedBlocks, Transaction}
 import com.wavesplatform.utils._
 import com.wavesplatform.utx.{UtxPool, UtxPoolImpl}
 import com.wavesplatform.wallet.Wallet
@@ -35,10 +39,6 @@ import monix.execution.Scheduler
 import monix.reactive.{Observable, Observer}
 import org.iq80.leveldb.DB
 import scopt.OParser
-
-import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
-import scala.util.{Failure, Success, Try}
 
 object Importer extends ScorexLogging {
   import monix.execution.Scheduler.Implicits.global
@@ -136,7 +136,6 @@ object Importer extends ScorexLogging {
               db,
               blockchainUpdater,
               utxPool,
-              wallet,
               _ => Future.successful(TracedResult.wrapE(Left(GenericError("Not implemented during import")))),
               Application.loadBlockAt(db, blockchainUpdater)
             )
@@ -170,7 +169,7 @@ object Importer extends ScorexLogging {
   @volatile private var quit = false
   private val lock           = new Object
 
-  //noinspection UnstableApiUsage
+  // noinspection UnstableApiUsage
   def startImport(
       inputStream: BufferedInputStream,
       blockchain: Blockchain,
@@ -279,36 +278,40 @@ object Importer extends ScorexLogging {
     val db          = openDB(settings.dbSettings.directory)
     val (blockchainUpdater, levelDb) =
       StorageFactory(settings, db, time, Observer.empty, BlockchainUpdateTriggers.combined(triggers))
-    val utxPool     = new UtxPoolImpl(time, blockchainUpdater, settings.utxSettings)
+    val utxPool     = new UtxPoolImpl(time, blockchainUpdater, settings.utxSettings, settings.maxTxErrorLogSize, settings.minerSettings.enable)
     val pos         = PoSSelector(blockchainUpdater, settings.synchronizationSettings.maxBaseTarget)
     val extAppender = BlockAppender(blockchainUpdater, time, utxPool, pos, scheduler, importOptions.verify) _
 
     val extensions = initExtensions(settings, blockchainUpdater, scheduler, time, utxPool, db, actorSystem)
     checkGenesis(settings, blockchainUpdater, Miner.Disabled)
 
-    val importFileOffset = if (importOptions.dryRun) 0 else importOptions.format match {
-      case Formats.Binary =>
-        var result = 0L
-        db.iterateOver(KeyTags.BlockInfoAtHeight) { e =>
-          e.getKey match {
-            case Array(_, _, 0, 0, 0, 1) => // Skip genesis
-            case _ =>
-              val meta = com.wavesplatform.database.readBlockMeta(e.getValue)
-              result += meta.size + 4
-          }
-        }
-        result
+    val importFileOffset =
+      if (importOptions.dryRun) 0
+      else
+        importOptions.format match {
+          case Formats.Binary =>
+            var result = 0L
+            db.iterateOver(KeyTags.BlockInfoAtHeight) { e =>
+              e.getKey match {
+                case Array(_, _, 0, 0, 0, 1) => // Skip genesis
+                case _ =>
+                  val meta = com.wavesplatform.database.readBlockMeta(e.getValue)
+                  result += meta.size + 4
+              }
+            }
+            result
 
-      case _ => 0L
-    }
+          case _ => 0L
+        }
     val inputStream = new BufferedInputStream(initFileStream(importOptions.blockchainFile, importFileOffset), 2 * 1024 * 1024)
 
     if (importOptions.dryRun) {
       def readNextBlock(): Future[Option[Block]] = Future.successful(None)
       readNextBlock().flatMap {
-        case None => Future.successful(())
-        case Some(block) =>
+        case None =>
+          Future.successful(())
 
+        case Some(_) =>
           readNextBlock()
       }
     }
@@ -317,7 +320,7 @@ object Importer extends ScorexLogging {
       quit = true
       Await.result(actorSystem.terminate(), 10.second)
       lock.synchronized {
-        if (blockchainUpdater.isFeatureActivated(BlockchainFeatures.NG)) {
+        if (blockchainUpdater.isFeatureActivated(BlockchainFeatures.NG) && blockchainUpdater.liquidBlockMeta.nonEmpty) {
           // Force store liquid block in leveldb
           val lastHeader = blockchainUpdater.lastBlockHeader.get.header
           val pseudoBlock = Block(

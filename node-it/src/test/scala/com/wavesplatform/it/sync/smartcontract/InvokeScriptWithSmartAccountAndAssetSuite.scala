@@ -54,7 +54,7 @@ class InvokeScriptWithSmartAccountAndAssetSuite extends BaseTransactionSuite wit
         ),
       AssertiveApiError(
         ScriptExecutionError.Id,
-        "Error while executing account-script: Fee in TN for InvokeScriptTransaction (14999999 in TN) with 12 total scripts invoked does not exceed minimal value of 54000000 TN."
+        "Error while executing dApp: Fee in TN for InvokeScriptTransaction (14999999 in TN) with 12 total scripts invoked does not exceed minimal value of 54000000 TN."
       )
     )
 
@@ -70,7 +70,7 @@ class InvokeScriptWithSmartAccountAndAssetSuite extends BaseTransactionSuite wit
       .id
     nodes.waitForHeightAriseAndTxPresent(invokeScriptTxId)
 
-    sender.debugStateChanges(invokeScriptTxId).stateChanges.get.error shouldBe empty
+    sender.stateChanges(invokeScriptTxId).stateChanges.get.error shouldBe empty
   }
 
   test("can't invoke with insufficient payment for @Verifier") {
@@ -123,7 +123,7 @@ class InvokeScriptWithSmartAccountAndAssetSuite extends BaseTransactionSuite wit
         ),
       AssertiveApiError(
         ScriptExecutionError.Id,
-        "Error while executing account-script: Fee in TN for InvokeScriptTransaction (10000000 in TN) with 2 total scripts invoked does not exceed minimal value of 14000000 TN."
+        "Error while executing dApp: Fee in TN for InvokeScriptTransaction (10000000 in TN) with 2 total scripts invoked does not exceed minimal value of 14000000 TN."
       )
     )
   }
@@ -173,7 +173,7 @@ class InvokeScriptWithSmartAccountAndAssetSuite extends BaseTransactionSuite wit
           payment = Seq(Payment(amountLessThanDAppScriptLimit, IssuedAsset(ByteStr.decodeBase58(asset2).get))),
           fee = smartMinFee + smartFee + smartFee
         ),
-      AssertiveApiError(ScriptExecutionError.Id, s"Error while executing account-script: need payment in 15+ tokens of asset2 $asset2")
+      AssertiveApiError(ScriptExecutionError.Id, s"Error while executing dApp: need payment in 15+ tokens of asset2 $asset2")
     )
   }
 

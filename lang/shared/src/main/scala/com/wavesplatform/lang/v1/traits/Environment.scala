@@ -4,10 +4,11 @@ import com.wavesplatform.common.state.ByteStr
 import com.wavesplatform.lang.ValidationError
 import com.wavesplatform.lang.script.Script
 import com.wavesplatform.lang.v1.compiler.Terms.EVALUATED
+import com.wavesplatform.lang.v1.evaluator.Log
 import com.wavesplatform.lang.v1.traits.domain.Recipient.Address
-import com.wavesplatform.lang.v1.traits.domain._
+import com.wavesplatform.lang.v1.traits.domain.*
 import monix.eval.Coeval
-import shapeless._
+import shapeless.*
 
 object Environment {
   case class BalanceDetails(available: Long, regular: Long, generating: Long, effective: Long)
@@ -38,6 +39,7 @@ trait Environment[F[_]] {
   def txId: ByteStr
   def transferTransactionFromProto(b: Array[Byte]): F[Option[Tx.Transfer]]
   def addressFromString(address: String): Either[String, Address]
+  def addressFromPublicKey(publicKey: ByteStr): Either[String, Address]
   def dAppAlias: Boolean = false
   def accountScript(addressOrAlias: Recipient): F[Option[Script]]
   def callScript(
@@ -47,5 +49,5 @@ trait Environment[F[_]] {
       payments: Seq[(Option[Array[Byte]], Long)],
       availableComplexity: Int,
       reentrant: Boolean
-  ): Coeval[F[(Either[ValidationError, EVALUATED], Int)]]
+  ): Coeval[F[(Either[ValidationError, (EVALUATED, Log[F])], Int)]]
 }
