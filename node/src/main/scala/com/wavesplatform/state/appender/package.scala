@@ -1,5 +1,6 @@
 package com.wavesplatform.state
 import cats.syntax.either.*
+import com.wavesplatform.account.AddressScheme
 import com.wavesplatform.block.Block
 import com.wavesplatform.block.Block.BlockId
 import com.wavesplatform.common.state.ByteStr

@@ -100,7 +100,6 @@ object FunctionalitySettings {
   val MAINNET: FunctionalitySettings = apply(
     featureCheckBlocksPeriod = 5000,
     blocksForFeatureActivation = 4000,
-<<<<<<< HEAD
     generationBalanceDepthFrom50To1000AfterHeight = 0,
     lastTimeBasedForkParameter = 1530161445559L,
     blockVersion3AfterHeight = 0,
@@ -111,9 +110,6 @@ object FunctionalitySettings {
       3.toShort -> 0,
       5.toShort -> 0,
       6.toShort -> 0) ,
-    syncDAppCheckPaymentsHeight = 1980000,
-    checkTotalDataEntriesBytesHeight = 0,
-    syncDAppCheckTransfersHeight = 0,
     estimationOverflowFixHeight = 0,
     estimatorSumOverflowFixHeight = 0,
     enforceTransferValidationAfter = 2200000
