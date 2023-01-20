@@ -35,14 +35,14 @@ class UtxPriorityPoolSpecification extends FreeSpec with SharedDomain {
                                             |    case _ => true
                                             |}
                                             |""".stripMargin),
-      fee = 0.01.waves
+      fee = 0.1.waves
     )
 
   "priority pool" - {
     "preserves correct order of transactions" in {
       val id = domain.appendKeyBlock().id()
-      val t1 = TxHelpers.transfer(alice, nextKeyPair.toAddress, fee = 0.001.waves)
-      val t2 = TxHelpers.transfer(alice, nextKeyPair.toAddress, fee = 0.01.waves, timestamp = t1.timestamp - 10000)
+      val t1 = TxHelpers.transfer(alice, nextKeyPair.toAddress, fee = 0.02.waves)
+      val t2 = TxHelpers.transfer(alice, nextKeyPair.toAddress, fee = 0.02.waves, timestamp = t1.timestamp - 10000)
 
       domain.appendMicroBlock(t1)
       domain.appendMicroBlock(t2)

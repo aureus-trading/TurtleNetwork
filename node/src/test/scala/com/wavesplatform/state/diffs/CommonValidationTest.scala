@@ -91,9 +91,9 @@ class CommonValidationTest extends PropSpec with WithState {
     val script = ExprScript(TRUE).explicitGet()
     val genesis = TxHelpers.genesis(richAcc.toAddress)
     val issue = if (smartToken) {
-      TxHelpers.issue(richAcc, Long.MaxValue, 2, script = Some(script), reissuable = false, fee = Constants.UnitsInWave)
+      TxHelpers.issue(richAcc, Long.MaxValue, 2, script = Some(script), reissuable = false, fee = 1000*Constants.UnitsInWave)
     } else {
-      TxHelpers.issue(richAcc, Long.MaxValue, 2, script = None, reissuable = false, fee = Constants.UnitsInWave, version = TxVersion.V1)
+      TxHelpers.issue(richAcc, Long.MaxValue, 2, script = None, reissuable = false, fee = 1000*Constants.UnitsInWave, version = TxVersion.V1)
     }
     val transferWaves =
       TxHelpers.transfer(richAcc, recipientAcc.toAddress, 10 * Constants.UnitsInWave, fee = Constants.UnitsInWave, version = TxVersion.V1)

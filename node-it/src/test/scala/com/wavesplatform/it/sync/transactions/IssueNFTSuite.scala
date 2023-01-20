@@ -80,7 +80,7 @@ class IssueNFTSuite extends BaseTransactionSuite with TableDrivenPropertyChecks 
         quantity = 1,
         decimals = 0,
         reissuable = true,
-        fee = 0.01.waves,
+        fee = 1.waves,
         script = None,
         waitForTx = true
       ),
@@ -100,7 +100,7 @@ class IssueNFTSuite extends BaseTransactionSuite with TableDrivenPropertyChecks 
         quantity = 2,
         decimals = 0,
         reissuable = false,
-        fee = 0.01.waves,
+        fee = 1.waves,
         script = None,
         waitForTx = true
       ),
@@ -120,7 +120,7 @@ class IssueNFTSuite extends BaseTransactionSuite with TableDrivenPropertyChecks 
         quantity = 1,
         decimals = 1,
         reissuable = false,
-        fee = 0.01.waves,
+        fee = 1.waves,
         script = None,
         waitForTx = true
       ),

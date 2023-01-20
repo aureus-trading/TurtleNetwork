@@ -84,7 +84,7 @@ class EthRpcRouteSpec extends RouteSpec("/eth") with WithDomain with EthHelpers 
                                                   |  ]
                                                   |}
                                                   |""".stripMargin)),
-          0.01.waves,
+          0.1.waves,
           ntpTime.getTimestamp()
         )
       )
@@ -262,7 +262,7 @@ class EthRpcRouteSpec extends RouteSpec("/eth") with WithDomain with EthHelpers 
                                                 |  ]
                                                 |}
                                                 |""".stripMargin)),
-        0.01.waves,
+        0.1.waves,
         ntpTime.getTimestamp()
       ),
       invoke
