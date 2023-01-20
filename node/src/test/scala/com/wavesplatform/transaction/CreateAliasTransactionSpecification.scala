@@ -140,7 +140,7 @@ class CreateAliasTransactionSpecification extends PropSpec with WithDomain {
         3.toByte,
         sender.publicKey,
         "abc12345",
-        TxPositiveAmount.unsafeFrom(0.001.waves),
+        TxPositiveAmount.unsafeFrom(10.waves),
         System.currentTimeMillis(),
         Proofs.empty,
         'T'.toByte
@@ -175,7 +175,7 @@ class CreateAliasTransactionSpecification extends PropSpec with WithDomain {
         3.toByte,
         sender.publicKey,
         "abc12345",
-        TxPositiveAmount.unsafeFrom(0.001.waves),
+        TxPositiveAmount.unsafeFrom(10.waves),
         System.currentTimeMillis(),
         Proofs.empty,
         'T'.toByte

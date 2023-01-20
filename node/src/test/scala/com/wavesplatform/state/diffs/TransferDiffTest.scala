@@ -78,7 +78,7 @@ class TransferDiffTest extends PropSpec with WithState {
       val genesis  = TxHelpers.genesis(master.toAddress)
       val issue    = TxHelpers.issue(master, Long.MaxValue, version = TxVersion.V1)
       val asset    = issue.asset
-      val transfer = TxHelpers.transfer(master, recipient.toAddress, Long.MaxValue, asset, fee = 100000, version = TxVersion.V1)
+      val transfer = TxHelpers.transfer(master, recipient.toAddress, Long.MaxValue, asset, fee = 2000000, version = TxVersion.V1)
 
       (genesis, issue, transfer)
     }

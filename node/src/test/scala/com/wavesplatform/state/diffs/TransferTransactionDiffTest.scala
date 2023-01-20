@@ -44,13 +44,13 @@ class TransferTransactionDiffTest extends PropSpec with WithDomain {
   property("handle transactions with amount + fee > Long.MaxValue") {
     withDomain(DomainPresets.ScriptsAndSponsorship, AddrWithBalance.enoughBalances(TxHelpers.defaultSigner)) { d =>
       val asset    = d.helpers.issueAsset(amount = Long.MaxValue)
-      val transfer = TxHelpers.transfer(asset = asset, amount = Long.MaxValue, version = TxVersion.V1, fee = 100000)
+      val transfer = TxHelpers.transfer(asset = asset, amount = Long.MaxValue, version = TxVersion.V1, fee = 2000000)
       d.appendAndCatchError(transfer) shouldBe TransactionDiffer.TransactionValidationError(TxValidationError.OverflowError, transfer)
     }
 
     withDomain(DomainPresets.mostRecent, AddrWithBalance.enoughBalances(TxHelpers.defaultSigner)) { d =>
       val asset    = d.helpers.issueAsset(amount = Long.MaxValue)
-      val transfer = TxHelpers.transfer(asset = asset, amount = Long.MaxValue, version = TxVersion.V1, fee = 100000)
+      val transfer = TxHelpers.transfer(asset = asset, amount = Long.MaxValue, version = TxVersion.V1, fee = 2000000)
       d.appendAndAssertSucceed(transfer)
     }
   }
