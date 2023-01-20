@@ -28,16 +28,16 @@ COPY entrypoint.sh $WAVES_INSTALL_PATH/bin/entrypoint.sh
 ARG INCLUDE_GRPC=true
 RUN mkdir -p $WVDATA $WVLOG; \
     # Create user
-    groupadd -r waves --gid=999; \
-    useradd -r -g waves --uid=999 --home-dir=$WVDATA --shell=/bin/bash waves; \
+    groupadd -r tn --gid=999; \
+    useradd -r -g tn --uid=999 --home-dir=$WVDATA --shell=/bin/bash tn; \
     # Unpack tgz packages
-    tar zxvf /tmp/waves.tgz -C $WAVES_INSTALL_PATH --strip-components=1; \
+    tar zxvf /tmp/tn.tgz -C $WAVES_INSTALL_PATH --strip-components=1; \
     if [[ $INCLUDE_GRPC == true ]]; then \
       echo "Unpacking gRPC server"; \
-      tar zxvf /tmp/waves-grpc-server.tgz -C $WAVES_INSTALL_PATH --strip-components=1; \
+      tar zxvf /tmp/tn-grpc-server.tgz -C $WAVES_INSTALL_PATH --strip-components=1; \
     fi; \
     # Set permissions
-    chown -R waves:waves $WVDATA $WVLOG $WAVES_INSTALL_PATH && chmod 755 $WVDATA $WVLOG; \
+    chown -R tn:tn $WVDATA $WVLOG $WAVES_INSTALL_PATH && chmod 755 $WVDATA $WVLOG; \
     # Cleanup
     rm -rf /tmp/*
 

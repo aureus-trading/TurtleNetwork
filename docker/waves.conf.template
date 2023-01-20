@@ -1,4 +1,4 @@
-waves {
+TN {
   directory = ${WVDATA}
   wallet {
     seed = ${?WAVES_WALLET_SEED}
