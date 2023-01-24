@@ -502,7 +502,7 @@ class AssetTransactionsDiffTest extends PropSpec with BlocksTransactionsHelpers 
           decimals = 0,
           reissuable = true,
           script = script,
-          fee = 1.waves,
+          fee = 1000.waves,
           timestamp = ts
         )
         .explicitGet()

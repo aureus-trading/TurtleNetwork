@@ -113,7 +113,7 @@ class SyncInvokeFailAndRejectTest extends PropSpec with WithDomain {
          """.stripMargin
       )
       d.appendBlock(setScript(dApp1Signer, dApp1), setScript(dApp2Signer, dApp2))
-      d.appendBlockE(invoke(dApp1Address, invoker = invoker)) should produce(s"negative waves balance: ${invoker.toAddress}, old: 0, new: -500000")
+      d.appendBlockE(invoke(dApp1Address, invoker = invoker)) should produce(s"negative TN balance: ${invoker.toAddress}, old: 0, new: -6000000")
     }
   }
 }

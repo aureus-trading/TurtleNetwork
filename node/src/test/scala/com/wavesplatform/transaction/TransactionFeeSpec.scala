@@ -298,7 +298,7 @@ class TransactionFeeSpec extends FreeSpec with WithDomain {
                                                         |
                                                         |sigVerify_16Kb(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
                                                         |""".stripMargin)),
-              0.06.waves,
+              1.waves,
               ntpTime.getTimestamp()
             )
             .explicitGet(),
@@ -319,7 +319,7 @@ class TransactionFeeSpec extends FreeSpec with WithDomain {
                                                         |    s0 + s1 + s2 > 1
                                                         |}
                                                         |""".stripMargin)),
-              0.06.waves,
+              1.waves,
               ntpTime.getTimestamp()
             )
             .explicitGet()

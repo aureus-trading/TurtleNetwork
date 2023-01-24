@@ -290,7 +290,7 @@ class BlockchainUpdaterImplSpec extends FreeSpec with EitherMatchers with WithDo
           ._1
 
         d.appendBlock(
-          SetScriptTransaction.selfSigned(2.toByte, dapp, Some(script), 600_0000L, ntpTime.getTimestamp()).explicitGet()
+          SetScriptTransaction.selfSigned(2.toByte, dapp, Some(script), 1_0000_0000L, ntpTime.getTimestamp()).explicitGet()
         )
 
         val invoke =

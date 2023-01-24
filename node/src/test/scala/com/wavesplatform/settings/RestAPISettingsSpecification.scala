@@ -39,7 +39,7 @@ class RestAPISettingsSpecification extends FlatSpec {
 
     settings.enable should be(true)
     settings.bindAddress should be("127.0.0.1")
-    settings.port should be(6859)
+    settings.port should be(6869)
     settings.apiKeyHash should be("BASE58APIKEYHASH")
     settings.transactionsByAddressLimit shouldBe 1000
     settings.distributionAddressLimit shouldBe 1000

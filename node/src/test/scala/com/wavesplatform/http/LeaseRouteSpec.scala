@@ -90,7 +90,7 @@ class LeaseRouteSpec
                                                 |  ]
                                                 |}
                                                 |""".stripMargin)),
-        0.01.waves,
+        0.02.waves,
         ntpTime.getTimestamp()
       )
       .explicitGet()

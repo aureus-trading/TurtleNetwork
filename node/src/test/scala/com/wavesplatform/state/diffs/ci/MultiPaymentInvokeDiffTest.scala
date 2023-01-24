@@ -130,9 +130,9 @@ class MultiPaymentInvokeDiffTest extends PropSpec with WithState {
         ) {
           val expectedFee = (0.06 + 0.04 + 0.04 * (ContractLimits.MaxAttachedPaymentAmount - 1)) * Constants.UnitsInWave
           _ should produceRejectOrFailedDiff(
-            s"Fee in WAVES for InvokeScriptTransaction (${ci.fee} in WAVES) " +
+            s"Fee in TN for InvokeScriptTransaction (${ci.fee} in TN) " +
               s"with ${ContractLimits.MaxAttachedPaymentAmount} total scripts invoked " +
-              s"does not exceed minimal value of ${expectedFee.toLong} WAVES"
+              s"does not exceed minimal value of ${expectedFee.toLong} TN"
           )
         }
     }

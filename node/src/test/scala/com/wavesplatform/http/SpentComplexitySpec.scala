@@ -83,7 +83,7 @@ class SpentComplexitySpec
     "does not count verifier complexity when InvokeScript is sent from smart account" in
       withDomain(settings, Seq(AddrWithBalance(sender.toAddress, 10_000_00000000L))) { d =>
         val invokeTx = Signed
-          .invokeScript(2.toByte, sender, sender.toAddress, None, Seq.empty, 800_0000L, Asset.Waves, ntpTime.getTimestamp())
+          .invokeScript(2.toByte, sender, sender.toAddress, None, Seq.empty, 1_000_0000L, Asset.Waves, ntpTime.getTimestamp())
 
         d.appendBlock(
           SetScriptTransaction.selfSigned(2.toByte, sender, Some(contract), 1_0000_0000L, ntpTime.getTimestamp()).explicitGet(),
@@ -100,7 +100,7 @@ class SpentComplexitySpec
 
       withDomain(settings, Seq(AddrWithBalance(sender.toAddress, 10_000_00000000L), AddrWithBalance(recipient.toAddress, 10_00000000L))) { d =>
         val issue = IssueTransaction
-          .selfSigned(2.toByte, sender, "TEST", "", 1000_00L, 2.toByte, false, Some(assetScript), 1_00000000L, ntpTime.getTimestamp())
+          .selfSigned(2.toByte, sender, "TEST", "", 1000_00L, 2.toByte, false, Some(assetScript), 1000_0000_0000L, ntpTime.getTimestamp())
           .explicitGet()
 
         val transferAsset = TransferTransaction

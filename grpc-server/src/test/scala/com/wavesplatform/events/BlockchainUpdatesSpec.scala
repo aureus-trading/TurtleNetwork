@@ -627,12 +627,10 @@ class BlockchainUpdatesSpec extends FreeSpec with WithBUDomain with ScalaFutures
            |    BinaryEntry("leaseId", calculateLeaseId(lease))
            |  ]
            |}
-           |""".stripMargin,
-          ScriptEstimatorV3(fixOverflow = true)
+           |""".stripMargin
         )
-        .explicitGet()
-      val invoke = InvokeScriptTransaction
-        .selfSigned(
+
+      val invoke = Signed.invokeScript(
           2.toByte,
           invoker,
           issuer.toAddress,
@@ -642,7 +640,6 @@ class BlockchainUpdatesSpec extends FreeSpec with WithBUDomain with ScalaFutures
           Asset.Waves,
           ntpTime.getTimestamp()
         )
-        .explicitGet()
       d.appendBlock(
         GenesisTransaction.create(issuerAddress, 1020.waves, ntpTime.getTimestamp()).explicitGet(),
         GenesisTransaction.create(invoker.toAddress, 1020.waves, ntpTime.getTimestamp()).explicitGet(),

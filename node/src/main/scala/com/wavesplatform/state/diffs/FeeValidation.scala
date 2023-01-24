@@ -47,7 +47,7 @@ object FeeValidation {
     TransactionType.SetAssetScript   -> 50,
     TransactionType.InvokeScript     -> 3,
     TransactionType.UpdateAssetInfo  -> 50000,
-    TransactionType.Ethereum         -> 50,
+    TransactionType.Ethereum         -> 3,
     TransactionType.InvokeExpression -> 50
   )
 
