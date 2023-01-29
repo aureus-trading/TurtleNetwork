@@ -56,14 +56,14 @@ class UtxPriorityPoolSpecification extends FreeSpec with SharedDomain {
     "takes into account priority txs when packing" in {
       val id        = domain.appendKeyBlock().id()
       val bob       = nextKeyPair
-      val transfer1 = TxHelpers.transfer(alice, bob.toAddress, 10.001.waves, fee = 0.001.waves)
+      val transfer1 = TxHelpers.transfer(alice, bob.toAddress, 10.001.waves, fee = 0.02.waves)
 
       domain.appendMicroBlock(transfer1)
       domain.appendKeyBlock(Some(id))
 
       domain.utxPool.priorityPool.priorityTransactions shouldBe Seq(transfer1)
 
-      val transfer2 = TxHelpers.transfer(bob, nextKeyPair.toAddress, 10.waves, fee = 0.001.waves)
+      val transfer2 = TxHelpers.transfer(bob, nextKeyPair.toAddress, 10.waves, fee = 0.02.waves)
 
       domain.utxPool.putIfNew(transfer2).resultE should beRight
       domain.utxPool.nonPriorityTransactions shouldBe Seq(transfer2)
@@ -110,16 +110,16 @@ class UtxPriorityPoolSpecification extends FreeSpec with SharedDomain {
     "continues packing when priority diff contains no valid transactions" in {
       val bob = nextKeyPair
       domain.appendBlock(
-        TxHelpers.transfer(alice, bob.toAddress, 10.02.waves, fee = 0.001.waves),
+        TxHelpers.transfer(alice, bob.toAddress, 10.02.waves, fee = 0.02.waves),
         mkHeightSensitiveScript(bob)
       )
       val ref       = domain.appendKeyBlock().id()
-      val transfer1 = TxHelpers.transfer(bob, nextKeyPair.toAddress, 10.waves, fee = 0.005.waves)
+      val transfer1 = TxHelpers.transfer(bob, nextKeyPair.toAddress, 10.waves, fee = 0.06.waves)
       domain.appendMicroBlock(transfer1)
       domain.appendKeyBlock(Some(ref))
       domain.utxPool.priorityPool.priorityTransactions shouldEqual Seq(transfer1)
 
-      val createAlias = TxHelpers.createAlias("0xbob", bob, 0.005.waves)
+      val createAlias = TxHelpers.createAlias("0xbob", bob, 10.waves)
       domain.utxPool.putIfNew(createAlias).resultE should beRight
       domain.utxPool.all shouldEqual Seq(transfer1, createAlias)
 

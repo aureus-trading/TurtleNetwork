@@ -135,7 +135,7 @@ class LevelDBWriterSpec extends FreeSpec with WithDomain {
 
   val aliasOwner: KeyPair = TxHelpers.signer(1001)
   "alias cache" in withDomain(DomainPresets.ScriptsAndSponsorship, Seq(AddrWithBalance(aliasOwner.toAddress, 200.waves))) { d =>
-    val createAlias = TxHelpers.createAlias("foobar", aliasOwner, 0.001.waves)
+    val createAlias = TxHelpers.createAlias("foobar", aliasOwner, 10.waves)
 
     d.blockchain.resolveAlias(createAlias.alias) shouldEqual Left(AliasDoesNotExist(createAlias.alias))
 

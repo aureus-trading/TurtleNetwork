@@ -673,7 +673,7 @@ class EthereumTransactionSpec
     )
 
     intercept[RuntimeException](differ(transaction).resultE.explicitGet()).toString should include(
-      "Fee in WAVES for InvokeScriptTransaction (499999 in WAVES) does not exceed minimal value of 500000 WAVES"
+      "Fee in TN for InvokeScriptTransaction (499999 in TN) does not exceed minimal value of 6000000 TN"
     )
   }
 }

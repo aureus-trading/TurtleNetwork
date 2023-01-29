@@ -33,8 +33,8 @@ class IllegalAddressChainIdTest extends PropSpec with WithDomain {
     val invoker  = RandomKeyPair()
     val gTx1     = TxHelpers.genesis(master.toAddress, ENOUGH_AMT, TxHelpers.timestamp)
     val gTx2     = TxHelpers.genesis(invoker.toAddress, ENOUGH_AMT, TxHelpers.timestamp)
-    val ssTx     = SetScriptTransaction.selfSigned(1.toByte, master, Some(contract(bigComplexity)), 0.01.waves, TxHelpers.timestamp).explicitGet()
-    val invokeTx = Signed.invokeScript(TxVersion.V3, invoker, master.toAddress, None, Nil, 0.005.waves, Waves, TxHelpers.timestamp)
+    val ssTx     = SetScriptTransaction.selfSigned(1.toByte, master, Some(contract(bigComplexity)), 0.02.waves, TxHelpers.timestamp).explicitGet()
+    val invokeTx = Signed.invokeScript(TxVersion.V3, invoker, master.toAddress, None, Nil, 0.06.waves, Waves, TxHelpers.timestamp)
     (Seq(gTx1, gTx2, ssTx), invokeTx)
   }
 

@@ -90,8 +90,8 @@ class DataTransactionNewLimitsSpec extends FlatSpec with WithDomain {
       withDomain(preset)(d => d.commonApi.calculateWavesFee(TxHelpers.dataWithMultipleEntries(TxHelpers.defaultSigner, data)))
 
     val bigData = (1 to 100).map(i => BinaryDataEntry(i.toString, ByteStr(new Array[Byte](1024 - i.toString.length))))
-    calculateFee(DomainPresets.RideV5)(bigData*) shouldBe 0.101.waves
-    calculateFee(DomainPresets.RideV6)(bigData*) shouldBe 0.100.waves
+    calculateFee(DomainPresets.RideV5)(bigData*) shouldBe 2.02.waves
+    calculateFee(DomainPresets.RideV6)(bigData*) shouldBe 2.waves
   }
 
   "Invoke transaction with data entries" should "handle new limits" in withDomain(DomainPresets.RideV6) { d =>

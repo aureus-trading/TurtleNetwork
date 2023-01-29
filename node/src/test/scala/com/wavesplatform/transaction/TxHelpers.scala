@@ -424,7 +424,7 @@ object TxHelpers {
   def createAlias(
       name: String,
       sender: KeyPair = defaultSigner,
-      fee: Long = TestValues.fee,
+      fee: Long = 10.waves,
       version: TxVersion = TxVersion.V2,
       chainId: Byte = AddressScheme.current.chainId
   ): CreateAliasTransaction = {

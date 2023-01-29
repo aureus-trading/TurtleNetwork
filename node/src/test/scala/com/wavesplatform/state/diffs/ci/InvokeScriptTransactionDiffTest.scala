@@ -712,7 +712,7 @@ class InvokeScriptTransactionDiffTest extends PropSpec with WithDomain with DBCa
   }
 
   property("invoking contract make payment by asset") {
-    val issue = TxHelpers.issue(dApp, script = Some(assetAllowed), fee = 1.004.waves)
+    val issue = TxHelpers.issue(dApp, script = Some(assetAllowed), fee = 1000.04.waves)
     val asset = IssuedAsset(issue.id())
 
     val (genesis, setScript, ci) = preconditionsAndSetContract(
@@ -1173,7 +1173,7 @@ class InvokeScriptTransactionDiffTest extends PropSpec with WithDomain with DBCa
   property("Reissuing unreissued asset should produce error") {
     val genesis1Tx  = TxHelpers.genesis(dAppAddress)
     val genesis2Tx  = TxHelpers.genesis(invokerAddress)
-    val assetTx     = TxHelpers.issue(dApp, fee = 1.004.waves)
+    val assetTx     = TxHelpers.issue(dApp, fee = 1000.04.waves)
     val contract    = reissueContract("f", assetTx.id())
     val setScriptTx = TxHelpers.setScript(dApp, contract)
 
