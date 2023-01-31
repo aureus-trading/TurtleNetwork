@@ -423,7 +423,7 @@ class TransactionBindingsTest extends PropSpec with PathMockFactory with EitherV
       val invoke = TxHelpers.invoke(masterDApp.toAddress, func = Some("foo"), invoker = invoker)
       val issue  = TxHelpers.issue(masterDApp, script = Some(TestCompiler(V6).compileAsset("true")))
       val setAssetScript =
-        TxHelpers.setAssetScript(masterDApp, issue.asset, assetVerifier(invoke, masterDApp, serviceDApp, issue.asset), fee = 1.waves)
+        TxHelpers.setAssetScript(masterDApp, issue.asset, assetVerifier(invoke, masterDApp, serviceDApp, issue.asset), fee = 1.04.waves)
 
       d.appendBlock(
         issue,

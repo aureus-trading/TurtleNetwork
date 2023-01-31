@@ -16,7 +16,7 @@ class EthereumTransactionStateChangesSpec extends FlatSpec with WithDomain with 
     val dApp = TxHelpers.secondSigner
 
     d.helpers.creditWavesToDefaultSigner()
-    d.helpers.creditWavesFromDefaultSigner(dApp.toAddress, 1_000_000)
+    d.helpers.creditWavesFromDefaultSigner(dApp.toAddress, 1_0000_0000)
     d.helpers.setScript(
       dApp,
       TxHelpers.scriptV5(s"""@Callable(i)
@@ -56,7 +56,7 @@ class EthereumTransactionStateChangesSpec extends FlatSpec with WithDomain with 
     val dApp = TxHelpers.secondSigner
 
     d.helpers.creditWavesToDefaultSigner()
-    d.helpers.creditWavesFromDefaultSigner(dApp.toAddress, 1_000_000)
+    d.helpers.creditWavesFromDefaultSigner(dApp.toAddress, 1_0000_0000)
     d.helpers.setScript(
       dApp,
       TxHelpers.scriptV5(s"""@Callable(i)
@@ -107,7 +107,7 @@ class EthereumTransactionStateChangesSpec extends FlatSpec with WithDomain with 
     val dApp = TxHelpers.signer(10)
 
     d.helpers.creditWavesToDefaultSigner()
-    d.helpers.creditWavesFromDefaultSigner(dApp.toAddress, 1_000_000)
+    d.helpers.creditWavesFromDefaultSigner(dApp.toAddress, 1_0000_0000)
 
     d.helpers.setScript(
       dApp,
@@ -159,8 +159,8 @@ class EthereumTransactionStateChangesSpec extends FlatSpec with WithDomain with 
     val nestedDApp = TxHelpers.signer(11)
 
     d.helpers.creditWavesToDefaultSigner()
-    d.helpers.creditWavesFromDefaultSigner(dApp.toAddress, 1_000_000)
-    d.helpers.creditWavesFromDefaultSigner(nestedDApp.toAddress, 1_000_000)
+    d.helpers.creditWavesFromDefaultSigner(dApp.toAddress, 1_0000_0000)
+    d.helpers.creditWavesFromDefaultSigner(nestedDApp.toAddress, 1_0000_0000)
 
     d.helpers.setScript(
       dApp,
@@ -247,8 +247,8 @@ class EthereumTransactionStateChangesSpec extends FlatSpec with WithDomain with 
     val nestedDApp = TxHelpers.signer(11)
 
     d.helpers.creditWavesToDefaultSigner()
-    d.helpers.creditWavesFromDefaultSigner(dApp.toAddress, 1_000_000)
-    d.helpers.creditWavesFromDefaultSigner(nestedDApp.toAddress, 1_000_000)
+    d.helpers.creditWavesFromDefaultSigner(dApp.toAddress, 1_0000_0000)
+    d.helpers.creditWavesFromDefaultSigner(nestedDApp.toAddress, 1_0000_0000)
 
     d.helpers.setScript(
       dApp,

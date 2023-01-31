@@ -71,7 +71,7 @@ class TransactionValidationErrorPrintTest extends PropSpec with Inside with With
       name = "name",
       reissuable = false,
       script = Some(preTypedScript),
-      fee = 100000000,
+      fee = 1000_0000_0000L,
       timestamp = 0
     )
 

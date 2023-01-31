@@ -437,7 +437,7 @@ class RideV6FailRejectTest extends FreeSpec with WithDomain with OptionValues wi
         ),
         Case(
           "NODE-556 If an invoke leads to a Waves overflow with a ScriptTransfer (multiple transfers)",
-          "negative waves balance",
+          "negative TN balance",
           { targetComplexity =>
             // 1 for strict, 1 for Address, 1 for ScriptTransfer, 10 for wavesBalance, 1 for Address(alice), 1 for "-",
             // 2 for list
@@ -765,7 +765,7 @@ class RideV6FailRejectTest extends FreeSpec with WithDomain with OptionValues wi
         ),
         Case(
           "NODE-620 If a negative balance happens during the invoke",
-          "negative waves balance",
+          "negative TN balance",
           { targetComplexity =>
             // 1+1 for strict, 75 for invoke, 1 for Address, 1 for list, 500 for bob.foo() body
             val baseComplexity = 1 + 1 + 75 + 1 + 1 + 500

@@ -512,9 +512,9 @@ class AssetTransactionsDiffTest extends PropSpec with BlocksTransactionsHelpers 
 
       val successfulIssue = issue(Some(TestCompiler(V5).compileAsset("true")))
       val setAssetScriptWithInvoke = TxHelpers
-        .setAssetScript(issuer, successfulIssue.asset, getScriptWithSyncCall("invoke"), 1.waves, version = TxVersion.V2)
+        .setAssetScript(issuer, successfulIssue.asset, getScriptWithSyncCall("invoke"), 1.04.waves, version = TxVersion.V2)
       val setAssetScriptWithReentrantInvoke = TxHelpers
-        .setAssetScript(issuer, successfulIssue.asset, getScriptWithSyncCall("reentrantInvoke"), 1.waves, version = TxVersion.V2)
+        .setAssetScript(issuer, successfulIssue.asset, getScriptWithSyncCall("reentrantInvoke"), 1.04.waves, version = TxVersion.V2)
 
       d.appendBlock(genesis)
       d.appendBlockE(issue(Some(getScriptWithSyncCall("invoke")))) should produce("function 'Native(1020)' not found")

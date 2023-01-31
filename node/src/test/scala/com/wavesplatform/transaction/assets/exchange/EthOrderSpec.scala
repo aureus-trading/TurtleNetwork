@@ -297,7 +297,7 @@ class EthOrderSpec
       )
 
     differ(transaction).resultE should matchPattern {
-      case Left(err) if err.toString.contains("negative waves balance") =>
+      case Left(err) if err.toString.contains("negative TN balance") =>
     }
   }
 

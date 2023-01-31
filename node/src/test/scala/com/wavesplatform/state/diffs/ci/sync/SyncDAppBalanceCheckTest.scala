@@ -69,7 +69,7 @@ class SyncDAppBalanceCheckTest extends PropSpec with WithDomain with Transaction
       d.appendBlock(preparingTxs*)
 
       val invoke1 = invoke()
-      d.appendAndCatchError(invoke1).toString should include("Negative waves balance")
+      d.appendAndCatchError(invoke1).toString should include("Negative TN balance")
     }
   }
 }

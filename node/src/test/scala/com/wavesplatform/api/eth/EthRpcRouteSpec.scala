@@ -103,7 +103,7 @@ class EthRpcRouteSpec extends RouteSpec("/eth") with WithDomain with EthHelpers 
 
   "eth_estimateGas" in withDomain() { d =>
     routeTest(d, "eth_estimateGas", Json.obj("to" -> TxHelpers.secondAddress.toEthAddress, "value" -> 0, "data" -> "0x00")) {
-      resultInt shouldBe 500000
+      resultInt shouldBe 10000000
     }
   }
 
@@ -191,7 +191,7 @@ class EthRpcRouteSpec extends RouteSpec("/eth") with WithDomain with EthHelpers 
            |  "from" : "0xf1f6bdabc1b48e7d75957b361881be9c40e4b424",
            |  "to" : "0x3d3ad884fa042927b9d6c37df70af5c0bd9516c5",
            |  "value" : "0x10",
-           |  "gasPrice" : "0x186a0",
+           |  "gasPrice" : "0x1e8480",
            |  "gas" : "0x186a0",
            |  "input" : "0x20",
            |  "v" : "0x30",

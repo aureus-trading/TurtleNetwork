@@ -133,7 +133,7 @@ class SyncDAppPaymentTest extends PropSpec with WithDomain {
 
       d.balance(masterDApp.toAddress) < paymentAmount shouldBe true
 
-      d.appendBlockE(invoke) should produce(s"${masterDApp.toAddress} -> negative waves balance")
+      d.appendBlockE(invoke) should produce(s"${masterDApp.toAddress} -> negative TN balance")
     }
   }
 
@@ -159,7 +159,7 @@ class SyncDAppPaymentTest extends PropSpec with WithDomain {
         d.appendBlock(preparingTxs*)
 
         if (!bigComplexityDApp1 && !bigComplexityDApp2) {
-          d.appendAndCatchError(invoke).toString should include("negative waves balance")
+          d.appendAndCatchError(invoke).toString should include("negative TN balance")
         } else {
           d.appendAndAssertFailed(invoke)
         }
@@ -187,7 +187,7 @@ class SyncDAppPaymentTest extends PropSpec with WithDomain {
       balanceDetails.leaseIn shouldBe paymentAmount
       balanceDetails.available < paymentAmount shouldBe true
 
-      d.appendBlockE(invoke) should produce(s"${masterDApp.toAddress} -> negative waves balance")
+      d.appendBlockE(invoke) should produce(s"${masterDApp.toAddress} -> negative TN balance")
     }
   }
 

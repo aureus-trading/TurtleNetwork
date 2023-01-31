@@ -75,7 +75,7 @@ class SyncDAppTransferTest extends PropSpec with WithDomain {
       val dApp1   = TxHelpers.signer(1)
       val dApp2   = TxHelpers.signer(2)
 
-      val balances = AddrWithBalance.enoughBalances(invoker, dApp1) :+ AddrWithBalance(dApp2.toAddress, 0.01.waves)
+      val balances = AddrWithBalance.enoughBalances(invoker, dApp1) :+ AddrWithBalance(dApp2.toAddress, 1.waves)
 
       val setScript1 = TxHelpers.setScript(dApp1, invokerWithTransferDAppScript(dApp2.toAddress, 100, bigComplexityDApp1))
       val setScript2 = TxHelpers.setScript(dApp2, simpleTransferDAppScript(amount = 100, bigComplexity = bigComplexityDApp2))
@@ -92,12 +92,12 @@ class SyncDAppTransferTest extends PropSpec with WithDomain {
       ) { d =>
         d.appendBlock(preparingTxs*)
 
-        d.appendAndCatchError(invoke).toString should include("Negative waves balance")
+        d.appendAndCatchError(invoke).toString should include("Negative TN balance")
 
         d.appendBlock()
 
         if (!bigComplexityDApp1 && !bigComplexityDApp2) {
-          d.appendAndCatchError(invoke).toString should include("negative waves balance")
+          d.appendAndCatchError(invoke).toString should include("negative TN balance")
         } else {
           d.appendAndAssertFailed(invoke)
         }

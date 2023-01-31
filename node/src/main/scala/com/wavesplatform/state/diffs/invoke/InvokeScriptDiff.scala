@@ -468,7 +468,7 @@ object InvokeScriptDiff {
         .headOption
         .fold[Either[ValidationError, Unit]](Right(())) { case (address, asset) =>
           val msg = asset match {
-            case Waves => s"$address: Negative waves balance: old = ${blockchain.balance(address)}, new = ${compositeBlockchain.balance(address)}"
+            case Waves => s"$address: Negative TN balance: old = ${blockchain.balance(address)}, new = ${compositeBlockchain.balance(address)}"
             case ia: IssuedAsset =>
               s"$address: Negative asset $ia balance: old = ${blockchain.balance(address, ia)}, new = ${compositeBlockchain.balance(address, ia)}"
           }
