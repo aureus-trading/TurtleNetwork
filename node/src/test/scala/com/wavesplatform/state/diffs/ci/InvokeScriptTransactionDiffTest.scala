@@ -1055,7 +1055,7 @@ class InvokeScriptTransactionDiffTest extends PropSpec with WithDomain with DBCa
   }
 
   property("transferring asset this value") {
-    val issue                    = TxHelpers.issue(dApp, script = Some(assetUsingThis), fee = 1.004.waves)
+    val issue                    = TxHelpers.issue(dApp, script = Some(assetUsingThis), fee = 1000.04.waves)
     val contract                 = dAppWithTransfers(assets = List(IssuedAsset(issue.id())))
     val (genesis, setScript, ci) = preconditionsAndSetContract(contract, fee = TestValues.invokeFee(1))
 
@@ -1432,7 +1432,7 @@ class InvokeScriptTransactionDiffTest extends PropSpec with WithDomain with DBCa
     val gTx1             = TxHelpers.genesis(dAppAddress)
     val gTx2             = TxHelpers.genesis(invokerAddress)
     val (assetScript, _) = ScriptCompiler.compile("false", ScriptEstimatorV3(fixOverflow = true, overhead = true)).explicitGet()
-    val iTx              = TxHelpers.issue(dApp, amount = Long.MaxValue, script = Some(assetScript), fee = 1.004.waves)
+    val iTx              = TxHelpers.issue(dApp, amount = Long.MaxValue, script = Some(assetScript), fee = 1000.04.waves)
 
     val ssTx = TxHelpers.setScript(dApp, contract(iTx.assetId.toString))
     Seq("throw", "insufficient fee", "negative amount", "overflow amount", "self payment", "max actions", "invalid data entries", "ok").foreach {
@@ -1477,7 +1477,7 @@ class InvokeScriptTransactionDiffTest extends PropSpec with WithDomain with DBCa
         val failAsset    = Random.nextInt(6) + 1
         val assetScripts = (1 to 6).map(i => if (i == failAsset) falseScript else trueScript)
         val iTxs = (1 to 6).map { _ =>
-          TxHelpers.issue(dApp, ENOUGH_AMT, script = Some(trueScript), fee = 1.004.waves)
+          TxHelpers.issue(dApp, ENOUGH_AMT, script = Some(trueScript), fee = 1000.04.waves)
         }
         val tTxs = iTxs.takeRight(3).map { tx =>
           TxHelpers.transfer(dApp, invokerAddress, ENOUGH_AMT / 2, IssuedAsset(tx.assetId))

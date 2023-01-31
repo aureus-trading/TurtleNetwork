@@ -276,7 +276,7 @@ class CallableV4DiffTest extends PropSpec with WithDomain with EitherValues {
         master,
         startAmount,
         script = Some(checkStateAsset(startAmount, reissueAmount, burnAmount, assetCheckTransferAmount, invoker.toAddress)),
-        fee = 1.004 waves
+        fee = 1000.04 waves
       )
     val setScript = TxHelpers.setScript(master, multiActionDApp(issue.id(), invoker.publicKey.toAddress, reissueAmount, burnAmount, transferAmount))
     val invoke    = TxHelpers.invoke(master.toAddress, func = None, invoker = invoker, fee = invokeFee)
