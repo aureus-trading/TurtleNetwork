@@ -56,7 +56,7 @@ class UtxPriorityPoolSpecification extends FreeSpec with SharedDomain {
     "takes into account priority txs when packing" in {
       val id        = domain.appendKeyBlock().id()
       val bob       = nextKeyPair
-      val transfer1 = TxHelpers.transfer(alice, bob.toAddress, 10.001.waves, fee = 0.02.waves)
+      val transfer1 = TxHelpers.transfer(alice, bob.toAddress, 10.02.waves, fee = 0.02.waves)
 
       domain.appendMicroBlock(transfer1)
       domain.appendKeyBlock(Some(id))
@@ -94,10 +94,10 @@ class UtxPriorityPoolSpecification extends FreeSpec with SharedDomain {
 
       domain.appendKeyBlock()
       val rollbackTarget = domain.appendMicroBlock(
-        TxHelpers.transfer(alice, bob.toAddress, 10.015.waves, fee = 0.001.waves),
+        TxHelpers.transfer(alice, bob.toAddress, 10.015.waves, fee = 0.02.waves),
         mkHeightSensitiveScript(bob)
       )
-      val transferToCarol = TxHelpers.transfer(bob, carol.toAddress, 10.waves, fee = 0.005.waves)
+      val transferToCarol = TxHelpers.transfer(bob, carol.toAddress, 10.waves, fee = 0.06.waves)
       domain.appendMicroBlock(transferToCarol)
 
       domain.appendKeyBlock(Some(rollbackTarget))

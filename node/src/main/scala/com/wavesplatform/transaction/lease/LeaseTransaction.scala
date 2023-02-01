@@ -56,7 +56,7 @@ object LeaseTransaction extends TransactionParser {
   ): Either[ValidationError, TransactionT] = {
     for {
       fee    <- TxPositiveAmount(fee)(TxValidationError.InsufficientFee)
-      amount <- TxPositiveAmount(amount)(TxValidationError.NonPositiveAmount(amount, "waves"))
+      amount <- TxPositiveAmount(amount)(TxValidationError.NonPositiveAmount(amount, "TN"))
       tx     <- LeaseTransaction(version, sender, recipient, amount, fee, timestamp, proofs, recipient.chainId).validatedEither
     } yield tx
 

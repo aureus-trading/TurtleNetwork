@@ -49,7 +49,7 @@ class LevelDBWriterSpec extends FreeSpec with WithDomain {
                                            |{-# CONTENT_TYPE EXPRESSION #-}
                                            |{-# SCRIPT_TYPE ACCOUNT #-}
                                            |true""".stripMargin),
-      0.1.waves
+      1.waves
     )
     d.appendBlock(setScript)
     // check liquid block
@@ -117,7 +117,7 @@ class LevelDBWriterSpec extends FreeSpec with WithDomain {
                                              |    override) then [] else throw("error")
                                              |}
                                              |""".stripMargin),
-          fee = 0.01.waves
+          fee = 1.waves
         ),
         successfulInvoke,
         failedInvoke

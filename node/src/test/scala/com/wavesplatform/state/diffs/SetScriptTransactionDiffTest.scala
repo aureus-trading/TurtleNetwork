@@ -103,7 +103,7 @@ class SetScriptTransactionDiffTest extends PropSpec with WithDomain {
       d.helpers.creditWavesToDefaultSigner()
 
       val setScript160kb = TxHelpers.setScript(TxHelpers.defaultSigner, exactSizeContract(V6, 160 * 1024), 0.16.waves, version = TxVersion.V2)
-      d.commonApi.calculateWavesFee(setScript160kb) shouldBe 0.16.waves
+      d.commonApi.calculateWavesFee(setScript160kb) shouldBe 3.2.waves
       d.appendAndAssertSucceed(setScript160kb)
 
       d.appendAndCatchError(TxHelpers.setScript(TxHelpers.defaultSigner, exactSizeContract(V6, 160 * 1024 + 1), 0.161.waves, version = TxVersion.V2))
@@ -131,19 +131,19 @@ class SetScriptTransactionDiffTest extends PropSpec with WithDomain {
 
   val scriptSizes = Table(
     ("StdLibVersion", "scriptSize", "fee"),
-    (V3, 1024, 0.001.waves),
-    (V3, 1025, 0.002.waves),
-    (V3, 32 * 1024, 0.032.waves),
-    (V4, 1024, 0.001.waves),
-    (V4, 1025, 0.002.waves),
-    (V4, 32 * 1024, 0.032.waves),
-    (V5, 1024, 0.001.waves),
-    (V5, 1025, 0.002.waves),
-    (V5, 32 * 1024, 0.032.waves),
-    (V6, 1024, 0.001.waves),
-    (V6, 1025, 0.002.waves),
-    (V6, 32 * 1024, 0.032.waves),
-    (V6, 160 * 1024, 0.16.waves),
+    (V3, 1024, 0.02.waves),
+    (V3, 1025, 0.04.waves),
+    (V3, 32 * 1024, 0.64.waves),
+    (V4, 1024, 0.02.waves),
+    (V4, 1025, 0.04.waves),
+    (V4, 32 * 1024, 0.64.waves),
+    (V5, 1024, 0.020.waves),
+    (V5, 1025, 0.040.waves),
+    (V5, 32 * 1024, 0.64.waves),
+    (V6, 1024, 0.020.waves),
+    (V6, 1025, 0.040.waves),
+    (V6, 32 * 1024, 0.64.waves),
+    (V6, 160 * 1024, 0.32.waves),
   )
 
   property("lowered contract fee after V6") {
@@ -623,7 +623,7 @@ class SetScriptTransactionDiffTest extends PropSpec with WithDomain {
     withDomain(DomainPresets.RideV5) { d =>
       val dApp     = accountGen.sample.get
       val ts: Long = System.currentTimeMillis()
-      val fee      = 0.01.waves
+      val fee      = 1.waves
       val genesis  = GenesisTransaction.create(dApp.toAddress, ENOUGH_AMT, ts).explicitGet()
 
       val scriptWithInvoke    = TestCompiler(V5).compileContract(dAppVerifier("invoke"))

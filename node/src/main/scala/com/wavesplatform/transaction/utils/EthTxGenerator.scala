@@ -107,7 +107,7 @@ object EthTxGenerator {
       funcName: String,
       args: Seq[Arg],
       payments: Seq[Payment],
-      fee: Long = 500000
+      fee: Long = 6000000
   ): EthereumTransaction = {
     import scala.jdk.CollectionConverters.*
     val paymentsArg = {

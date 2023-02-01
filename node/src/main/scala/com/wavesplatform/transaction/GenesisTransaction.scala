@@ -48,7 +48,7 @@ object GenesisTransaction extends TransactionParser {
     val signature = ByteStr(GenesisTransaction.generateSignature(recipient, amount, timestamp))
 
     for {
-      amount <- TxNonNegativeAmount(amount)(TxValidationError.NegativeAmount(amount, "waves"))
+      amount <- TxNonNegativeAmount(amount)(TxValidationError.NegativeAmount(amount, "TN"))
       tx     <- GenesisTransaction(recipient, amount, timestamp, signature, recipient.chainId).validatedEither
     } yield tx
   }

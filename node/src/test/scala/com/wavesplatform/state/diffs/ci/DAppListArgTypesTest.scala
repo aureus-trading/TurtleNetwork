@@ -33,7 +33,7 @@ class DAppListArgTypesTest extends PropSpec with WithDomain with Inside {
     val fee     = ciFee().sample.get
     val call    = Some(FUNCTION_CALL(User("f"), args))
     val genesis = Seq(invoker, dApp).map(acc => TxHelpers.genesis(acc.toAddress, ENOUGH_AMT))
-    val setDApp = SetScriptTransaction.selfSigned(1.toByte, dApp, Some(dAppScript), 0.01.waves, ts).explicitGet()
+    val setDApp = SetScriptTransaction.selfSigned(1.toByte, dApp, Some(dAppScript), 1.waves, ts).explicitGet()
     val ci      = () => Signed.invokeScript(1.toByte, invoker, dApp.toAddress, call, Nil, fee, Waves, ts)
     (genesis :+ setDApp, ci, dApp.toAddress)
   }

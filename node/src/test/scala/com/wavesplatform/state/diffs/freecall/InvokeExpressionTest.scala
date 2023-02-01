@@ -403,7 +403,7 @@ private object InvokeExpressionTest {
     val setVerifier = SetScriptTransaction.selfSigned(TxVersion.V2, invoker, verifier, fee, TxHelpers.timestamp).explicitGet()
 
     val sponsorIssueTx =
-      IssueTransaction.selfSigned(TxVersion.V2, invoker, "name", "", 1000, 1, true, None, 1.waves, TxHelpers.timestamp).explicitGet()
+      IssueTransaction.selfSigned(TxVersion.V2, invoker, "name", "", 1000, 1, true, None, 1000.waves, TxHelpers.timestamp).explicitGet()
     val sponsorAsset = IssuedAsset(sponsorIssueTx.id.value())
     val sponsorTx    = SponsorFeeTransaction.selfSigned(TxVersion.V2, invoker, sponsorAsset, Some(1000L), fee, TxHelpers.timestamp).explicitGet()
     val feeAsset     = if (sponsor) sponsorAsset else Waves

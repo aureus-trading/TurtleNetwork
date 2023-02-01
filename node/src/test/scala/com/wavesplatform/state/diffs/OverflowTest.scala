@@ -44,7 +44,7 @@ class OverflowTest extends PropSpec with WithDomain {
       val balances = Seq(AddrWithBalance(sender.toAddress, Long.MaxValue), AddrWithBalance(recipient, recipientBalance))
       withDomain(RideV5, balances) { d =>
         d.appendBlockE(TxHelpers.massTransfer(sender, Seq(ParsedTransfer(recipient, TxNonNegativeAmount.unsafeFrom(transferAmount))), fee = massTransferFee)) should produce(
-          "Waves balance sum overflow"
+          "TN balance sum overflow"
         )
       }
     }

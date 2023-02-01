@@ -97,7 +97,7 @@ class AssetsRouteSpec extends RouteSpec("/assets") with Eventually with RestAPIS
         decimals = assetDesc.decimals.toByte,
         reissuable = assetDesc.reissuable,
         script = script,
-        fee = 1.waves,
+        fee = 1000.waves,
         timestamp = TxHelpers.timestamp
       )
       .explicitGet()
