@@ -177,7 +177,7 @@ class AliasTransactionSuite extends BaseTransactionSuite with TableDrivenPropert
     )
 
     val kp = KeyPair(Longs.toByteArray(Random.nextLong()))
-    val cat = CreateAliasTransaction(3.toByte, notMiner.publicKey, "abc12345", TxPositiveAmount.unsafeFrom(0.005.waves), System.currentTimeMillis(), Proofs.empty, AddressScheme.current.chainId)
+    val cat = CreateAliasTransaction(3.toByte, notMiner.publicKey, "abc12345", TxPositiveAmount.unsafeFrom(10.04.waves), System.currentTimeMillis(), Proofs.empty, AddressScheme.current.chainId)
     val signedCreateAlias = cat.copy(
       proofs = cat.signWith(notMiner.keyPair.privateKey).proofs.proofs ++ cat.signWith(kp.privateKey).proofs.proofs
     )

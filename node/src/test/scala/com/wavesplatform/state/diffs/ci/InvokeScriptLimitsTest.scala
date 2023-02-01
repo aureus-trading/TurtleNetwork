@@ -142,7 +142,7 @@ class InvokeScriptLimitsTest extends PropSpec with WithState with DBCacheSetting
     val invoker = TxHelpers.signer(1)
     val service = TxHelpers.signer(2)
 
-    val fee = 100.waves
+    val fee = 100_0000.waves
 
     val genesis = Seq(
       TxHelpers.genesis(master.toAddress),

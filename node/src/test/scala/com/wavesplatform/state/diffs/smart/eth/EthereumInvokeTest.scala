@@ -115,7 +115,7 @@ class EthereumInvokeTest extends PropSpec with WithDomain with EthHelpers {
     val emptyScript = Some(ExprScript(Terms.TRUE).explicitGet())
     val issues =
       (1 to paymentCount).map(_ =>
-        IssueTransaction.selfSigned(2.toByte, dApp, "Asset", "", ENOUGH_AMT, 8, true, emptyScript, 1.waves, ts).explicitGet()
+        IssueTransaction.selfSigned(2.toByte, dApp, "Asset", "", ENOUGH_AMT, 8, true, emptyScript, 1000.waves, ts).explicitGet()
       )
     val assets = issues.map(i => IssuedAsset(i.id()))
     val setAssetScripts = assets.map { asset =>

@@ -1833,8 +1833,8 @@ class ExchangeTransactionDiffTest extends PropSpec with Inside with WithDomain w
   }
 
   property("buyMatcherFee/sellMatcherFee validation") {
-    val issueFee            = 1.waves
-    val exchangeFee         = 0.003.waves
+    val issueFee            = 1000.waves
+    val exchangeFee         = 0.04.waves
     val matcherStartBalance = issueFee * 2 + exchangeFee
     val buyMatcherFee       = -1
     val sellMatcherFee      = Long.MinValue - buyMatcherFee + exchangeFee

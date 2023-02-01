@@ -383,7 +383,7 @@ class BlockchainUpdatesSpec extends FreeSpec with WithBUDomain with ScalaFutures
 
     "should handle genesis and payment" in withGenerateSubscription(settings = currentSettings.configure(_.copy(blockVersion3AfterHeight = 3))) { d =>
       val tx =
-        PaymentTransaction.create(TxHelpers.defaultSigner, TxHelpers.secondAddress, 100, 100000, TxHelpers.timestamp).explicitGet()
+        PaymentTransaction.create(TxHelpers.defaultSigner, TxHelpers.secondAddress, 100, 2000000, TxHelpers.timestamp).explicitGet()
       d.appendBlock(tx)
     } { results =>
       val reward        = 600000000
@@ -641,8 +641,8 @@ class BlockchainUpdatesSpec extends FreeSpec with WithBUDomain with ScalaFutures
           ntpTime.getTimestamp()
         )
       d.appendBlock(
-        GenesisTransaction.create(issuerAddress, 1020.waves, ntpTime.getTimestamp()).explicitGet(),
-        GenesisTransaction.create(invoker.toAddress, 1020.waves, ntpTime.getTimestamp()).explicitGet(),
+        GenesisTransaction.create(issuerAddress, 1030.waves, ntpTime.getTimestamp()).explicitGet(),
+        GenesisTransaction.create(invoker.toAddress, 1030.waves, ntpTime.getTimestamp()).explicitGet(),
         SetScriptTransaction.selfSigned(2.toByte, issuer, Some(dAppScript), 1.waves, ntpTime.getTimestamp()).explicitGet(),
         invoke
       )

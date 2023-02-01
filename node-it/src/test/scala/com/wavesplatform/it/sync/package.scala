@@ -25,7 +25,7 @@ package object sync {
   val invokeExpressionFee: Long        = 1.waves
   val sponsorFee: Long                 = 10.waves
   val sponsorReducedFee: Long          = 0.02.waves
-  val setAssetScriptFee: Long          = 1.waves
+  val setAssetScriptFee: Long          = 1.04.waves
   val setScriptFee: Long               = 1.waves
   val transferAmount: Long             = 1100.waves
   val tokenTransferAmount: Long        = 10.waves
