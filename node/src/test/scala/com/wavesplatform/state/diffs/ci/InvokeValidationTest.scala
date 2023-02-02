@@ -89,7 +89,7 @@ class InvokeValidationTest extends PropSpec with WithDomain {
       d.appendBlockE(invoke(invoker = signer(2), payments = Seq(Payment(invokeFee + 1, Waves)))) should produce(
         "Attempt to transfer unavailable funds: " +
           "Transaction application leads to negative TN balance to (at least) temporary negative state, " +
-          "current balance equals 500000, spends equals -1000001, result is -500001"
+          "current balance equals 6000000, spends equals -12000001, result is -6000001"
       )
 
       // asset payment and Waves fee

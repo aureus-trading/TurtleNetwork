@@ -63,7 +63,7 @@ object TxHelpers {
   def transfer(
       from: KeyPair = defaultSigner,
       to: AddressOrAlias = secondAddress,
-      amount: Long = 1.waves,
+      amount: Long = 3.waves,
       asset: Asset = Waves,
       fee: Long = TestValues.fee,
       feeAsset: Asset = Waves,
@@ -424,7 +424,7 @@ object TxHelpers {
   def createAlias(
       name: String,
       sender: KeyPair = defaultSigner,
-      fee: Long = 10.waves,
+      fee: Long = 10.04.waves,
       version: TxVersion = TxVersion.V2,
       chainId: Byte = AddressScheme.current.chainId
   ): CreateAliasTransaction = {

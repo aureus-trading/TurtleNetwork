@@ -606,7 +606,7 @@ class RideV6FailRejectTest extends FreeSpec with WithDomain with OptionValues wi
         )
       } ++ Seq(
         ("negative", -1, "Negative lease amount = -1"),
-        ("zero", 0, "NonPositiveAmount(0,waves)")
+        ("zero", 0, "NonPositiveAmount(0,TN)")
       ).map { case (tpe, leaseAmount, rejectError) =>
         Case(
           s"NODE-584 If an invoke leases $tpe amount",
@@ -723,8 +723,8 @@ class RideV6FailRejectTest extends FreeSpec with WithDomain with OptionValues wi
         )
       } ++ Seq(
         Case.withInnerPayment(
-          "NODE-606 If an inner invoke contains a negative Waves payment",
-          "with attached WAVES amount = -1",
+          "NODE-606 If an inner invoke contains a negative TN payment",
+          "with attached TN amount = -1",
           "AttachedPayment(unit, -1)"
         ),
         Case.withInnerPayment(

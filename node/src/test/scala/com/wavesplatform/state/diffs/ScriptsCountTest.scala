@@ -134,7 +134,7 @@ class ScriptsCountTest extends PropSpec with WithState with Inside {
     val reissueScr    = TxHelpers.reissue(issueScr.asset, master, 1)
     val assetScript   = TxHelpers.setAssetScript(master, issueScr.asset, allAllowed)
     val data          = TxHelpers.data(master, Seq(BooleanDataEntry("q", true)))
-    val tr1           = TxHelpers.transfer(master, acc.toAddress, 10000000000L)
+    val tr1           = TxHelpers.transfer(master, acc.toAddress, 1100_0000_0000L)
     val tr2           = TxHelpers.transfer(master, acc.toAddress, additionalAmount, issueScr.asset)
     val mt1           = TxHelpers.massTransfer(master, Seq(ParsedTransfer(acc.toAddress, TxNonNegativeAmount.unsafeFrom(1))), version = TxVersion.V1)
     val mt2 =

@@ -583,7 +583,7 @@ class UtilsRouteSpec extends RouteSpec("/utils") with RestAPISettingsHelper with
       (responseAs[JsValue] \ "script").toOption shouldBe defined
       (responseAs[JsValue] \ "complexity").as[Long] shouldBe 0
       (responseAs[JsValue] \ "verifierComplexity").as[Long] shouldBe 0
-      (responseAs[JsValue] \ "extraFee").as[Long] shouldBe 400000
+      (responseAs[JsValue] \ "extraFee").as[Long] shouldBe 4000000
     }
 
     Post(routePath("/script/compileCode"), "{-# STDLIB_VERSION 2 #-}\n(1 == 2)") ~> route ~> check {

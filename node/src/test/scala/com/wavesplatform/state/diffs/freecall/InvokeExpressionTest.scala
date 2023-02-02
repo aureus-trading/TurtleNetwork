@@ -108,7 +108,7 @@ class InvokeExpressionTest extends PropSpec with ScalaCheckPropertyChecks with W
                                                        |if (test == 123) then [] else throw("err")""".stripMargin)
 
     val invoke = InvokeExpressionTransaction
-      .selfSigned(TxVersion.V1, TxHelpers.defaultSigner, freeCall, 1000000L, Waves, System.currentTimeMillis())
+      .selfSigned(TxVersion.V1, TxHelpers.defaultSigner, freeCall, 1_0000_0000L, Waves, System.currentTimeMillis())
       .explicitGet()
     withDomain(ContinuationTransaction) { d =>
       d.helpers.creditWavesToDefaultSigner()

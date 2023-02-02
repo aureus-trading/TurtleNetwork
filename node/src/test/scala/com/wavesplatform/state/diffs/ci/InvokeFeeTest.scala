@@ -109,7 +109,7 @@ class InvokeFeeTest extends PropSpec with WithDomain {
       d.appendBlock(invoke(fee = enoughFee))
       d.appendAndAssertFailed(
         invoke(fee = enoughFee - 1),
-        "Fee in WAVES for InvokeScriptTransaction (100499999 in WAVES) with 1 assets issued does not exceed minimal value of 100500000 WAVES"
+        "Fee in WAVES for InvokeScriptTransaction (100499999 in TN) with 1 assets issued does not exceed minimal value of 100500000 TN"
       )
     }
   }

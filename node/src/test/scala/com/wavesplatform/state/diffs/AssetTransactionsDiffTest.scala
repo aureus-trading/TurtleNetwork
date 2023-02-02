@@ -544,7 +544,7 @@ class AssetTransactionsDiffTest extends PropSpec with BlocksTransactionsHelpers 
         TxHelpers.updateAssetInfo(
           assetId = updatedIssue.assetId,
           sender = updatedIssuer,
-          fee = Sponsorship.fromWaves(TestValues.fee, sponsor.minSponsoredAssetFee.get.value),
+          fee = Sponsorship.fromWaves(1000*TestValues.fee, sponsor.minSponsoredAssetFee.get.value),
           feeAsset = sponsorIssue.asset
         )
 

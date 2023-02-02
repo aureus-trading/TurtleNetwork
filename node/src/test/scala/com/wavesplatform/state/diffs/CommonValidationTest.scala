@@ -104,9 +104,9 @@ class CommonValidationTest extends PropSpec with WithState {
     }
     val transferAsset = TxHelpers.transfer(richAcc, recipientAcc.toAddress, 100, issue.asset, fee = transferAssetFee, version = TxVersion.V1)
     val sponsorTxFee = if (smartToken) {
-      Constants.UnitsInWave + ScriptExtraFee
+      10*Constants.UnitsInWave + ScriptExtraFee
     } else {
-      Constants.UnitsInWave
+      10*Constants.UnitsInWave
     }
     val sponsor =
       if (sponsorship) {

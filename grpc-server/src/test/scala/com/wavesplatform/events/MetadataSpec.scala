@@ -45,7 +45,7 @@ class MetadataSpec extends FreeSpec with WithBUDomain {
       TxOrderPrice.unsafeFrom(1.waves),
       System.currentTimeMillis(),
       System.currentTimeMillis() + 10000,
-      TxMatcherFee.unsafeFrom(0.003.waves)
+      TxMatcherFee.unsafeFrom(0.04.waves)
     )
 
     val signedEthOrder = ethOrder.copy(
@@ -69,7 +69,7 @@ class MetadataSpec extends FreeSpec with WithBUDomain {
         MassTransferTransaction.ParsedTransfer(matcher.toAddress, TxNonNegativeAmount.unsafeFrom(100.waves)),
         MassTransferTransaction.ParsedTransfer(ethOrderSender.toWavesAddress, TxNonNegativeAmount.unsafeFrom(100.waves)),
       ),
-      fee = 0.003.waves
+      fee = 0.04.waves
     )
 
     val ethTransfer = EthTxGenerator.generateEthTransfer(
@@ -77,7 +77,7 @@ class MetadataSpec extends FreeSpec with WithBUDomain {
       matcher.toAddress,
       10,
       issue.asset,
-      0.005.waves
+      0.06.waves
     )
 
     d.appendBlock(

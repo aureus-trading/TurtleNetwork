@@ -1483,12 +1483,12 @@ class InvokeScriptTransactionDiffTest extends PropSpec with WithDomain with DBCa
           TxHelpers.transfer(dApp, invokerAddress, ENOUGH_AMT / 2, IssuedAsset(tx.assetId))
         }
         val saTxs = assetScripts.zipWithIndex.map { case (sc, i) =>
-          TxHelpers.setAssetScript(dApp, IssuedAsset(iTxs(i).id()), sc, fee = 1.waves)
+          TxHelpers.setAssetScript(dApp, IssuedAsset(iTxs(i).id()), sc, fee = 1.04.waves)
         }
         val ssTx = TxHelpers.setScript(dApp, contract(iTxs.take(4).map(_.assetId.toString)))
 
         val payments = iTxs.takeRight(2).map(tx => Payment(10, IssuedAsset(tx.assetId)))
-        val invoke   = TxHelpers.invoke(dAppAddress, Some("foo"), payments = payments, fee = 0.017.waves)
+        val invoke   = TxHelpers.invoke(dAppAddress, Some("foo"), payments = payments, fee = 0.34.waves)
 
         val genesisTxs = Seq(gTx1, gTx2) ++ invokerScriptTx ++ iTxs ++ tTxs ++ saTxs :+ ssTx
         testDiffAndState(Seq(TestBlock.create(genesisTxs)), TestBlock.create(Seq(invoke), Block.ProtoBlockVersion), from = V4, to = V5) {

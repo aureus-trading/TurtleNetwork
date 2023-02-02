@@ -106,7 +106,7 @@ class SyncDAppComplexityCountTest extends PropSpec with WithDomain {
     )
 
     val invokerGenesis = TxHelpers.genesis(invoker.toAddress)
-    val assetIssue     = TxHelpers.issue(invoker, ENOUGH_AMT, script = Some(assetScript(if (raiseError) sigVerify else groth)), fee = 1.waves)
+    val assetIssue     = TxHelpers.issue(invoker, ENOUGH_AMT, script = Some(assetScript(if (raiseError) sigVerify else groth)), fee = 1000.waves)
     val asset          = IssuedAsset(assetIssue.id())
     val payment        = List(Payment(1, asset))
 

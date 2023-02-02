@@ -665,9 +665,9 @@ class SetScriptTransactionDiffTest extends PropSpec with WithDomain {
       val genesis  = GenesisTransaction.create(smartAcc.toAddress, ENOUGH_AMT, ts).explicitGet()
 
       val setScriptWithInvoke =
-        SetScriptTransaction.selfSigned(TxVersion.V2, smartAcc, Some(getScriptWithSyncCall("invoke")), 0.01.waves, ts).explicitGet()
+        SetScriptTransaction.selfSigned(TxVersion.V2, smartAcc, Some(getScriptWithSyncCall("invoke")), 1.waves, ts).explicitGet()
       val setScriptWithReentrantInvoke =
-        SetScriptTransaction.selfSigned(TxVersion.V2, smartAcc, Some(getScriptWithSyncCall("reentrantInvoke")), 0.01.waves, ts).explicitGet()
+        SetScriptTransaction.selfSigned(TxVersion.V2, smartAcc, Some(getScriptWithSyncCall("reentrantInvoke")), 1.waves, ts).explicitGet()
 
       d.appendBlock(genesis)
       d.appendBlockE(setScriptWithInvoke) should produce("function 'Native(1020)' not found")
