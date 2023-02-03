@@ -360,7 +360,7 @@ case class Domain(db: DB, blockchainUpdater: BlockchainUpdaterImpl, levelDBWrite
       appendBlock(TxHelpers.genesis(TxHelpers.defaultAddress, amount), TxHelpers.genesis(TxHelpers.defaultSigner.toEthWavesAddress, amount))
     }
 
-    def creditWavesFromDefaultSigner(to: Address, amount: Long = 100_0000_0000): Unit = {
+    def creditWavesFromDefaultSigner(to: Address, amount: Long = 100_0000_0000L): Unit = {
       appendBlock(TxHelpers.transfer(to = to, amount = amount))
     }
 
