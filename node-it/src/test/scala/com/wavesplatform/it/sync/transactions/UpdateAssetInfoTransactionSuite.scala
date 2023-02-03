@@ -191,7 +191,7 @@ class UpdateAssetInfoTransactionSuite extends BaseTransactionSuite with CancelAf
   }
 
   test("not able to update name/description more than once within interval") {
-    val nextTermEnd = updateAssetInfoTxHeight + 2 * updateInterval
+    val nextTermEnd = updateAssetInfoTxHeight +  updateInterval
     assertApiError(sender.updateAssetInfo(issuer, assetId, "updatedName", "updatedDescription", issueFee)) { error =>
       error.id shouldBe StateCheckFailed.Id
       error.message should include(
@@ -281,7 +281,7 @@ class UpdateAssetInfoTransactionSuite extends BaseTransactionSuite with CancelAf
     }
     validNames.foreach { name =>
       sender.waitForHeight(sender.height + updateInterval + 1, 3.minutes)
-      val (tx, _) = sender.updateAssetInfo(issuer, assetId, name, "updatedDescription", minFee)
+      val (tx, _) = sender.updateAssetInfo(issuer, assetId, name, "updatedDescription", issueFee)
 
       nodes.waitForHeightAriseAndTxPresent(tx.id)
       nodes.foreach(_.assetsDetails(assetId).name shouldBe name)
@@ -299,7 +299,7 @@ class UpdateAssetInfoTransactionSuite extends BaseTransactionSuite with CancelAf
     }
     validDescs.foreach { desc =>
       sender.waitForHeight(sender.height + updateInterval + 1, 3.minutes)
-      val (tx, _) = sender.updateAssetInfo(issuer, assetId, "updatedName", desc, minFee)
+      val (tx, _) = sender.updateAssetInfo(issuer, assetId, "updatedName", desc, issueFee)
 
       nodes.waitForHeightAriseAndTxPresent(tx.id)
       nodes.foreach(_.assetsDetails(assetId).description shouldBe desc)

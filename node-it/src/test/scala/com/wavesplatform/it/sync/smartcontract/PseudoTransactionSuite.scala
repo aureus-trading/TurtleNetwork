@@ -112,7 +112,7 @@ class PseudoTransactionSuite extends BaseTransactionSuite {
     )
     sender.signedBroadcast(signedInvoke.json(), waitForTx = true)
 
-    sender.createAlias(recipient, recipientAlias, fee = aliasFeeAmount, waitForTx = true)
+    sender.createAlias(recipient, recipientAlias, fee = aliasFeeAmount+ smartFee, waitForTx = true)
     val signedInvoke2 = invokeScriptTransaction(
       "transferAssetByAlias",
       List(

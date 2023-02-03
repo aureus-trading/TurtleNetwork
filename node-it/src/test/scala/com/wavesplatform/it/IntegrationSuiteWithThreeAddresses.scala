@@ -27,7 +27,7 @@ trait IntegrationSuiteWithThreeAddresses extends BaseSuite with ScalaFutures wit
   abstract protected override def beforeAll(): Unit = {
     super.beforeAll()
 
-    val defaultBalance: Long = 20000.waves
+    val defaultBalance: Long = 30000.waves
 
     def makeTransfers(accounts: Seq[KeyPair]): Seq[String] = accounts.map { acc =>
       sender.transfer(sender.keyPair, acc.toAddress.toString, defaultBalance, sender.fee(TransferTransaction.typeId)).id
