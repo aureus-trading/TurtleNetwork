@@ -50,7 +50,7 @@ class RideV6FailRejectTest extends FreeSpec with WithDomain with OptionValues wi
     dApp = aliceAddr,
     invoker = invoker,
     func = Some("foo"),
-    fee = 3.waves
+    fee = 4000.waves
   )
   private val ethAliceInvokeTx = EthTxGenerator.generateEthInvoke(
     keyPair = ethInvoker,
@@ -58,7 +58,7 @@ class RideV6FailRejectTest extends FreeSpec with WithDomain with OptionValues wi
     funcName = "foo",
     args = Seq.empty,
     payments = Seq.empty,
-    fee = 3.waves
+    fee = 4000.waves
   )
 
   private val bobAssetTx   = TxHelpers.issue(issuer = bob)

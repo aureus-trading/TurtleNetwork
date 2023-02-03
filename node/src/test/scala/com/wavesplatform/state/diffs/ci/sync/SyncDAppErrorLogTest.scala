@@ -26,7 +26,7 @@ class SyncDAppErrorLogTest extends PropSpec with WithDomain with OptionValues {
   val dApp3: KeyPair   = TxHelpers.signer(4)
 
   val balances: Seq[AddrWithBalance] =
-    Seq(invoker, dApp1, dApp2, dApp3).map(acc => AddrWithBalance(acc.toAddress, 10.waves))
+    Seq(invoker, dApp1, dApp2, dApp3).map(acc => AddrWithBalance(acc.toAddress, 2000.waves))
 
   val settings: WavesSettings = DomainPresets.RideV6
 
@@ -56,7 +56,7 @@ class SyncDAppErrorLogTest extends PropSpec with WithDomain with OptionValues {
          |		caller = Address(
          |			bytes = base58'3MuVqVJGmFsHeuFni5RbjRmALuGCkEwzZtC'
          |		)
-         |		fee = 500000
+         |		fee = 6000000
          |	)
          |	testCase.@args = [
          |		true
@@ -241,7 +241,7 @@ class SyncDAppErrorLogTest extends PropSpec with WithDomain with OptionValues {
          |	]
          |	invoke.@complexity = 75
          |	@complexityLimit = 51102
-         |	inv = FailedTransactionError(code = 1, error = AccountBalanceError(Map(3N87Qja7rNj8z6H7nG9EYtjCXQtZLawaxyM -> negative waves balance: 3N87Qja7rNj8z6H7nG9EYtjCXQtZLawaxyM, old: 999000010, new: -98900999990)), log = 
+         |	inv = FailedTransactionError(code = 1, error = AccountBalanceError(Map(3N87Qja7rNj8z6H7nG9EYtjCXQtZLawaxyM -> negative TN balance: 3N87Qja7rNj8z6H7nG9EYtjCXQtZLawaxyM, old: 999000010, new: -98900999990)), log =
          |		@invokedDApp = Address(
          |			bytes = base58'3N4DiVEiZHzcjEhoBx2kmoKKCH7GBZMim3L'
          |		)
@@ -258,7 +258,7 @@ class SyncDAppErrorLogTest extends PropSpec with WithDomain with OptionValues {
          |			caller = Address(
          |				bytes = base58'3MsY23LPQnvPZnBKpvs6YcnCvGjLVD42pSy'
          |			)
-         |			fee = 500000
+         |			fee = 6000000
          |		)
          |		testCase.@args = [
          |			true
@@ -490,7 +490,7 @@ class SyncDAppErrorLogTest extends PropSpec with WithDomain with OptionValues {
          |		caller = Address(
          |			bytes = base58'3MuVqVJGmFsHeuFni5RbjRmALuGCkEwzZtC'
          |		)
-         |		fee = 500000
+         |		fee = 6000000
          |	)
          |	testCase.@args = [
          |		false
@@ -654,7 +654,7 @@ class SyncDAppErrorLogTest extends PropSpec with WithDomain with OptionValues {
          |			caller = Address(
          |				bytes = base58'3MsY23LPQnvPZnBKpvs6YcnCvGjLVD42pSy'
          |			)
-         |			fee = 500000
+         |			fee = 6000000
          |		)
          |		testCase.@args = [
          |			false
@@ -903,11 +903,11 @@ class SyncDAppErrorLogTest extends PropSpec with WithDomain with OptionValues {
                |		callerPublicKey = base58'9BUoYQYq7K38mkk61q8aMH9kD9fKSVL1Fib7FbH6nUkQ'
                |		feeAssetId = Unit
                |		originCallerPublicKey = base58'9BUoYQYq7K38mkk61q8aMH9kD9fKSVL1Fib7FbH6nUkQ'
-               |		transactionId = base58'CgfvaFiiQXPqvFytezf8iAAastJu5qdbr1ysPXtvpPgz'
+               |		transactionId = base58'DkmaAqq1WJVf3hxnRyXDZhq8qm4yA2H8zoVA9RjRoGDq'
                |		caller = Address(
                |			bytes = base58'3MtGzgmNa5fMjGCcPi5nqMTdtZkfojyWHL9'
                |		)
-               |		fee = 500000
+               |		fee = 6000000
                |	)
                |	foo.@args = []
                |	invoke.@args = [

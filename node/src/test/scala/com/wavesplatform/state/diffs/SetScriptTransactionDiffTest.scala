@@ -143,7 +143,7 @@ class SetScriptTransactionDiffTest extends PropSpec with WithDomain {
     (V6, 1024, 0.020.waves),
     (V6, 1025, 0.040.waves),
     (V6, 32 * 1024, 0.64.waves),
-    (V6, 160 * 1024, 0.32.waves),
+    (V6, 160 * 1024, 3.2.waves),
   )
 
   property("lowered contract fee after V6") {

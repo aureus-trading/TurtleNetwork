@@ -69,7 +69,7 @@ class EthereumTransferSmartTest extends PropSpec with WithDomain with EthHelpers
   property("access to Ethereum transfer from RIDE script") {
     val recipient = RandomKeyPair()
 
-    val issue = IssueTransaction.selfSigned(2.toByte, recipient, "Asset", "", ENOUGH_AMT, 8, true, None, 1.waves, ts).explicitGet()
+    val issue = IssueTransaction.selfSigned(2.toByte, recipient, "Asset", "", ENOUGH_AMT, 8, true, None, 1000.waves, ts).explicitGet()
     val asset = IssuedAsset(issue.id())
 
     for {
@@ -80,14 +80,14 @@ class EthereumTransferSmartTest extends PropSpec with WithDomain with EthHelpers
       val ethTransfer = EthereumTransaction(transfer, TestEthRawTransaction, TestEthSignature, 'T'.toByte)
       val ethSender   = ethTransfer.senderAddress()
       val preTransfer =
-        TransferTransaction.selfSigned(2.toByte, recipient, ethSender, asset, ENOUGH_AMT, Waves, 0.001.waves, ByteStr.empty, ts).explicitGet()
+        TransferTransaction.selfSigned(2.toByte, recipient, ethSender, asset, ENOUGH_AMT, Waves, 0.02.waves, ByteStr.empty, ts).explicitGet()
 
       val genesis1 = GenesisTransaction.create(ethSender, ENOUGH_AMT, ts).explicitGet()
       val genesis2 = GenesisTransaction.create(recipient.toAddress, ENOUGH_AMT, ts).explicitGet()
 
       val function    = if (version >= V3) "transferTransactionById" else "transactionById"
       val verifier    = Some(accountScript(version, function, ethTransfer, token.map(_ => asset), recipient.toAddress))
-      val setVerifier = () => SetScriptTransaction.selfSigned(1.toByte, recipient, verifier, 0.01.waves, ts).explicitGet()
+      val setVerifier = () => SetScriptTransaction.selfSigned(1.toByte, recipient, verifier, 0.02.waves, ts).explicitGet()
 
       withDomain(RideV6) { d =>
         d.appendBlock(genesis1, genesis2, issue, preTransfer, setVerifier())

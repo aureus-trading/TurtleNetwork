@@ -81,7 +81,7 @@ class AssetsRouteSpec extends RouteSpec("/assets") with Eventually with RestAPIS
                                                 |  ]
                                                 |}
                                                 |""".stripMargin)),
-        0.01.waves,
+        0.02.waves,
         ntpTime.getTimestamp()
       )
       .explicitGet()
@@ -241,7 +241,7 @@ class AssetsRouteSpec extends RouteSpec("/assets") with Eventually with RestAPIS
            |  BinaryEntry("assetId", calculateAssetId(t))
            |]""".stripMargin
       ),
-      fee = 1.01.waves
+      fee = 1001.00.waves
     )
 
     d.appendBlock(TxHelpers.genesis(tx.sender.toAddress))

@@ -69,7 +69,7 @@ class MetadataSpec extends FreeSpec with WithBUDomain {
         MassTransferTransaction.ParsedTransfer(matcher.toAddress, TxNonNegativeAmount.unsafeFrom(100.waves)),
         MassTransferTransaction.ParsedTransfer(ethOrderSender.toWavesAddress, TxNonNegativeAmount.unsafeFrom(100.waves)),
       ),
-      fee = 0.04.waves
+      fee = 0.06.waves
     )
 
     val ethTransfer = EthTxGenerator.generateEthTransfer(
