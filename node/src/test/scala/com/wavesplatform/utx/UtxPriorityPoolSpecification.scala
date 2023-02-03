@@ -35,7 +35,7 @@ class UtxPriorityPoolSpecification extends FreeSpec with SharedDomain {
                                             |    case _ => true
                                             |}
                                             |""".stripMargin),
-      fee = 0.1.waves
+      fee = 1.waves
     )
 
   "priority pool" - {

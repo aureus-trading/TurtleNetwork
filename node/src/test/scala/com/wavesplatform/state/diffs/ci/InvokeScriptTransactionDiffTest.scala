@@ -1210,7 +1210,7 @@ class InvokeScriptTransactionDiffTest extends PropSpec with WithDomain with DBCa
     val genesis2Tx  = TxHelpers.genesis(invokerAddress)
     val setScriptTx = TxHelpers.setScript(dApp, transferIssueContract)
 
-    val invoke = TxHelpers.invoke(dAppAddress, Some("f"), fee = 100500000)
+    val invoke = TxHelpers.invoke(dAppAddress, Some("f"), fee = 100006000000L)
 
     testDiff(Seq(TestBlock.create(Seq(genesis1Tx, genesis2Tx, setScriptTx))), TestBlock.create(Seq(invoke), Block.ProtoBlockVersion), from = V4) {
       _.explicitGet()

@@ -999,7 +999,7 @@ class LeaseActionDiffTest extends PropSpec with WithDomain {
   property("ScriptTransfer after LeaseCancel of transferring balance") {
     withDomain(
       RideV5.configure(_.copy(blockVersion3AfterHeight = 0)),
-      Seq(AddrWithBalance(secondAddress, 1.006.waves))
+      Seq(AddrWithBalance(secondAddress, 2.02.waves))
     ) { d =>
       val leaseTx = lease(secondSigner, defaultAddress, amount = 1)
       val dApp = TestCompiler(V5).compileContract(
