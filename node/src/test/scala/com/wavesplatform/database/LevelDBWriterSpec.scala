@@ -59,7 +59,7 @@ class LevelDBWriterSpec extends FreeSpec with WithDomain {
     d.blockchain.hasAccountScript(scriptOwner.toAddress) shouldBe true
 
     // removing account script
-    d.appendBlock(SetScriptTransaction.selfSigned(1.toByte, scriptOwner, None, 0.014.waves, ntpNow).explicitGet())
+    d.appendBlock(SetScriptTransaction.selfSigned(1.toByte, scriptOwner, None, 1.04.waves, ntpNow).explicitGet())
     d.blockchain.hasAccountScript(scriptOwner.toAddress) shouldBe false
 
     d.appendBlock()

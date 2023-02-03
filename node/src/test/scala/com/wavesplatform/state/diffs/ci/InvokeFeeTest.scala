@@ -78,7 +78,7 @@ class InvokeFeeTest extends PropSpec with WithDomain {
   }
 
   property("invoke is rejected if fee sponsor has not enough Waves") {
-    withDomain(RideV5, AddrWithBalance.enoughBalances(secondSigner) :+ AddrWithBalance(signer(9).toAddress, 2.waves)) { d =>
+    withDomain(RideV5, AddrWithBalance.enoughBalances(secondSigner) :+ AddrWithBalance(signer(9).toAddress, 1000.waves)) { d =>
       val dApp = TestCompiler(V5).compileContract(
         """
           | @Callable(i)

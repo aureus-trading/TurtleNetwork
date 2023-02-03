@@ -526,7 +526,7 @@ class AssetsRouteSpec extends RouteSpec("/assets") with Eventually with RestAPIS
   routePath("/nft/list") in routeTest() { (d, route) =>
     val issuer = testWallet.generateNewAccount().get
     val nfts = Seq.tabulate(5) { i =>
-      TxHelpers.issue(issuer, 1, name = s"NFT_0$i", reissuable = false, fee = 0.02.waves)
+      TxHelpers.issue(issuer, 1, name = s"NFT_0$i", reissuable = false, fee = 0.1.waves)
     }
     d.appendBlock(TxHelpers.genesis(issuer.toAddress, 1100.waves))
     val nonNFT = TxHelpers.issue(issuer, 100, 2.toByte)

@@ -218,7 +218,7 @@ class EthereumTransactionSpec
       )
     )
     intercept[RuntimeException](differ(transaction)).toString should include(
-      "Fee for EthereumTransaction (99999 in WAVES) does not exceed minimal value of 100000 WAVES"
+      "Fee for EthereumTransaction (99999 in TN) does not exceed minimal value of 2000000 TN"
     )
   }
 

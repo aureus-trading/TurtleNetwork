@@ -62,8 +62,8 @@ class TransactionValidationErrorPrintTest extends PropSpec with Inside with With
 
     val seed     = Address.fromString("3MydsP4UeQdGwBq7yDbMvf9MzfB2pxFoUKU").explicitGet()
     val master   = Address.fromString("3N1w8y9Udv3k9NCSv9EE3QvMTRnGFTDQSzu").explicitGet()
-    val genesis1 = TxHelpers.genesis(master, 1000000000, timestamp = 0)
-    val genesis2 = TxHelpers.genesis(KeyPair(master.bytes).toAddress, 1000000000, timestamp = 0)
+    val genesis1 = TxHelpers.genesis(master, 1100_0000_0000L, timestamp = 0)
+    val genesis2 = TxHelpers.genesis(KeyPair(master.bytes).toAddress, 10_0000_0000, timestamp = 0)
 
     val issueTransaction = TxHelpers.issue(
       issuer = KeyPair(seed.bytes),
