@@ -80,7 +80,7 @@ class InvokeActionsFeeTest extends PropSpec with Inside with WithState with DBCa
       d.appendBlockE(invokeFromNonScripted1) should produce(
         s"Transaction involves 2 scripted assets. Requires ${2 * ScriptExtraFee} extra fee. " +
             s"Fee for InvokeScriptTransaction (${invokeFromScripted1.fee} in TN) " +
-          s"does not exceed minimal value of ${FeeConstants(TransactionType.InvokeScript) * FeeUnit + 3 * ScriptExtraFee} TN"
+          s"does not exceed minimal value of ${FeeConstants(TransactionType.InvokeScript) * FeeUnit + 2 * ScriptExtraFee} TN"
       )
 
       d.appendBlock()

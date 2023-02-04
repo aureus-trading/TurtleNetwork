@@ -80,7 +80,7 @@ class TransactionBroadcastSpec
            |  "id" : "${transaction.id()}",
            |  "sender" : "3MtGzgmNa5fMjGCcPi5nqMTdtZkfojyWHL9",
            |  "senderPublicKey" : "9BUoYQYq7K38mkk61q8aMH9kD9fKSVL1Fib7FbH6nUkQ",
-           |  "fee" : 1000000,
+           |  "fee" : 100000000,
            |  "feeAssetId" : null,
            |  "timestamp" : 100,
            |  "proofs" : [ "${transaction.signature}" ],
@@ -283,7 +283,7 @@ class TransactionBroadcastSpec
              |  "transaction" : {
              |    "type" : 16,
              |    "id" : "${invoke.id()}",
-             |    "fee" : 500000,
+             |    "fee" : 6000000,
              |    "feeAssetId" : null,
              |    "timestamp" : ${invoke.timestamp},
              |    "version" : 1,
@@ -376,7 +376,7 @@ class TransactionBroadcastSpec
              |        },
              |        "fee" : {
              |          "type" : "Int",
-             |          "value" : 500000
+             |          "value" : 6000000
              |        }
              |      }
              |    }, {

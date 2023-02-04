@@ -403,7 +403,7 @@ class TransactionsRouteSpec
         responseAs[JsObject] should matchJson(s"""{
                                                  |  "type" : 18,
                                                  |  "id" : "${transaction.id()}",
-                                                 |  "fee" : 100000,
+                                                 |  "fee" : 2000000,
                                                  |  "feeAssetId" : null,
                                                  |  "timestamp" : ${transaction.timestamp},
                                                  |  "version" : 1,
@@ -460,7 +460,7 @@ class TransactionsRouteSpec
         responseAs[JsObject] should matchJson(s"""{
                                                  |  "type" : 18,
                                                  |  "id" : "${transaction.id()}",
-                                                 |  "fee" : 500000,
+                                                 |  "fee" : 10000000,
                                                  |  "feeAssetId" : null,
                                                  |  "timestamp" : ${transaction.timestamp},
                                                  |  "version" : 1,
@@ -524,7 +524,7 @@ class TransactionsRouteSpec
                                     |  "id" : "${leaseCancel.id()}",
                                     |  "sender" : "3MtGzgmNa5fMjGCcPi5nqMTdtZkfojyWHL9",
                                     |  "senderPublicKey" : "9BUoYQYq7K38mkk61q8aMH9kD9fKSVL1Fib7FbH6nUkQ",
-                                    |  "fee" : 100000,
+                                    |  "fee" : 2000000,
                                     |  "feeAssetId" : null,
                                     |  "timestamp" : ${leaseCancel.timestamp},
                                     |  "proofs" : [ "${leaseCancel.signature}" ],
@@ -974,7 +974,7 @@ class TransactionsRouteSpec
           "dApp"       -> acc2.toAddress,
           "call"       -> func,
           "payment"    -> Seq[Payment](),
-          "fee"        -> 500000,
+          "fee"        -> 6000000,
           "feeAssetId" -> JsNull
         )
         Post(routePath("/sign"), ist) ~> ApiKeyHeader ~> route ~> check {

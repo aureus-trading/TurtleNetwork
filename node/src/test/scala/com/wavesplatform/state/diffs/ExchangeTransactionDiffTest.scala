@@ -1723,6 +1723,7 @@ class ExchangeTransactionDiffTest extends PropSpec with Inside with WithDomain w
       val exchange = TxHelpers.exchangeFromOrders(order1, order2, fee = fee)
 
       withDomain(RideV4) { d =>
+        d.helpers.creditWavesToDefaultSigner()
         d.appendBlock(Seq(amountAssetIssue, priceAssetIssue, order1FeeAssetIssue, order2FeeAssetIssue).distinct*)
         d.appendAndAssertFailed(exchange)
         d.liquidDiff.scriptsComplexity shouldBe complexity
@@ -1895,7 +1896,7 @@ class ExchangeTransactionDiffTest extends PropSpec with Inside with WithDomain w
 
     withDomain(
       DomainPresets.RideV6.setFeaturesHeight(BlockchainFeatures.ConsensusImprovements -> 4),
-      Seq(AddrWithBalance(signer.toWavesAddress))
+      Seq(AddrWithBalance(signer.toWavesAddress), AddrWithBalance(TxHelpers.defaultSigner.toAddress,3000_0000_0000L))
     ) { d =>
       val issue = TxHelpers.issue(TxHelpers.defaultSigner)
       val buyOrder = Order(
@@ -1916,7 +1917,6 @@ class ExchangeTransactionDiffTest extends PropSpec with Inside with WithDomain w
       val sellOrder = TxHelpers.order(OrderType.SELL, issue.asset, Waves, version = Order.V4)
 
       val tx = TxHelpers.exchange(signedBuyOrder, sellOrder, version = TxVersion.V3)
-
       d.appendBlock(issue)
 
       d.appendAndCatchError(tx) shouldBe TransactionDiffer.TransactionValidationError(
@@ -1934,14 +1934,13 @@ class ExchangeTransactionDiffTest extends PropSpec with Inside with WithDomain w
 
     withDomain(
       DomainPresets.RideV6.setFeaturesHeight(BlockchainFeatures.ConsensusImprovements -> 4),
-      AddrWithBalance.enoughBalances(signer)
+      AddrWithBalance.enoughBalances(signer,TxHelpers.defaultSigner)
     ) { d =>
       val issue     = TxHelpers.issue(TxHelpers.defaultSigner)
       val buyOrder  = () => TxHelpers.order(OrderType.BUY, issue.asset, Waves, sender = signer)
       val sellOrder = () => TxHelpers.order(OrderType.SELL, issue.asset, Waves)
 
       val tx = () => TxHelpers.exchange(buyOrder(), sellOrder())
-
       d.appendBlock(issue)
       d.appendAndAssertSucceed(tx())
 
@@ -1961,7 +1960,7 @@ class ExchangeTransactionDiffTest extends PropSpec with Inside with WithDomain w
 
     withDomain(
       DomainPresets.RideV6.setFeaturesHeight(BlockchainFeatures.ConsensusImprovements -> 4),
-      Seq(AddrWithBalance(signer.toWavesAddress))
+      Seq(AddrWithBalance(signer.toWavesAddress),AddrWithBalance(TxHelpers.defaultSigner.toAddress))
     ) { d =>
       val issue = TxHelpers.issue(TxHelpers.defaultSigner)
       val buyOrder = Order(

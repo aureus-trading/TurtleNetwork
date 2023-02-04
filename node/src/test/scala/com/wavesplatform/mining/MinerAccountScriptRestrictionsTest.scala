@@ -131,7 +131,7 @@ class MinerAccountScriptRestrictionsTest extends PropSpec with WithDomain {
   }
 
   private def setScript(script: Script): SetScriptTransaction =
-    SetScriptTransaction.selfSigned(TxVersion.V2, minerAcc, Some(script), 0.01.waves, ts).explicitGet()
+    SetScriptTransaction.selfSigned(TxVersion.V2, minerAcc, Some(script), 1.waves, ts).explicitGet()
 
   private def verifierScriptStr: String =
     s"""

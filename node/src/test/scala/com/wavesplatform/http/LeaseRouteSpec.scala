@@ -281,7 +281,7 @@ class LeaseRouteSpec
              |  BinaryEntry("leaseId", lease.calculateLeaseId())
              |]""".stripMargin
         ),
-        0.01.waves
+        1.waves
       )
     } yield (
       sender,

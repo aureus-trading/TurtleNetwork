@@ -15,7 +15,7 @@ object BlockchainFeatures {
   val SmartAssets                     = BlockchainFeature(9, "Smart Assets")
   val SmartAccountTrading             = BlockchainFeature(10, "Smart Account Trading")
   val Ride4DApps                      = BlockchainFeature(11, "RIDE 4 DAPPS")
-  val OrderV3                         = BlockchainFeature(12, "Smart Orders")
+  val OrderV3                         = BlockchainFeature(12, "Order Version 3")
   val ReduceNFTFee                    = BlockchainFeature(13, "Non-fungible token (NFT)")
   val BlockReward                     = BlockchainFeature(14, "Block Reward and Community Driven Monetary Policy")
   val BlockV5                         = BlockchainFeature(15, "Ride V4, VRF, Protobuf, Failed transactions")

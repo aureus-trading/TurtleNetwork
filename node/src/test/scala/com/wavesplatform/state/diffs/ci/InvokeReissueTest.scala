@@ -12,7 +12,7 @@ class InvokeReissueTest extends PropSpec with WithDomain {
   import DomainPresets._
 
   property("invoke fails on reissue of foreign asset") {
-    withDomain(RideV5, AddrWithBalance.enoughBalances(secondSigner)) { d =>
+    withDomain(RideV5, AddrWithBalance.enoughBalances(secondSigner,defaultSigner)) { d =>
       val issueTx = issue()
       val asset   = IssuedAsset(issueTx.id())
       val dApp = TestCompiler(V5).compileContract(
@@ -49,7 +49,7 @@ class InvokeReissueTest extends PropSpec with WithDomain {
   }
 
   property("Reissue transaction for asset issued via invoke") {
-    withDomain(RideV5, AddrWithBalance.enoughBalances(secondSigner)) { d =>
+    withDomain(RideV5, AddrWithBalance.enoughBalances(secondSigner, defaultSigner)) { d =>
       val dApp = TestCompiler(V5).compileContract(
         s"""
            | @Callable(i)
