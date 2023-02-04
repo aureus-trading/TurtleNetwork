@@ -256,7 +256,7 @@ class SyncDAppPaymentTest extends PropSpec with WithDomain {
 
       Long.MaxValue - d.balance(serviceDApp.toAddress) < paymentAmount
 
-      d.appendBlockE(invoke) should produce(s"${serviceDApp.toAddress} -> Waves balance sum overflow")
+      d.appendBlockE(invoke) should produce(s"${serviceDApp.toAddress} -> TN balance sum overflow")
     }
   }
 

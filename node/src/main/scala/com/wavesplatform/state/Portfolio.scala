@@ -18,7 +18,7 @@ case class Portfolio(balance: Long = 0L, lease: LeaseBalance = LeaseBalance.empt
 
   def combine(that: Portfolio): Either[String, Portfolio] =
     for {
-      balance  <- sum(this.balance, that.balance, "Waves balance sum overflow")
+      balance  <- sum(this.balance, that.balance, "TN balance sum overflow")
       assets   <- combineAssets(this.assets, that.assets)
       leaseIn  <- sum(this.lease.in, that.lease.in, "Lease in sum overflow")
       leaseOut <- sum(this.lease.out, that.lease.out, "Lease out sum overflow")

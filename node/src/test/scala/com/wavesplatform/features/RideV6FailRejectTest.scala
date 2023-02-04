@@ -416,7 +416,7 @@ class RideV6FailRejectTest extends FreeSpec with WithDomain with OptionValues wi
         ),
         Case(
           "NODE-556 If an invoke leads to a Waves overflow with a ScriptTransfer (initial balances)",
-          "Waves balance sum overflow",
+          "TN balance sum overflow",
           { targetComplexity =>
             // 1 for strict, 1 for Address, 1 for list, 1 for ScriptTransfer, 10 for wavesBalance,
             //   1 for Address(alice) and 1 for "-"

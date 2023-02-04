@@ -45,7 +45,7 @@ class PortfolioTest extends FunSuite {
   }
 
   test("prevents overflow of Waves") {
-    Portfolio(Long.MaxValue - 1L).combine(Portfolio(Long.MaxValue - 2L)) shouldBe Left("Waves balance sum overflow")
+    Portfolio(Long.MaxValue - 1L).combine(Portfolio(Long.MaxValue - 2L)) shouldBe Left("TN balance sum overflow")
   }
 
   test("prevents overflow of assets") {

@@ -94,7 +94,7 @@ class UtxPriorityPoolSpecification extends FreeSpec with SharedDomain {
 
       domain.appendKeyBlock()
       val rollbackTarget = domain.appendMicroBlock(
-        TxHelpers.transfer(alice, bob.toAddress, 10.015.waves, fee = 0.02.waves),
+        TxHelpers.transfer(alice, bob.toAddress, 11.06.waves, fee = 0.02.waves),
         mkHeightSensitiveScript(bob)
       )
       val transferToCarol = TxHelpers.transfer(bob, carol.toAddress, 10.waves, fee = 0.06.waves)
@@ -110,7 +110,7 @@ class UtxPriorityPoolSpecification extends FreeSpec with SharedDomain {
     "continues packing when priority diff contains no valid transactions" in {
       val bob = nextKeyPair
       domain.appendBlock(
-        TxHelpers.transfer(alice, bob.toAddress, 10.02.waves, fee = 0.02.waves),
+        TxHelpers.transfer(alice, bob.toAddress, 21.1.waves, fee = 0.02.waves),
         mkHeightSensitiveScript(bob)
       )
       val ref       = domain.appendKeyBlock().id()
@@ -119,7 +119,7 @@ class UtxPriorityPoolSpecification extends FreeSpec with SharedDomain {
       domain.appendKeyBlock(Some(ref))
       domain.utxPool.priorityPool.priorityTransactions shouldEqual Seq(transfer1)
 
-      val createAlias = TxHelpers.createAlias("0xbob", bob, 10.waves)
+      val createAlias = TxHelpers.createAlias("0xbob", bob, 10.04.waves)
       domain.utxPool.putIfNew(createAlias).resultE should beRight
       domain.utxPool.all shouldEqual Seq(transfer1, createAlias)
 
