@@ -120,7 +120,7 @@ class EthereumInvokeTest extends PropSpec with WithDomain with EthHelpers {
     val assets = issues.map(i => IssuedAsset(i.id()))
     val setAssetScripts = assets.map { asset =>
       val resultScript = assetScript(dummyEthInvoke, dApp.toAddress, assets, asset, assetScriptVersion)
-      SetAssetScriptTransaction.selfSigned(1.toByte, dApp, asset, Some(resultScript), 1.waves, ts).explicitGet()
+      SetAssetScriptTransaction.selfSigned(1.toByte, dApp, asset, Some(resultScript), 1.04.waves, ts).explicitGet()
     }
     val assetTransfers =
       assets.map(a => TransferTransaction.selfSigned(2.toByte, dApp, invoker, a, ENOUGH_AMT, Waves, fee, ByteStr.empty, ts).explicitGet())

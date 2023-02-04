@@ -15,7 +15,7 @@ import com.wavesplatform.state.diffs.FeeValidation.{FeeConstants, FeeUnit}
 import com.wavesplatform.test.*
 import com.wavesplatform.transaction.Asset.{IssuedAsset, Waves}
 import com.wavesplatform.transaction.TransactionType
-import com.wavesplatform.transaction.TxHelpers.{invoke, issue, secondAddress, secondSigner, setScript}
+import com.wavesplatform.transaction.TxHelpers.{defaultSigner, invoke, issue, secondAddress, secondSigner, setScript}
 import com.wavesplatform.transaction.smart.InvokeScriptTransaction.Payment
 
 class ScriptTransferTest extends PropSpec with WithDomain {
@@ -115,7 +115,7 @@ class ScriptTransferTest extends PropSpec with WithDomain {
 
   property("invoke fails if Transfer Transaction is prohibited in transfer asset") {
     def test(transferCheck: String) = {
-      withDomain(RideV5, AddrWithBalance.enoughBalances(secondSigner)) { d =>
+      withDomain(RideV5, AddrWithBalance.enoughBalances(secondSigner,defaultSigner)) { d =>
         val assetScript = TestCompiler(V5).compileAsset(
           s"""
              | match tx {

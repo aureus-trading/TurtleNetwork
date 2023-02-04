@@ -31,7 +31,7 @@ class SyncInvokeFailAndRejectTest extends PropSpec with WithDomain {
   )
 
   property("failed sync invoke doesn't affect state") {
-    withDomain(RideV5, AddrWithBalance.enoughBalances(dApp1Signer, dApp2Signer)) { d =>
+    withDomain(RideV5, AddrWithBalance.enoughBalances(dApp1Signer, dApp2Signer,defaultSigner)) { d =>
       val failAssetIssue     = issue(script = Some(assetFailScript))
       val trueAssetIssue     = issue(dApp2Signer, script = Some(ExprScriptImpl(V3, false, TRUE)))
       val noScriptAssetIssue = issue(dApp2Signer)

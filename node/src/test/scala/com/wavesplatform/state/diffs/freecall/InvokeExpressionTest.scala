@@ -416,9 +416,9 @@ private object InvokeExpressionTest {
 
   def feeErrorMessage(invoke: InvokeExpressionTransaction, issue: Boolean = false, verifier: Boolean = false): String = {
     val expectingFee =
-      FeeConstants(invoke.tpe) * FeeUnit + (if (issue) 1 else 0) * 1_0000_0000L + (if (verifier) 1 else 0) * FeeValidation.ScriptExtraFee
+      FeeConstants(invoke.tpe) * FeeUnit + (if (issue) 1 else 0) * 1000_0000_0000L + (if (verifier) 1 else 0) * FeeValidation.ScriptExtraFee
     val issueErr = if (issue) " with 1 assets issued" else ""
-    s"for InvokeExpressionTransaction (${invoke.fee} in WAVES)$issueErr does not exceed minimal value of $expectingFee WAVES."
+    s"for InvokeExpressionTransaction (${invoke.fee} in TN)$issueErr does not exceed minimal value of $expectingFee TN."
   }
 
   def verifier(version: StdLibVersion): Script =
