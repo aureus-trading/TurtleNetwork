@@ -87,7 +87,7 @@ class EthereumTransferSmartTest extends PropSpec with WithDomain with EthHelpers
 
       val function    = if (version >= V3) "transferTransactionById" else "transactionById"
       val verifier    = Some(accountScript(version, function, ethTransfer, token.map(_ => asset), recipient.toAddress))
-      val setVerifier = () => SetScriptTransaction.selfSigned(1.toByte, recipient, verifier, 0.02.waves, ts).explicitGet()
+      val setVerifier = () => SetScriptTransaction.selfSigned(1.toByte, recipient, verifier, 0.04.waves, ts).explicitGet()
 
       withDomain(RideV6) { d =>
         d.appendBlock(genesis1, genesis2, issue, preTransfer, setVerifier())
