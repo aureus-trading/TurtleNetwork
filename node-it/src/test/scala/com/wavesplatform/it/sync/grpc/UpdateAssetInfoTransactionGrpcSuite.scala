@@ -98,8 +98,8 @@ class UpdateAssetInfoTransactionGrpcSuite extends GrpcBaseTransactionSuite with 
       )
     }
     validNames.foreach { name =>
-      sender.waitForHeight(sender.height + updateInterval + 1, 3.minutes)
-      val tx = sender.updateAssetInfo(issuer, assetId, name, "updatedDescription", minFee)
+      sender.waitForHeight(sender.height + updateInterval + 1, 10.minutes)
+      val tx = sender.updateAssetInfo(issuer, assetId, name, "updatedDescription", issueFee)
 
       nodes.foreach(_.waitForTxAndHeightArise(tx.id))
       nodes.foreach(_.assetInfo(assetId).name shouldBe name)

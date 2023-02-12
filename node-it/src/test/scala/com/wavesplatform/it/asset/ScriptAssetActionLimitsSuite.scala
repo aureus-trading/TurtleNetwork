@@ -19,7 +19,7 @@ trait ScriptAssetActionLimitsSuite extends BaseFreeSpec {
       .overrideBase(_.preactivatedFeatures((SynchronousCalls.id, 0), (RideV6.id, 0)))
       .buildNonConflicting()
 
-  protected val initialWavesBalance: Long  = 1000.waves
+  protected val initialWavesBalance: Long  = 40000.waves
   protected val minSponsoredAssetFee: Long = 1001
   protected val asset: Asset               = Asset("Simple", "ReissuableAsset", "description", 100000000, reissuable = true, 3, 0)
 
