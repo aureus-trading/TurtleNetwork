@@ -73,7 +73,7 @@ class InvokeValidationTest extends PropSpec with WithDomain {
   }
 
   property("invoke payment balance in Waves should be checked before script execution only if spending exceeds fee, in asset — always") {
-    withDomain(RideV5, Seq(AddrWithBalance(secondAddress, ENOUGH_AMT), AddrWithBalance(signer(2).toAddress, invokeFee))) { d =>
+    withDomain(RideV5, Seq(AddrWithBalance(defaultSigner.toAddress, ENOUGH_AMT),AddrWithBalance(secondAddress, ENOUGH_AMT), AddrWithBalance(signer(2).toAddress, invokeFee))) { d =>
       val script = TestCompiler(V5).compileContract(
         """
           | @Callable(i)
@@ -107,7 +107,7 @@ class InvokeValidationTest extends PropSpec with WithDomain {
       d.appendBlockE(invoke(invoker = signer(2), payments = Seq(Payment(1, asset)), feeAssetId = asset)) should produce(
         "Attempt to transfer unavailable funds: " +
           s"Transaction application leads to negative asset '$asset' balance to (at least) temporary negative state, " +
-          "current balance is 500000, spends equals -500001, result is -1"
+          "current balance is 6000000, spends equals -6000001, result is -1"
       )
     }
   }

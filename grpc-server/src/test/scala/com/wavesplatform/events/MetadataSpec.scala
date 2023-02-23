@@ -65,7 +65,7 @@ class MetadataSpec extends FreeSpec with WithBUDomain {
     val massTransfer = TxHelpers.massTransfer(
       genesisAddress,
       Seq(
-        MassTransferTransaction.ParsedTransfer(issuer.toAddress, TxNonNegativeAmount.unsafeFrom(100.waves)),
+        MassTransferTransaction.ParsedTransfer(issuer.toAddress, TxNonNegativeAmount.unsafeFrom(1001.waves)),
         MassTransferTransaction.ParsedTransfer(matcher.toAddress, TxNonNegativeAmount.unsafeFrom(100.waves)),
         MassTransferTransaction.ParsedTransfer(ethOrderSender.toWavesAddress, TxNonNegativeAmount.unsafeFrom(100.waves)),
       ),
