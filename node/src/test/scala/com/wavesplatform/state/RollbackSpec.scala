@@ -477,7 +477,7 @@ class RollbackSpec extends FreeSpec with WithDomain {
           parentBlockId: ByteStr,
           fc: Terms.FUNCTION_CALL
       ): ByteStr = {
-        val fee = 100006000000L
+        val fee = 100100000000L
         val invoke =
           ss.fold[InvokeTransaction](
             TxHelpers.invoke(dApp.toAddress, func = Some(fc.function.funcName), args = fc.args, invoker = invoker, fee = fee)

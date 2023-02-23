@@ -55,7 +55,7 @@ object BalanceDiffValidation {
 
       for {
         newLease <- oldLease.combineF[Either[String, *]](portfolio.lease).leftMap((acc, _))
-        newWaves <- state.safeSum(oldWaves, balance, "Waves balance").leftMap((acc, _))
+        newWaves <- state.safeSum(oldWaves, balance, "TN balance").leftMap((acc, _))
         _        <- negativeBalanceCheck(newLease, newWaves)
         _        <- assetsCheck
       } yield ()

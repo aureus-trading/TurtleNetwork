@@ -16,7 +16,7 @@ class InvokePaymentsTest extends PropSpec with WithDomain {
   import DomainPresets.*
 
   property("invoke allowed if Transfer Transaction is prohibited in payment asset") {
-    withDomain(RideV5, AddrWithBalance.enoughBalances(secondSigner)) { d =>
+    withDomain(RideV5, AddrWithBalance.enoughBalances(secondSigner,defaultSigner)) { d =>
       val assetScript = TestCompiler(V5).compileExpression(
         """
           | match tx {
@@ -41,7 +41,7 @@ class InvokePaymentsTest extends PropSpec with WithDomain {
 
   property("invoke fails if Transfer Transaction is allowed but Invoke is prohibited in payment asset") {
     def test(invokeCheck: String) = {
-      withDomain(RideV5, AddrWithBalance.enoughBalances(secondSigner)) { d =>
+      withDomain(RideV5, AddrWithBalance.enoughBalances(secondSigner,defaultSigner)) { d =>
         val assetScript = TestCompiler(V5).compileAsset(
           s"""
              | match tx {
@@ -69,7 +69,7 @@ class InvokePaymentsTest extends PropSpec with WithDomain {
 
   property("invoke on insufficient balance is always rejected for asset payment and fails on big complexity for waves") {
     val invoker = signer(2)
-    withDomain(RideV5, AddrWithBalance.enoughBalances(secondSigner) :+ AddrWithBalance(invoker.toAddress, invokeFee)) { d =>
+    withDomain(RideV5, AddrWithBalance.enoughBalances(secondSigner,defaultSigner) :+ AddrWithBalance(invoker.toAddress, invokeFee)) { d =>
       val dApp = TestCompiler(V5).compileContract(
         s"""
            | @Callable(i)

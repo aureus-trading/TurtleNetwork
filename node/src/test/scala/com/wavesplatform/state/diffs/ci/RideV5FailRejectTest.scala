@@ -27,7 +27,7 @@ class RideV5FailRejectTest extends PropSpec with WithDomain {
   )
 
   private def assert[A](assert: Domain => A): Unit =
-    withDomain(RideV5, AddrWithBalance.enoughBalances(secondSigner))(assert)
+    withDomain(RideV5, AddrWithBalance.enoughBalances(defaultSigner,secondSigner))(assert)
 
   property("invoke fails by payment script") {
     assert { d =>
@@ -118,14 +118,14 @@ class RideV5FailRejectTest extends PropSpec with WithDomain {
          """.stripMargin
     )
     val invokeTx = invoke()
-    withDomain(RideV5, AddrWithBalance.enoughBalances(secondSigner, signer(10))) { d =>
+    withDomain(RideV5, AddrWithBalance.enoughBalances(defaultSigner,secondSigner, signer(10))) { d =>
       d.appendBlock(issueTx)
       d.appendBlock(setScript(secondSigner, dApp))
       d.appendAndAssertFailed(invokeTx, "Transaction is not allowed by script of the asset")
     }
 
     // TODO: move test after bug fix NODE-2520
-    withDomain(RideV6, AddrWithBalance.enoughBalances(secondSigner, signer(10))) { d =>
+    withDomain(RideV6, AddrWithBalance.enoughBalances(defaultSigner,secondSigner, signer(10))) { d =>
       d.appendBlock(issueTx)
       d.appendBlock(setScript(secondSigner, dApp))
       d.appendBlockE(invokeTx) should produce("negative asset balance")
@@ -133,7 +133,7 @@ class RideV5FailRejectTest extends PropSpec with WithDomain {
   }
 
   property("failed invoke doesn't affect state") {
-    withDomain(RideV5, AddrWithBalance.enoughBalances(secondSigner, signer(10))) { d =>
+    withDomain(RideV5, AddrWithBalance.enoughBalances(defaultSigner,secondSigner, signer(10))) { d =>
       val failAssetIssue = issue(script = Some(assetFailScript))
       val trueAssetIssue = issue(secondSigner, script = Some(ExprScriptImpl(V3, false, TRUE)))
       val failAsset      = IssuedAsset(failAssetIssue.id())
