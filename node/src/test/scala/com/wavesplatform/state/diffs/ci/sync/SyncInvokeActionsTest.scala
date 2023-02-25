@@ -17,7 +17,7 @@ class SyncInvokeActionsTest extends PropSpec with WithDomain {
   private val dApp2Address = signer(2).toAddress
 
   property("can't reissue asset issued by other dApp in the chain") {
-    withDomain(RideV5, AddrWithBalance.enoughBalances(dApp1Signer, dApp2Signer)) { d =>
+    withDomain(RideV5, AddrWithBalance.enoughBalances(defaultSigner,dApp1Signer, dApp2Signer)) { d =>
       val dApp1 = TestCompiler(V5).compileContract(
         s"""
            | @Callable(i)
@@ -44,7 +44,7 @@ class SyncInvokeActionsTest extends PropSpec with WithDomain {
   }
 
   property("can transfer from parent dApp asset issued in the chain") {
-    withDomain(RideV5, AddrWithBalance.enoughBalances(dApp1Signer, dApp2Signer)) { d =>
+    withDomain(RideV5, AddrWithBalance.enoughBalances(defaultSigner,dApp1Signer, dApp2Signer)) { d =>
       val dApp1 = TestCompiler(V5).compileContract(
         s"""
            | @Callable(i)
@@ -75,7 +75,7 @@ class SyncInvokeActionsTest extends PropSpec with WithDomain {
   }
 
   property("can't attach asset that will be issued later in the chain") {
-    withDomain(RideV5, AddrWithBalance.enoughBalances(dApp1Signer, dApp2Signer)) { d =>
+    withDomain(RideV5, AddrWithBalance.enoughBalances(defaultSigner,dApp1Signer, dApp2Signer)) { d =>
       val dApp1 = TestCompiler(V5).compileContract(
         s"""
            | @Callable(i)
@@ -103,7 +103,7 @@ class SyncInvokeActionsTest extends PropSpec with WithDomain {
   }
 
   property("can't transfer asset that will be issued later from the same dApp") {
-    withDomain(RideV5, AddrWithBalance.enoughBalances(dApp1Signer, dApp2Signer)) { d =>
+    withDomain(RideV5, AddrWithBalance.enoughBalances(defaultSigner,dApp1Signer, dApp2Signer)) { d =>
       val dApp = TestCompiler(V5).compileContract(
         s"""
            | let issue = Issue("name", "", 1000, 4, true, unit, 0)
@@ -125,7 +125,7 @@ class SyncInvokeActionsTest extends PropSpec with WithDomain {
   }
 
   property("can't issue the same asset in two dApps in the chain") {
-    withDomain(RideV5, AddrWithBalance.enoughBalances(dApp1Signer, dApp2Signer)) { d =>
+    withDomain(RideV5, AddrWithBalance.enoughBalances(defaultSigner,dApp1Signer, dApp2Signer)) { d =>
       val dApp1 = TestCompiler(V5).compileContract(
         s"""
            | @Callable(i)

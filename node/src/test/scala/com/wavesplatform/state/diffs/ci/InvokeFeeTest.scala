@@ -25,13 +25,13 @@ class InvokeFeeTest extends PropSpec with WithDomain {
       d.appendBlock(setScript(secondSigner, dApp))
       d.appendBlock(invoke(fee = invokeFee))
       d.appendBlockE(invoke(fee = invokeFee - 1)) should produce(
-        "Fee for InvokeScriptTransaction (499999 in WAVES) does not exceed minimal value of 500000 WAVES"
+        "Fee for InvokeScriptTransaction (5999999 in TN) does not exceed minimal value of 6000000 TN"
       )
     }
   }
 
   property("invoke sponsor fee") {
-    withDomain(RideV5, AddrWithBalance.enoughBalances(secondSigner)) { d =>
+    withDomain(RideV5, AddrWithBalance.enoughBalances(defaultSigner,secondSigner)) { d =>
       val dApp = TestCompiler(V5).compileContract(
         """
           | @Callable(i)
@@ -45,7 +45,7 @@ class InvokeFeeTest extends PropSpec with WithDomain {
       d.appendBlock(issueTx, sponsorTx)
       d.appendBlock(invoke(fee = invokeFee, feeAssetId = asset))
       d.appendBlockE(invoke(fee = invokeFee - 1, feeAssetId = asset)) should produce(
-        s"Fee for InvokeScriptTransaction (499999 in $asset) does not exceed minimal value of 500000 WAVES"
+        s"Fee for InvokeScriptTransaction (5999999 in $asset) does not exceed minimal value of 6000000 TN"
       )
     }
   }
@@ -78,7 +78,7 @@ class InvokeFeeTest extends PropSpec with WithDomain {
   }
 
   property("invoke is rejected if fee sponsor has not enough Waves") {
-    withDomain(RideV5, AddrWithBalance.enoughBalances(secondSigner) :+ AddrWithBalance(signer(9).toAddress, 1000.waves)) { d =>
+    withDomain(RideV5, AddrWithBalance.enoughBalances(secondSigner) :+ AddrWithBalance(signer(9).toAddress, 1010.waves)) { d =>
       val dApp = TestCompiler(V5).compileContract(
         """
           | @Callable(i)
@@ -95,7 +95,7 @@ class InvokeFeeTest extends PropSpec with WithDomain {
   }
 
   property("invoke Issue fee") {
-    withDomain(RideV5, AddrWithBalance.enoughBalances(secondSigner)) { d =>
+    withDomain(RideV5, AddrWithBalance.enoughBalances(defaultSigner,secondSigner)) { d =>
       val dApp = TestCompiler(V5).compileContract(
         """
           | @Callable(i)
@@ -109,7 +109,7 @@ class InvokeFeeTest extends PropSpec with WithDomain {
       d.appendBlock(invoke(fee = enoughFee))
       d.appendAndAssertFailed(
         invoke(fee = enoughFee - 1),
-        "Fee in WAVES for InvokeScriptTransaction (100499999 in TN) with 1 assets issued does not exceed minimal value of 100500000 TN"
+        "Fee in TN for InvokeScriptTransaction (100005999999 in TN) with 1 assets issued does not exceed minimal value of 100006000000 TN"
       )
     }
   }
@@ -119,7 +119,7 @@ class InvokeFeeTest extends PropSpec with WithDomain {
   }
 
   property("invoke sponsor fee via non-sponsored asset") {
-    withDomain(RideV5, AddrWithBalance.enoughBalances(secondSigner)) { d =>
+    withDomain(RideV5, AddrWithBalance.enoughBalances(defaultSigner,secondSigner)) { d =>
       val dApp = TestCompiler(V5).compileContract(
         """
           | @Callable(i)
