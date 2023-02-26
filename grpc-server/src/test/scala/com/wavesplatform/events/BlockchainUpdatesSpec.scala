@@ -130,8 +130,8 @@ class BlockchainUpdatesSpec extends FreeSpec with WithBUDomain with ScalaFutures
 
     "should not freeze on micro rollback" in withDomainAndRepo(currentSettings) { case (d, repo) =>
       val keyBlockId = d.appendKeyBlock().id()
-      d.appendMicroBlock(TxHelpers.transfer())
-      d.appendMicroBlock(TxHelpers.transfer())
+      d.appendMicroBlock(TxHelpers.transfer(amount= 1_0000_0000))
+      d.appendMicroBlock(TxHelpers.transfer(amount= 1_0000_0000))
 
       val subscription = repo.createFakeObserver(SubscribeRequest.of(1, 0))
       d.appendKeyBlock(Some(keyBlockId))
@@ -222,9 +222,9 @@ class BlockchainUpdatesSpec extends FreeSpec with WithBUDomain with ScalaFutures
     "should survive invalid micro rollback" in withDomainAndRepo(currentSettings) { case (d, repo) =>
       d.appendKeyBlock()
       val sub   = repo.createFakeObserver(SubscribeRequest(1))
-      val mb1Id = d.appendMicroBlock(TxHelpers.transfer())
-      val mb2Id = d.appendMicroBlock(TxHelpers.transfer())
-      d.appendMicroBlock(TxHelpers.transfer())
+      val mb1Id = d.appendMicroBlock(TxHelpers.transfer(amount=1_0000_0000))
+      val mb2Id = d.appendMicroBlock(TxHelpers.transfer(amount=1_0000_0000))
+      d.appendMicroBlock(TxHelpers.transfer(amount=1_0000_0000))
 
       d.blockchain.removeAfter(mb1Id) // Should not do anything
       d.appendKeyBlock(ref = Some(mb2Id))
@@ -460,9 +460,9 @@ class BlockchainUpdatesSpec extends FreeSpec with WithBUDomain with ScalaFutures
 
         rollback.removedBlocks should have length 1
         rollback.stateUpdate.balances shouldBe Seq(
-          BalanceUpdate(TxHelpers.defaultAddress, Waves, 9999940740000000L, after = 10000000600000000L),
+          BalanceUpdate(TxHelpers.defaultAddress, Waves, 9999940598800000L, after = 10000000600000000L),
           BalanceUpdate(TxHelpers.defaultAddress, issue.asset, 2000, after = 0),
-          BalanceUpdate(TxHelpers.secondAddress, Waves, 100000000, after = 0)
+          BalanceUpdate(TxHelpers.secondAddress, Waves, 300000000, after = 0)
         )
         assertCommon(rollback)
       }
@@ -493,9 +493,9 @@ class BlockchainUpdatesSpec extends FreeSpec with WithBUDomain with ScalaFutures
 
         rollback.removedBlocks shouldBe empty
         rollback.stateUpdate.balances shouldBe Seq(
-          BalanceUpdate(TxHelpers.defaultAddress, Waves, 9999940580000000L, after = 10000001040000000L),
+          BalanceUpdate(TxHelpers.defaultAddress, Waves, 9999940297600000L, after = 10000000898800000L),
           BalanceUpdate(TxHelpers.defaultAddress, issue.asset, 2000, after = 0),
-          BalanceUpdate(TxHelpers.secondAddress, Waves, 200000000, after = 100000000)
+          BalanceUpdate(TxHelpers.secondAddress, Waves, 600000000, after = 300000000)
         )
         assertCommon(rollback)
       }
@@ -518,8 +518,8 @@ class BlockchainUpdatesSpec extends FreeSpec with WithBUDomain with ScalaFutures
         val keyBlockId   = d.appendKeyBlock().id()
         val subscription = repo.createFakeObserver(SubscribeRequest.of(1, 0))
 
-        d.appendMicroBlock(TxHelpers.transfer())
-        d.appendMicroBlock(TxHelpers.transfer())
+        d.appendMicroBlock(TxHelpers.transfer(amount=1_0000_0000))
+        d.appendMicroBlock(TxHelpers.transfer(amount=1_0000_0000))
         d.appendKeyBlock(Some(keyBlockId))
 
         sendUpdate()
@@ -540,7 +540,7 @@ class BlockchainUpdatesSpec extends FreeSpec with WithBUDomain with ScalaFutures
         d.appendKeyBlock().id()
         val subscription = repo.createFakeObserver(SubscribeRequest.of(1, 0))
 
-        val microBlockId = d.appendMicroBlock(TxHelpers.transfer())
+        val microBlockId = d.appendMicroBlock(TxHelpers.transfer(amount = 1_0000_0000))
         d.appendMicroBlock(TxHelpers.transfer())
         d.appendKeyBlock(Some(microBlockId))
 
@@ -563,8 +563,8 @@ class BlockchainUpdatesSpec extends FreeSpec with WithBUDomain with ScalaFutures
         val subscription = repo.createFakeObserver(SubscribeRequest.of(1, 0))
         sendUpdate()
 
-        d.appendMicroBlock(TxHelpers.transfer())
-        d.appendMicroBlock(TxHelpers.transfer())
+        d.appendMicroBlock(TxHelpers.transfer(amount = 1_0000_0000))
+        d.appendMicroBlock(TxHelpers.transfer(amount = 1_0000_0000))
         d.appendKeyBlock(Some(keyBlockId))
         sendUpdate()
 
@@ -584,10 +584,10 @@ class BlockchainUpdatesSpec extends FreeSpec with WithBUDomain with ScalaFutures
         val subscription = repo.createFakeObserver(SubscribeRequest.of(1, 0))
         sendUpdate()
 
-        d.appendMicroBlock(TxHelpers.transfer())
+        d.appendMicroBlock(TxHelpers.transfer(amount = 1_0000_0000))
         sendUpdate()
 
-        d.appendMicroBlock(TxHelpers.transfer())
+        d.appendMicroBlock(TxHelpers.transfer(amount = 1_0000_0000))
         d.appendKeyBlock(Some(keyBlockId))
 
         (1 to 3).foreach(_ => sendUpdate())
@@ -667,24 +667,24 @@ class BlockchainUpdatesSpec extends FreeSpec with WithBUDomain with ScalaFutures
 
     "should correctly concatenate stream from DB and new blocks stream" in {
       subscribeAndCheckResult(5, _ => (), 1 to 5)
-      subscribeAndCheckResult(5, d => d.appendMicroBlock(TxHelpers.transfer()), (1 to 5) :+ 5)
+      subscribeAndCheckResult(5, d => d.appendMicroBlock(TxHelpers.transfer(amount = 1)), (1 to 5) :+ 5)
       subscribeAndCheckResult(5, d => d.appendKeyBlock(), 1 to 5, isStreamClosed = true)
       subscribeAndCheckResult(
         5,
         d => {
-          d.appendMicroBlock(TxHelpers.transfer())
+          d.appendMicroBlock(TxHelpers.transfer(amount = 1))
           d.appendKeyBlock()
         },
         (1 to 5) :+ 5,
         isStreamClosed = true
       )
       subscribeAndCheckResult(0, _ => (), 1 to 5)
-      subscribeAndCheckResult(0, d => d.appendMicroBlock(TxHelpers.transfer()), (1 to 5) :+ 5)
+      subscribeAndCheckResult(0, d => d.appendMicroBlock(TxHelpers.transfer(amount = 1)), (1 to 5) :+ 5)
       subscribeAndCheckResult(0, d => d.appendKeyBlock(), (1 to 5) :+ 6)
       subscribeAndCheckResult(
         0,
         d => {
-          d.appendMicroBlock(TxHelpers.transfer())
+          d.appendMicroBlock(TxHelpers.transfer(amount = 1))
           d.appendKeyBlock()
         },
         (1 to 5) ++ Seq(5, 6)

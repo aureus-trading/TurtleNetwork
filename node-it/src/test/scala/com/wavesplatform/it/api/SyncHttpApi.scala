@@ -754,7 +754,7 @@ object SyncHttpApi extends Assertions with matchers.should.Matchers {
 
     import com.wavesplatform.it.api.AsyncHttpApi.NodesAsyncHttpApi as async
 
-    private val TxInBlockchainAwaitTime = 15 * nodes.head.blockDelay
+    private val TxInBlockchainAwaitTime = 30 * nodes.head.blockDelay
     private val ConditionAwaitTime      = 8.minutes
 
     private[this] def withTxIdMessage[T](transactionId: String)(f: => T): T =

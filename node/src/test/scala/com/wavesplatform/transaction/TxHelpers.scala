@@ -65,7 +65,7 @@ object TxHelpers {
       to: AddressOrAlias = secondAddress,
       amount: Long = 3.waves,
       asset: Asset = Waves,
-      fee: Long = TestValues.fee,
+      fee: Long = TestValues.feeSmall,
       feeAsset: Asset = Waves,
       attachment: ByteStr = ByteStr.empty,
       timestamp: TxTimestamp = timestamp,
