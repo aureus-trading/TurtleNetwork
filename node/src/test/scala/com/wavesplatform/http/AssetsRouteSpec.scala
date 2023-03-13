@@ -270,7 +270,7 @@ class AssetsRouteSpec extends RouteSpec("/assets") with Eventually with RestAPIS
         Arg.Bool(assetDesc.reissuable)
       ),
       payments = Seq.empty,
-      fee = 1.01.waves
+      fee = 1000.06.waves
     )
 
     d.appendBlock(TxHelpers.genesis(tx.sender.toAddress), TxHelpers.genesis(defaultSigner.toAddress))
@@ -333,7 +333,7 @@ class AssetsRouteSpec extends RouteSpec("/assets") with Eventually with RestAPIS
           issuer,
           issueTransaction.asset,
           transfers,
-          0.01.waves,
+          0.08.waves,
           ntpTime.getTimestamp(),
           ByteStr.empty
         )

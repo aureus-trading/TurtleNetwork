@@ -17,7 +17,7 @@ class TransferTransactionDiffTest extends PropSpec with WithDomain {
     val sender    = TxHelpers.secondAddress
     val senderKp  = TxHelpers.secondSigner
     val recipient = TxHelpers.address(2)
-    val feeDiff   = Diff(portfolios = Map(sender -> Portfolio.waves(TestValues.fee)))
+    val feeDiff   = Diff(portfolios = Map(sender -> Portfolio.waves(TestValues.feeSmall)))
 
     withDomain(DomainPresets.mostRecent.copy(rewardsSettings = RewardsVotingSettings(None)), AddrWithBalance.enoughBalances(senderKp)) { d =>
       val wavesTransfer = TxHelpers.transfer(senderKp, recipient)

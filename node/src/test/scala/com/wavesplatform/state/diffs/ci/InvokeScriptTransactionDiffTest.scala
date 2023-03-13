@@ -1480,7 +1480,7 @@ class InvokeScriptTransactionDiffTest extends PropSpec with WithDomain with DBCa
           TxHelpers.issue(dApp, ENOUGH_AMT, script = Some(trueScript), fee = 1000.04.waves)
         }
         val tTxs = iTxs.takeRight(3).map { tx =>
-          TxHelpers.transfer(dApp, invokerAddress, ENOUGH_AMT / 2, IssuedAsset(tx.assetId))
+          TxHelpers.transfer(dApp, invokerAddress, ENOUGH_AMT / 2, IssuedAsset(tx.assetId),fee=0.06.waves)
         }
         val saTxs = assetScripts.zipWithIndex.map { case (sc, i) =>
           TxHelpers.setAssetScript(dApp, IssuedAsset(iTxs(i).id()), sc, fee = 1.04.waves)

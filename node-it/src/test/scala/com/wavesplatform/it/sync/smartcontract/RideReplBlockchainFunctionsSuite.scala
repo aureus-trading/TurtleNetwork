@@ -112,10 +112,10 @@ class RideReplBlockchainFunctionsSuite extends BaseTransactionSuite {
       "this.wavesBalance()",
       """
         |BalanceDetails(
-        |	available = 1899992000000
-        |	regular = 1899992000000
+        |	available = 2899992000000
+        |	regular = 2899992000000
         |	generating = 0
-        |	effective = 1899992000000
+        |	effective = 2899992000000
         |)
       """.trim.stripMargin
     )
