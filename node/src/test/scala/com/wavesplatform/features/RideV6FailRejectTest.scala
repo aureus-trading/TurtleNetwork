@@ -166,8 +166,8 @@ class RideV6FailRejectTest extends FreeSpec with WithDomain with OptionValues wi
           ethInvokeTx = Some(EthTxGenerator.generateEthInvoke(ethInvoker, aliceAddr, "foo", Seq.empty, Seq(Payment(1, bobSmartAssetTx.asset)))),
           knownTxs = Seq(
             bobSmartAssetTx,
-            TxHelpers.transfer(bob, invokerAddr, 1, bobSmartAssetTx.asset),
-            TxHelpers.transfer(bob, ethInvokerAddr, 1, bobSmartAssetTx.asset)
+            TxHelpers.transfer(bob, invokerAddr, 1, bobSmartAssetTx.asset,fee = 0.06.waves),
+            TxHelpers.transfer(bob, ethInvokerAddr, 1, bobSmartAssetTx.asset,fee = 0.06.waves)
           )
         )
       },
